@@ -1,0 +1,66 @@
+<meta charset="utf-8">
+<title>Minor Index — specimen</title>
+<style>
+@font-face { font-family:"Minor Index"; font-weight:300; src:url("fonts/MinorIndex-Light.ttf") format("truetype"); }
+@font-face { font-family:"Minor Index"; font-weight:400; src:url("fonts/MinorIndex-Regular.ttf") format("truetype"); }
+@font-face { font-family:"Minor Index"; font-weight:700; src:url("fonts/MinorIndex-Bold.ttf") format("truetype"); }
+:root { --black:#141410; --white:#f4f4f2; --ground:#8f8f8c; --fluo:#e8ff00; --blu:#001ef7; }
+body { margin:0; background:var(--ground); color:var(--black);
+       font-family:"Minor Index","Helvetica Neue",Helvetica,Arial,sans-serif; }
+main { max-width:1100px; margin:0 auto; background:var(--white); min-height:100vh;
+       padding:52px 56px 90px; box-shadow:0 2px 0 rgba(0,0,0,.35); }
+h1 { font-size:96px; font-weight:400; margin:0 0 4px; line-height:1.05; }
+.sub { font-size:15px; color:#6f6f6a; margin-bottom:54px;
+       font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; }
+section { border-top:1px solid var(--black); padding:22px 0 30px; }
+.lab { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#6f6f6a;
+       margin-bottom:14px; font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; }
+.row { font-size:56px; line-height:1.25; }
+.light { font-weight:300; } .bold { font-weight:700; }
+.set { font-size:38px; line-height:1.5; word-spacing:.1em; }
+.sizes p { margin:0 0 10px; }
+.s34 { font-size:34px; } .s24 { font-size:24px; } .s18 { font-size:18px; } .s13 { font-size:13px; }
+.note { font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; font-size:12.5px;
+        color:#6f6f6a; max-width:64ch; line-height:1.6; }
+mark { background:var(--fluo); }
+</style>
+<main>
+  <h1>AUTOPHAGIE</h1>
+  <div class="sub">Minor Index — three weights, 64 glyphs, drawn in code and outlined into TrueType.</div>
+
+  <section>
+    <div class="lab">Light · Regular · Bold</div>
+    <div class="row light">AUTOPHAGIE</div>
+    <div class="row">AUTOPHAGIE</div>
+    <div class="row bold">AUTOPHAGIE</div>
+  </section>
+
+  <section>
+    <div class="lab">The set</div>
+    <div class="set">ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>0123456789 ÉÈÊËÀÂÇÎÏÔÛÙŒ<br>&amp; ? ! . , : - · ' / ( ) °</div>
+  </section>
+
+  <section class="sizes">
+    <div class="lab">Down the sizes</div>
+    <p class="s34">ÉCONOMIE GÉNÉRALE — le soleil se dépense</p>
+    <p class="s24">SOLEIL · SPIRALE · AUTOPHAGIE · 131 PLANCHES</p>
+    <p class="s18">LE CORPS SE MANGE LUI-MÊME &amp; NE DEMANDE RIEN EN RETOUR</p>
+    <p class="s13">MINOR INDEX 2026 — TOUS LES SIGNES SONT DANS LE CODE</p>
+  </section>
+
+  <section>
+    <div class="lab">In use</div>
+    <div class="s34">UN FILM DE <mark>&nbsp;ALESSANDRO LONGO&nbsp;</mark></div>
+    <div class="s18" style="margin-top:14px">AUTOPHAGIE (2026) · 4K · 88 MIN · FRANCE</div>
+  </section>
+
+  <section>
+    <div class="lab">Where it comes from</div>
+    <p class="note">Every letter is a skeleton of lines and arcs in
+    <code>_letters.js</code>, laid down with a wobble the way a hand pulls a marker.
+    A font has no pen, so <code>_font.js</code> turns each stroke into overlapping
+    capsules and discs and writes the TrueType tables by hand — no font editor and
+    no library anywhere in it. The same skeletons are what the plates print, which
+    is why type set here and lettering on a plate are the same letters.</p>
+  </section>
+</main>
