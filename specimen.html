@@ -1,66 +1,400 @@
 <meta charset="utf-8">
-<title>Minor Index — specimen</title>
+<title>Minor Index Typeface</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap">
 <style>
-@font-face { font-family:"Minor Index"; font-weight:300; src:url("fonts/MinorIndex-Light.ttf") format("truetype"); }
-@font-face { font-family:"Minor Index"; font-weight:400; src:url("fonts/MinorIndex-Regular.ttf") format("truetype"); }
-@font-face { font-family:"Minor Index"; font-weight:700; src:url("fonts/MinorIndex-Bold.ttf") format("truetype"); }
-:root { --black:#141410; --white:#f4f4f2; --ground:#8f8f8c; --fluo:#e8ff00; --blu:#001ef7; }
-body { margin:0; background:var(--ground); color:var(--black);
-       font-family:"Minor Index","Helvetica Neue",Helvetica,Arial,sans-serif; }
-main { max-width:1100px; margin:0 auto; background:var(--white); min-height:100vh;
-       padding:52px 56px 90px; box-shadow:0 2px 0 rgba(0,0,0,.35); }
-h1 { font-size:96px; font-weight:400; margin:0 0 4px; line-height:1.05; }
-.sub { font-size:15px; color:#6f6f6a; margin-bottom:54px;
-       font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; }
-section { border-top:1px solid var(--black); padding:22px 0 30px; }
-.lab { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#6f6f6a;
-       margin-bottom:14px; font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; }
-.row { font-size:56px; line-height:1.25; }
-.light { font-weight:300; } .bold { font-weight:700; }
-.set { font-size:38px; line-height:1.5; word-spacing:.1em; }
-.sizes p { margin:0 0 10px; }
-.s34 { font-size:34px; } .s24 { font-size:24px; } .s18 { font-size:18px; } .s13 { font-size:13px; }
-.note { font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; font-size:12.5px;
-        color:#6f6f6a; max-width:64ch; line-height:1.6; }
-mark { background:var(--fluo); }
+  /* the identity's ink table — the same five colours the plates are printed in */
+  :root {
+    --black:#141410; --white:#f4f4f2; --grey:#e4e4e0; --fluo:#e8ff00; --blu:#001ef7;
+    --ground:#8f8f8c; --rule:#141410; --dim:#6f6f6a;
+    --sans:'Archivo','Helvetica Neue',Helvetica,Arial,sans-serif;
+    --face:'Minor Index','Archivo','Helvetica Neue',Helvetica,Arial,sans-serif;
+  }
+  @font-face { font-family:"Minor Index"; font-weight:300; font-display:swap;
+               src:url("fonts/MinorIndex-Light.ttf") format("truetype"); }
+  @font-face { font-family:"Minor Index"; font-weight:400; font-display:swap;
+               src:url("fonts/MinorIndex-Regular.ttf") format("truetype"); }
+  @font-face { font-family:"Minor Index"; font-weight:700; font-display:swap;
+               src:url("fonts/MinorIndex-Bold.ttf") format("truetype"); }
+
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--black);
+         font:400 13px/1.55 var(--sans); font-variant-numeric:tabular-nums;
+         -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { margin:0; font-weight:700; }
+  a { color:inherit; }
+  .caps { font-stretch:118%; letter-spacing:.14em; text-transform:uppercase; }
+
+  /* ---- the same bar the atelier wears ---- */
+  header { position:sticky; top:0; z-index:5; display:flex; align-items:stretch;
+           background:var(--white); border-bottom:1px solid var(--rule); }
+  .brand { display:flex; align-items:center; gap:9px; padding:0 13px; flex:none;
+           border-right:1px solid var(--rule); }
+  .brand .dot { width:9px; height:9px; background:var(--black); flex:none; }
+  .brand h1 { font-size:12.5px; font-stretch:118%; letter-spacing:.13em;
+              text-transform:uppercase; white-space:nowrap; }
+  nav { display:flex; align-items:stretch; }
+  nav a { display:flex; align-items:center; padding:0 14px; text-decoration:none;
+          border-right:1px solid var(--rule); font-size:11px; font-weight:600;
+          font-stretch:112%; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
+  nav a:hover { background:var(--grey); }
+  nav a[aria-current=page] { background:var(--black); color:var(--white); }
+  .grab { display:flex; align-items:center; gap:5px; padding:8px 12px; margin-left:auto; flex-wrap:wrap; }
+  .b { white-space:nowrap; background:var(--white); border:1px solid var(--rule); padding:5px 11px;
+       cursor:pointer; font:600 11px var(--sans); font-stretch:112%; letter-spacing:.09em;
+       text-transform:uppercase; text-decoration:none; color:var(--black); display:inline-block; }
+  .b:hover { background:var(--grey); }
+  .b.key { background:var(--fluo); }
+  .b:focus-visible { outline:2px solid var(--blu); outline-offset:1px; }
+
+  main { max-width:1180px; margin:0 auto; padding:26px 26px 80px; }
+  /* every block is a sheet, the way a plate is a sheet */
+  .sheet { background:var(--white); border:1px solid var(--rule); box-shadow:0 2px 0 rgba(0,0,0,.35);
+           margin-bottom:26px; position:relative; }
+  .sheet > .lab { display:flex; align-items:baseline; gap:10px; padding:9px 16px;
+                  border-bottom:1px solid var(--rule); font-size:11px; font-stretch:118%;
+                  letter-spacing:.14em; text-transform:uppercase; font-weight:700; }
+  .sheet > .lab span { font-weight:400; font-stretch:100%; letter-spacing:0;
+                       text-transform:none; color:var(--dim); font-size:11.5px; }
+  .body { padding:26px 30px 32px; }
+
+  .hero { font-family:var(--face); font-size:clamp(56px,11vw,150px); font-weight:400;
+          line-height:.98; margin:0; }
+  .heroline { display:flex; flex-wrap:wrap; gap:14px 26px; align-items:baseline;
+              padding:14px 30px 26px; }
+  .heroline .meta { color:var(--dim); font-size:12.5px; max-width:46ch; }
+  .rows { font-family:var(--face); }
+  .rows div:not(.tag) { font-size:clamp(30px,6vw,64px); line-height:1.22; white-space:nowrap;
+                        overflow:hidden; text-overflow:clip; }
+  .w300 { font-weight:300; } .w700 { font-weight:700; }
+  .tag { font-family:var(--sans); font-size:10.5px; color:var(--dim); font-stretch:118%;
+         letter-spacing:.14em; text-transform:uppercase; margin-bottom:4px; }
+  .set { font-family:var(--face); font-size:clamp(24px,4.4vw,44px); line-height:1.45; }
+  .sizes p { font-family:var(--face); margin:0 0 12px; }
+  .s40 { font-size:40px; } .s28 { font-size:28px; } .s20 { font-size:20px; } .s14 { font-size:14px; }
+  .note { max-width:66ch; line-height:1.65; color:#2a2a26; }
+  .note p { margin:0 0 14px; }
+  .note b { font-weight:700; }
+  .note code { background:var(--grey); padding:1px 5px; font-family:var(--sans); font-size:12px; }
+  mark { background:var(--fluo); color:var(--black); }
+
+  /* ---- the tester ---- */
+  .try { display:grid; grid-template-columns:1fr 268px; gap:0; }
+  @media (max-width:820px) { .try { grid-template-columns:1fr; } }
+  .stage { padding:0; min-height:290px; display:grid; place-items:center; overflow:hidden;
+           border-right:1px solid var(--rule); }
+  @media (max-width:820px) { .stage { border-right:0; border-bottom:1px solid var(--rule); } }
+  .stage .live { font-family:var(--face); font-size:72px; line-height:1.2; text-align:center;
+                 padding:34px 26px; width:100%; outline:none; word-break:break-word; }
+  .stage svg { display:block; max-width:100%; height:auto; }
+  .panel { padding:16px 16px 20px; display:flex; flex-direction:column; gap:13px; }
+  .f { display:grid; grid-template-columns:1fr auto; gap:3px 8px; align-items:center; }
+  .f label { font-size:11px; font-weight:500; }
+  .f .val { font-size:11px; font-weight:700; color:var(--dim); }
+  .f .wide { grid-column:1/-1; }
+  select { width:100%; background:var(--grey); border:1px solid var(--rule);
+           padding:4px 6px; font:400 11.5px var(--sans); }
+  select:focus, input:focus { outline:1px solid var(--blu); }
+  input[type=text] { width:100%; background:var(--grey); border:1px solid var(--rule);
+                     padding:6px 8px; font:600 13px var(--sans); letter-spacing:.03em; }
+  input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:15px;
+                      background:transparent; cursor:ew-resize; }
+  input[type=range]::-webkit-slider-runnable-track { height:2px; background:var(--black); }
+  input[type=range]::-moz-range-track { height:2px; background:var(--black); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:9px; height:16px;
+                                            background:var(--black); border:0; margin-top:-7px; }
+  input[type=range]::-moz-range-thumb { width:9px; height:16px; background:var(--black);
+                                        border:0; border-radius:0; }
+  .swatches { display:flex; gap:4px; grid-column:1/-1; }
+  .swatches button { width:100%; height:19px; border:1px solid var(--rule); cursor:pointer;
+                     padding:0; position:relative; }
+  .swatches button[aria-pressed=true]::after { content:""; position:absolute; inset:2px;
+                                               border:1px solid var(--blu); }
+  .sw-black{background:#141410}.sw-white{background:#f4f4f2}.sw-fluo{background:#e8ff00}
+  .sw-blu{background:#001ef7}.sw-grey{background:#e4e4e0}
+  .hint { font-size:10.5px; color:var(--dim); line-height:1.45; }
+  footer { max-width:1180px; margin:0 auto; padding:0 26px 60px; color:#3f3f3b; font-size:11.5px; }
+  footer a { text-decoration:none; border-bottom:1px solid currentColor; }
 </style>
+
+<header>
+  <div class="brand"><span class="dot"></span><h1>Minor Index</h1></div>
+  <nav>
+    <a href="index.html" id="navAtelier">Atelier</a>
+    <a href="specimen.html" aria-current="page">Typeface</a>
+  </nav>
+  <div class="grab">
+    <a class="b key" href="fonts/MinorIndex-Regular.ttf" download>Regular .ttf</a>
+    <a class="b" href="fonts/MinorIndex-Light.ttf" download>Light</a>
+    <a class="b" href="fonts/MinorIndex-Bold.ttf" download>Bold</a>
+  </div>
+</header>
+
 <main>
-  <h1>AUTOPHAGIE</h1>
-  <div class="sub">Minor Index — three weights, 64 glyphs, drawn in code and outlined into TrueType.</div>
+  <div class="sheet">
+    <div class="lab">The face <span>Minor Index — drawn in code, outlined into TrueType</span></div>
+    <div class="heroline">
+      <h2 class="hero">AUTOPHAGIE</h2>
+      <div class="meta">64 glyphs · three weights · caps, figures, the accents French needs,
+        &amp; and ?. Lowercase types the caps. No font editor was involved at any point.</div>
+    </div>
+  </div>
 
-  <section>
-    <div class="lab">Light · Regular · Bold</div>
-    <div class="row light">AUTOPHAGIE</div>
-    <div class="row">AUTOPHAGIE</div>
-    <div class="row bold">AUTOPHAGIE</div>
-  </section>
+  <div class="sheet">
+    <div class="lab">Weights <span>one skeleton, three pens</span></div>
+    <div class="body rows">
+      <div class="tag">Light</div><div class="w300">AUTOPHAGIE</div>
+      <div class="tag" style="margin-top:14px">Regular</div><div>AUTOPHAGIE</div>
+      <div class="tag" style="margin-top:14px">Bold</div><div class="w700">AUTOPHAGIE</div>
+    </div>
+  </div>
 
-  <section>
-    <div class="lab">The set</div>
-    <div class="set">ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>0123456789 ÉÈÊËÀÂÇÎÏÔÛÙŒ<br>&amp; ? ! . , : - · ' / ( ) °</div>
-  </section>
+  <div class="sheet">
+    <div class="lab">Try it <span>type into the box — the box is the font</span></div>
+    <div class="try">
+      <div class="stage" id="stage">
+        <div class="live" id="live" contenteditable="true" spellcheck="false">AUTOPHAGIE</div>
+      </div>
+      <div class="panel">
+        <div class="f">
+          <label class="wide" for="tText">the words</label>
+          <input class="wide" type="text" id="tText" value="AUTOPHAGIE" aria-label="text to set">
+        </div>
+        <div class="f">
+          <label for="tPass">pass</label><span class="val" id="vPass"></span>
+          <select class="wide" id="tPass">
+            <option value="type">type — the real font, editable</option>
+            <option value="cut">cut — drawn strokes</option>
+            <option value="screen">screened — through the copier</option>
+            <option value="hot">over-inked — the press runs hot</option>
+          </select>
+        </div>
+        <div class="f">
+          <label for="tSize">size</label><span class="val" id="vSize">72</span>
+          <input class="wide" type="range" id="tSize" min="14" max="180" step="2" value="72">
+        </div>
+        <div class="f">
+          <label for="tWeight">weight</label><span class="val" id="vWeight">Regular</span>
+          <select class="wide" id="tWeight">
+            <option value="0.075">Light</option>
+            <option value="0.12" selected>Regular</option>
+            <option value="0.19">Bold</option>
+          </select>
+        </div>
+        <div class="f">
+          <label for="tTrack">tracking</label><span class="val" id="vTrack">0.10</span>
+          <input class="wide" type="range" id="tTrack" min="-0.02" max="0.4" step="0.01" value="0.1">
+        </div>
+        <div class="f">
+          <label>ground</label><span class="val" id="vGround">white</span>
+          <div class="swatches" id="swGround"></div>
+        </div>
+        <div class="f">
+          <label>ink</label><span class="val" id="vInk">black</span>
+          <div class="swatches" id="swInk"></div>
+        </div>
+        <div class="hint" id="hint">Black ground with white ink is the knock-out the plates use.</div>
+        <button class="b" id="tSave" style="width:100%">Save this line as SVG</button>
+      </div>
+    </div>
+  </div>
 
-  <section class="sizes">
-    <div class="lab">Down the sizes</div>
-    <p class="s34">ÉCONOMIE GÉNÉRALE — le soleil se dépense</p>
-    <p class="s24">SOLEIL · SPIRALE · AUTOPHAGIE · 131 PLANCHES</p>
-    <p class="s18">LE CORPS SE MANGE LUI-MÊME &amp; NE DEMANDE RIEN EN RETOUR</p>
-    <p class="s13">MINOR INDEX 2026 — TOUS LES SIGNES SONT DANS LE CODE</p>
-  </section>
+  <div class="sheet">
+    <div class="lab">The set <span>everything there is</span></div>
+    <div class="body set">
+      ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>
+      0123456789 ÉÈÊËÀÂÇÎÏÔÛÙŒ<br>
+      &amp; ? ! . , : - · ' / ( ) °
+    </div>
+  </div>
 
-  <section>
+  <div class="sheet">
+    <div class="lab">Down the sizes <span>where it stops being a poster and starts being a caption</span></div>
+    <div class="body sizes">
+      <p class="s40">ÉCONOMIE GÉNÉRALE — LE SOLEIL SE DÉPENSE</p>
+      <p class="s28">SOLEIL · SPIRALE · AUTOPHAGIE · 131 PLANCHES</p>
+      <p class="s20">LE CORPS SE MANGE LUI-MÊME &amp; NE DEMANDE RIEN EN RETOUR</p>
+      <p class="s14">MINOR INDEX 2026 — TOUS LES SIGNES SONT DANS LE CODE</p>
+    </div>
+  </div>
+
+  <div class="sheet">
     <div class="lab">In use</div>
-    <div class="s34">UN FILM DE <mark>&nbsp;ALESSANDRO LONGO&nbsp;</mark></div>
-    <div class="s18" style="margin-top:14px">AUTOPHAGIE (2026) · 4K · 88 MIN · FRANCE</div>
-  </section>
+    <div class="body">
+      <div class="s40" style="font-family:var(--face)">UN FILM DE <mark>&nbsp;ALESSANDRO LONGO&nbsp;</mark></div>
+      <div class="s20" style="font-family:var(--face); margin-top:12px">AUTOPHAGIE (2026) · 4K · 88 MIN · FRANCE</div>
+    </div>
+  </div>
 
-  <section>
-    <div class="lab">Where it comes from</div>
-    <p class="note">Every letter is a skeleton of lines and arcs in
-    <code>_letters.js</code>, laid down with a wobble the way a hand pulls a marker.
-    A font has no pen, so <code>_font.js</code> turns each stroke into overlapping
-    capsules and discs and writes the TrueType tables by hand — no font editor and
-    no library anywhere in it. The same skeletons are what the plates print, which
-    is why type set here and lettering on a plate are the same letters.</p>
-  </section>
+  <div class="sheet">
+    <div class="lab">The project <span>what this is and why it is made this way</span></div>
+    <div class="body note">
+      <p><b>MINOR INDEX</b> is the visual identity of <b>AUTOPHAGIE</b>, a film about a body
+      that consumes itself. It is not a logo with variations. It is a small machine that
+      prints plates, and everything it prints comes out of the same three decisions.</p>
+
+      <p><b>Nothing here is drawn in an editor and nothing here contains a font.</b> Every
+      shape is code: 131 numbered plates, each written by a generator script, each
+      reproducible byte for byte from its seed. If a plate is wrong you do not retouch it —
+      you change the number that made it and print it again.</p>
+
+      <p><b>A body is a distance field, not a shape.</b> Each form — the sun, the cell, the
+      seed head at 137.5°, the spiral — is a function that answers <i>how far outside am I</i>.
+      That single decision is what lets any form be cut into any other, lets the halftone dots
+      stop exactly at the join, and lets one word be eaten by the same mouth that eats a sun.
+      The press then does what a press does: coverage becomes dot area on a screen at 15° for
+      the toner and 75° for the blu, and the ink either floods until the forms grow together
+      or is choked back until only a kernel is left.</p>
+
+      <p><b>The type is made of the same material.</b> These letters began as a skeleton of
+      lines and arcs with a wobble in the hand, the way a marker is pulled. Because they are
+      distance fields like everything else, a word can be over-inked, knocked out, twisted or
+      bitten exactly like a body — and because a font has no pen, only filled outlines, each
+      stroke is turned into overlapping capsules and discs whose union is the letter, then
+      written into TrueType tables by hand. No font editor, no font library: the same file
+      that draws a poster writes the <code>.ttf</code> you just downloaded.</p>
+
+      <p><b>The atelier is the same machine with a handle on it.</b> What comes out of its
+      <i>Code</i> button is the JavaScript that rebuilds the plate on screen, byte for byte,
+      ready to paste into the next batch script. The tool is not a preview of the work; it is
+      the work, with the lid off.</p>
+    </div>
+  </div>
 </main>
+
+<footer>
+  Minor Index · the identity of AUTOPHAGIE (2026) · every mark generated ·
+  <a href="index.html" id="footAtelier">open the atelier</a> ·
+  <a href="https://github.com/yunglong28/minor-index-atelier">source</a>
+</footer>
+
+<script src="_bundle.js"></script>
+<script>
+(function () {
+  "use strict";
+  var M = window.MINOR;
+  var INKS = ["white", "black", "fluo", "blu", "grey"];
+  var HEX = { white: "#f4f4f2", black: "#141410", fluo: "#e8ff00", blu: "#001ef7", grey: "#e4e4e0" };
+  var state = { text: "AUTOPHAGIE", pass: "type", size: 72, weight: 0.12,
+                track: 0.1, ground: "white", ink: "black" };
+
+  var stage = document.getElementById("stage"), live = document.getElementById("live");
+  var el = function (t, c) { var e = document.createElement(t); if (c) e.className = c; return e; };
+
+  /* the five inks, as two rows of swatches */
+  function swatches(host, key, valEl) {
+    INKS.forEach(function (ink) {
+      var b = el("button", "sw-" + ink);
+      b.type = "button"; b.title = ink;
+      b.onclick = function () { state[key] = ink; sync(); draw(); };
+      host.appendChild(b);
+    });
+  }
+  swatches(document.getElementById("swGround"), "ground");
+  swatches(document.getElementById("swInk"), "ink");
+
+  /** the typed line as a plate — the same call a batch script would make */
+  function plate(s) {
+    if (!M || !M.text) return null;
+    var cap = s.size, pad = Math.round(cap * 0.55);
+    var w = Math.max(40, Math.round(M.text.textW(s.text || " ", cap, s.track))) + pad * 2;
+    var h = Math.round(cap * 1.5) + pad;
+    var y = Math.round(pad * 0.7);
+    var opt = { weight: s.weight, hand: 0.02, track: s.track, seed: 7 };
+    var ink = HEX[s.ink], bg = HEX[s.ground];
+    if (s.pass === "cut") {
+      return M.svg(w, h, M.text.textSolid(s.text, pad, y, cap,
+        Object.assign({ color: ink }, opt)), bg);
+    }
+    var f = M.text.textField(s.text, pad, y, cap, opt);
+    var hot = s.pass === "hot";
+    return M.svg(w, h, M.screen({ x: 0, y: 0, w: w, h: h, sdf: f,
+      cell: hot ? Math.max(4, cap * 0.075) : Math.max(2.6, cap * 0.05),
+      falloff: hot ? cap * 0.16 : cap * 0.1,
+      spread: hot ? 0.7 : 0.54, grain: hot ? 0.26 : 0.16,
+      angle: 15, seed: 5, color: ink }), bg);
+  }
+
+  var timer = null, holder = null;      /* kept, not looked up: one node, redrawn */
+  function draw() {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(function () {
+      stage.style.background = HEX[state.ground];
+      if (state.pass === "type") {
+        live.style.display = "";
+        live.style.color = HEX[state.ink];
+        live.style.fontSize = state.size + "px";
+        live.style.fontWeight = state.weight < 0.1 ? 300 : (state.weight < 0.16 ? 400 : 700);
+        live.style.letterSpacing = (state.track - 0.1).toFixed(3) + "em";
+        if (live.textContent !== state.text) live.textContent = state.text;
+        if (holder) { holder.remove(); holder = null; }
+        return;
+      }
+      live.style.display = "none";
+      if (!holder) { holder = el("div"); holder.id = "liveSvg"; stage.appendChild(holder); }
+      holder.innerHTML = plate(state) || "";
+    }, 60);
+  }
+
+  function sync() {
+    document.getElementById("tText").value = state.text;
+    document.getElementById("tPass").value = state.pass;
+    document.getElementById("tSize").value = state.size;
+    document.getElementById("vSize").textContent = state.size;
+    document.getElementById("tWeight").value = String(state.weight);
+    document.getElementById("vWeight").textContent =
+      state.weight < 0.1 ? "Light" : (state.weight < 0.16 ? "Regular" : "Bold");
+    document.getElementById("tTrack").value = state.track;
+    document.getElementById("vTrack").textContent = (+state.track).toFixed(2);
+    document.getElementById("vGround").textContent = state.ground;
+    document.getElementById("vInk").textContent = state.ink;
+    document.getElementById("vPass").textContent = "";
+    [["swGround", "ground"], ["swInk", "ink"]].forEach(function (p) {
+      var host = document.getElementById(p[0]);
+      Array.prototype.forEach.call(host.children, function (b, i) {
+        b.setAttribute("aria-pressed", INKS[i] === state[p[1]] ? "true" : "false");
+      });
+    });
+    document.getElementById("hint").textContent = state.ground === state.ink
+      ? "Ground and ink are the same colour — nothing will show."
+      : "Black ground with white ink is the knock-out the plates use.";
+  }
+
+  document.getElementById("tText").oninput = function (e) {
+    state.text = e.target.value.toUpperCase(); e.target.value = state.text; draw();
+  };
+  live.oninput = function () {
+    state.text = live.textContent.replace(/\s+/g, " ");
+    document.getElementById("tText").value = state.text;
+  };
+  document.getElementById("tPass").onchange = function (e) { state.pass = e.target.value; sync(); draw(); };
+  document.getElementById("tSize").oninput = function (e) { state.size = +e.target.value; sync(); draw(); };
+  document.getElementById("tWeight").onchange = function (e) { state.weight = +e.target.value; sync(); draw(); };
+  document.getElementById("tTrack").oninput = function (e) { state.track = +e.target.value; sync(); draw(); };
+  document.getElementById("tSave").onclick = function () {
+    var s = Object.assign({}, state);
+    if (s.pass === "type") s.pass = "cut";              /* an SVG has no font to lean on */
+    var svg = plate(s);
+    if (!svg) return;
+    var blob = new Blob([svg], { type: "image/svg+xml" });
+    var a = el("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = (state.text.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 32) || "line") + ".svg";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  };
+
+  /* the atelier sits next door on the site, and online when this page does not */
+  (function () {
+    var local = location.protocol === "file:" || /github\.io$/.test(location.hostname);
+    if (local) return;
+    var url = "https://yunglong28.github.io/minor-index-atelier/";
+    document.getElementById("navAtelier").href = url;
+    document.getElementById("footAtelier").href = url;
+  })();
+
+  sync(); draw();
+})();
+</script>
