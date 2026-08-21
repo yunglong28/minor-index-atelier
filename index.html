@@ -1334,8 +1334,8 @@ function cmap4(map) {
 function nameTable(records) {
   const items = records.map(([id, str]) => ({
     id,
-    mac: Buffer.from(str, "latin1"),
-    win: Buffer.from(str.split("").map((c) => " " + c).join(""), "latin1"),
+    mac: tag(str),
+    win: tag(str.split("").map((c) => " " + c).join("")),   /* utf-16be, the crude way */
   }));
   const heads = [], datas = [];
   let off = 0;
