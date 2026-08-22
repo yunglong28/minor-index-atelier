@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="640" height="640">
+  <rect width="640" height="640" fill="#f2f0e8"/>
+  
+  <g stroke="#17160f" stroke-width="1.4" fill="none">
+    <line x1="320" y1="19.2" x2="320" y2="620.8"/>
+    <line x1="19.2" y1="320" x2="620.8" y2="320"/>
+    <line x1="51.2" y1="308.48" x2="51.2" y2="331.52"/>
+    <line x1="308.48" y1="51.2" x2="331.52" y2="51.2"/>
+    <line x1="118.4" y1="308.48" x2="118.4" y2="331.52"/>
+    <line x1="308.48" y1="118.4" x2="331.52" y2="118.4"/>
+    <line x1="185.6" y1="308.48" x2="185.6" y2="331.52"/>
+    <line x1="308.48" y1="185.6" x2="331.52" y2="185.6"/>
+    <line x1="252.8" y1="308.48" x2="252.8" y2="331.52"/>
+    <line x1="308.48" y1="252.8" x2="331.52" y2="252.8"/>
+    <line x1="387.2" y1="308.48" x2="387.2" y2="331.52"/>
+    <line x1="308.48" y1="387.2" x2="331.52" y2="387.2"/>
+    <line x1="454.4" y1="308.48" x2="454.4" y2="331.52"/>
+    <line x1="308.48" y1="454.4" x2="331.52" y2="454.4"/>
+    <line x1="521.6" y1="308.48" x2="521.6" y2="331.52"/>
+    <line x1="308.48" y1="521.6" x2="331.52" y2="521.6"/>
+    <line x1="588.8" y1="308.48" x2="588.8" y2="331.52"/>
+    <line x1="308.48" y1="588.8" x2="331.52" y2="588.8"/>
+    <ellipse cx="320" cy="320" rx="198.4" ry="134.4"/>
+    <rect x="102.4" y="128" width="435.2" height="384"/>
+    <path d="M 118.4 108.8 L 83.2 108.8 L 83.2 144"/>
+    <path d="M 521.6 108.8 L 556.8 108.8 L 556.8 144"/>
+    <path d="M 118.4 531.2 L 83.2 531.2 L 83.2 496"/>
+    <path d="M 521.6 531.2 L 556.8 531.2 L 556.8 496"/>
+  </g>
+  <text x="120" y="120.32" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16.64" letter-spacing="0.5" fill="#17160f">MODEL AUTOPHAGY DISORDER</text><text x="120" y="538.88" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16.64" letter-spacing="0.5" fill="#17160f">MINOR-INDEX · PLATE 01</text>
+    <rect x="192" y="292.48" width="256" height="55.04" fill="#f2f0e8" stroke="#17160f" stroke-width="1.4"/>
+    <rect x="177.92" y="292.48" width="8.96" height="55.04" fill="#17160f"/>
+    <rect x="453.12" y="292.48" width="8.96" height="55.04" fill="#17160f"/>
+    <text x="320" y="332.16" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="700" font-size="30.72" letter-spacing="1" fill="#17160f">MINOR INDEX</text>
+</svg>
