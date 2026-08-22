@@ -1,3 +1,4 @@
+<!doctype html>
 <meta charset="utf-8">
 <title>Minor Index Typeface</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -48,7 +49,8 @@
   .b:focus-visible { outline:2px solid var(--blu); outline-offset:1px; }
 
   /* ---- the poster head ---- */
-  .hero { padding:52px 26px 0; max-width:1300px; margin:0 auto; }
+  .hero { padding:52px 26px 0; max-width:1300px; margin:0 auto; overflow:hidden; }
+  body { overflow-x:hidden; }
   .kicker { display:flex; flex-wrap:wrap; gap:8px 18px; align-items:baseline; font-size:11px;
             font-stretch:118%; letter-spacing:.2em; text-transform:uppercase; color:#9a9a94; }
   .kicker b { color:var(--fluo); font-weight:800; }
@@ -84,7 +86,7 @@
   .plate.failed:empty::after { content:"the drawing engine did not load"; color:#a33; }
   .pad { padding:22px 24px; }
 
-  .mrow { display:grid; grid-template-columns:136px 1fr; align-items:center;
+  .mrow { display:grid; grid-template-columns:150px 1fr; align-items:center;
           border-bottom:1px solid var(--hair); }
   .mrow:last-child { border-bottom:0; }
   .mrow .vec { padding:9px 12px; font-size:10px; line-height:1.4; color:var(--dim);
@@ -95,11 +97,10 @@
   @media (max-width:720px) { .mrow { grid-template-columns:1fr; }
     .mrow .vec { border-right:0; border-bottom:1px solid var(--hair); } }
 
-  .strip { display:grid; grid-auto-flow:column; grid-auto-columns:1fr; }
-  .strip > div { border-right:1px solid var(--hair); padding:14px 10px 10px; min-width:0; }
-  .strip > div:last-child { border-right:0; }
-  .strip .t { font-size:9.5px; color:var(--dim); text-align:center; margin-top:8px;
-              font-stretch:118%; letter-spacing:.1em; }
+  #interp > div:first-child { padding:16px 0 4px; }
+  .ticks { display:flex; padding:0 0 12px; }
+  .ticks div { font-size:9.5px; color:var(--dim); text-align:center; min-width:0;
+               font-stretch:118%; letter-spacing:.1em; }
 
   .weights .wline { font-family:var(--face); font-size:clamp(34px,7vw,76px); line-height:1.18;
                     white-space:nowrap; overflow:hidden; }
@@ -306,7 +307,8 @@
     <div class="fhead"><span class="fnum">Table 01</span>
       <span class="ftitle">What the file is made of</span>
       <span class="fcap">Measured in this browser, just now, by building all three weights from the
-        drawing and reading the bytes back.</span></div>
+        drawing and reading the bytes back. The outline counts do not move between weights: the
+        skeleton is the same drawing, and only the pen laid over it changes.</span></div>
     <div class="plate"><table>
       <thead><tr><th>Weight</th><th>Pen</th><th class="n">Contours in A</th><th class="n">Points in A</th>
         <th class="n">Glyphs</th><th class="n">Bytes</th><th class="n">Build</th></tr></thead>
@@ -397,14 +399,20 @@
     var host = document.getElementById("matrix");
     if (!host || !M || !M.text) return;
     var cap = 26, track = 0.08;
+    /* one box for every row: wide enough for the widest style, so the rows are
+       at one scale and the extended one is not cut off at the sheet edge */
+    var base = M.text.textW(AZ, cap, track);
+    var boxW = Math.ceil(STYLES.reduce(function (m, st) {
+      return Math.max(m, base * st.wd + Math.abs(Math.tan(st.sl * Math.PI / 180)) * cap);
+    }, 0)) + 14;
     STYLES.forEach(function (st) {
       var row = el("div", "mrow");
       var vec = el("div", "vec");
-      vec.innerHTML = "<b>" + st.label + "</b>" + st.w.toFixed(3) + " · " + st.wd.toFixed(2)
-        + " · " + st.sl + "° · " + st.h.toFixed(3) + " · " + st.s;
+      vec.innerHTML = "<b>" + st.label + "</b>"
+        + "pen " + st.w.toFixed(3) + " · wd " + st.wd.toFixed(2) + " · " + st.sl + "°<br>"
+        + "hand " + st.h.toFixed(3) + " · seed " + st.s;
       var g = el("div", "glyphs");
-      var w = Math.ceil(M.text.textW(AZ, cap, track)) + 10;
-      g.innerHTML = fit(w, Math.round(cap * 1.5), M.text.textSolid(AZ, 5, Math.round(cap * 0.22), cap,
+      g.innerHTML = fit(boxW, Math.round(cap * 1.55), M.text.textSolid(AZ, 7, Math.round(cap * 0.24), cap,
         { weight: st.w, width: st.wd, slant: st.sl, hand: st.h, track: track, seed: st.s,
           color: "#141410" }));
       row.appendChild(vec); row.appendChild(g);
@@ -412,45 +420,57 @@
     });
   }
 
-  /* ---- Fig. 02 — the path between two vectors --------------------------- */
+  /* ---- Fig. 02 — the path between two vectors ---------------------------
+     Drawn as one picture at one scale, each step at its true width: scaling
+     each step to its own column would have hidden the width axis, which is
+     half of what the figure is for. */
   function drawInterp() {
     var host = document.getElementById("interp");
     if (!host || !M || !M.text) return;
     var a = { w: 0.06, wd: 0.72, sl: 0, h: 0.01 }, b = { w: 0.28, wd: 1.3, sl: -20, h: 0.05 };
-    var strip = el("div", "strip"), N = 7, word = "SOLEIL", cap = 40;
+    var N = 7, word = "SOLEIL", cap = 46, gap = 26, base = M.text.textW(word, cap, 0.08);
+    var steps = [], x = gap, body = "";
     for (var i = 0; i < N; i++) {
       var t = i / (N - 1);
       var mix = { w: a.w + (b.w - a.w) * t, wd: a.wd + (b.wd - a.wd) * t,
                   sl: a.sl + (b.sl - a.sl) * t, h: a.h + (b.h - a.h) * t };
-      var cell = el("div");
-      var w = Math.ceil(M.text.textW(word, cap, 0.08)) * mix.wd + 12;
-      cell.innerHTML = fit(Math.round(w), Math.round(cap * 1.6),
-        M.text.textSolid(word, 6, Math.round(cap * 0.25), cap,
-          { weight: mix.w, width: mix.wd, slant: mix.sl, hand: mix.h, track: 0.08, seed: 7,
-            color: "#141410" }))
-        + '<div class="t">t = ' + t.toFixed(2) + "</div>";
-      strip.appendChild(cell);
+      var wi = base * mix.wd + Math.abs(Math.tan(mix.sl * Math.PI / 180)) * cap;
+      body += M.text.textSolid(word, x, Math.round(cap * 0.42), cap,
+        { weight: mix.w, width: mix.wd, slant: mix.sl, hand: mix.h, track: 0.08, seed: 7,
+          color: "#141410" });
+      steps.push({ t: t, w: wi + gap });
+      x += wi + gap;
     }
-    host.appendChild(strip);
+    var total = x, h = Math.round(cap * 1.9);
+    var strip = el("div");
+    strip.innerHTML = fit(Math.round(total), h, body);
+    var labels = el("div", "ticks");
+    steps.forEach(function (st) {
+      var d = el("div");
+      d.style.flex = st.w + " 0 0";
+      d.textContent = "t = " + st.t.toFixed(2);
+      labels.appendChild(d);
+    });
+    host.appendChild(strip); host.appendChild(labels);
   }
 
   /* ---- Fig. 04 — the presses ------------------------------------------- */
   function drawPress() {
     var host = document.getElementById("press");
     if (!host || !M || !M.text) return;
-    var word = "AUTOPHAGIE", cap = 54, pad = 26;
-    var w = Math.ceil(M.text.textW(word, cap, 0.1)) + pad * 2, h = Math.round(cap * 1.8);
+    var word = "AUTOPHAGIE", cap = 62, pad = 26;
+    var w = Math.ceil(M.text.textW(word, cap, 0.1)) + pad * 2, h = Math.round(cap * 1.7);
     var y = Math.round(cap * 0.4);
     var opt = { weight: 0.13, hand: 0.02, track: 0.1, seed: 7 };
     var f = M.text.textField(word, pad, y, cap, opt);
     var passes = [
       ["Cut", M.text.textSolid(word, pad, y, cap, Object.assign({ color: "#141410" }, opt)), "#f4f4f2"],
-      ["Screened", M.screen({ x: 0, y: 0, w: w, h: h, sdf: f, cell: 3.2, falloff: 6,
-        spread: 0.54, grain: 0.16, angle: 15, seed: 5, color: "#141410" }), "#f4f4f2"],
-      ["Over-inked", M.screen({ x: 0, y: 0, w: w, h: h, sdf: M.sGrow(f, 2.5), cell: 5.6,
-        falloff: 11, spread: 0.7, grain: 0.26, angle: 15, seed: 5, color: "#141410" }), "#f4f4f2"],
-      ["Knocked out", M.screen({ x: 0, y: 0, w: w, h: h, sdf: f, cell: 3, falloff: 6,
-        spread: 0.54, grain: 0.16, angle: 75, seed: 9, color: "#f4f4f2" }), "#141410"]
+      ["Screened", M.screen({ x: 0, y: 0, w: w, h: h, sdf: f, cell: 3.2, falloff: 5,
+        spread: 0.54, grain: 0.1, angle: 15, seed: 5, color: "#141410" }), "#f4f4f2"],
+      ["Over-inked", M.screen({ x: 0, y: 0, w: w, h: h, sdf: M.sGrow(f, 1.5), cell: 4.8,
+        falloff: 7, spread: 0.66, grain: 0.14, angle: 15, seed: 5, color: "#141410" }), "#f4f4f2"],
+      ["Knocked out", M.screen({ x: 0, y: 0, w: w, h: h, sdf: f, cell: 3, falloff: 5,
+        spread: 0.54, grain: 0.1, angle: 75, seed: 9, color: "#f4f4f2" }), "#141410"]
     ];
     passes.forEach(function (p) {
       var cell = el("div");
@@ -565,17 +585,30 @@
         b.setAttribute("aria-pressed", INKS[i] === state[p[1]] ? "true" : "false");
       });
     });
-    document.getElementById("hint").textContent = state.ground === state.ink
-      ? "Ground and ink are the same colour — nothing will show."
-      : "Black ground with white ink is the knock-out the plates use.";
+    missing();
   }
 
+  /* the face is 64 glyphs: say plainly when a typed character is not one of them,
+     because the drawn passes drop it while the type pass falls back to another font */
+  function missing() {
+    var hint = document.getElementById("hint");
+    var gone = [];
+    [].forEach.call(state.text, function (c) {
+      if (c !== " " && !M.text.glyph(c) && gone.indexOf(c) < 0) gone.push(c);
+    });
+    if (gone.length) hint.textContent = "Not in the face: " + gone.join(" ")
+      + " — the drawn passes leave them out.";
+    else if (state.ground === state.ink)
+      hint.textContent = "Ground and ink are the same colour — nothing will show.";
+    else hint.textContent = "Black ground with white ink is the knock-out the plates use.";
+  }
   document.getElementById("tText").oninput = function (e) {
-    state.text = e.target.value.toUpperCase(); e.target.value = state.text; draw();
+    state.text = e.target.value.toUpperCase(); e.target.value = state.text; missing(); draw();
   };
   live.oninput = function () {
-    state.text = live.textContent.replace(/\s+/g, " ");
+    state.text = live.textContent.replace(/\s+/g, " ").toUpperCase();
     document.getElementById("tText").value = state.text;
+    missing();
   };
   document.getElementById("tPass").onchange = function (e) { state.pass = e.target.value; sync(); draw(); };
   document.getElementById("tSize").oninput = function (e) { state.size = +e.target.value; sync(); draw(); };
