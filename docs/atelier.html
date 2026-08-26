@@ -41,6 +41,9 @@
   .plateid input.nom { width:130px; }
   .plateid input:focus { outline:none; border-bottom-color:var(--blu); background:#fff; }
   .acts { display:flex; align-items:center; gap:5px; padding:8px 10px; flex:1 1 auto; min-width:0; }
+  .acts .sep { width:1px; align-self:stretch; background:var(--rule); opacity:.3; margin:0 4px; flex:none; }
+  .acts .lab { font-size:9.5px; color:var(--dim); font-stretch:118%; letter-spacing:.14em;
+               text-transform:uppercase; flex:none; }
   .stats { margin-left:auto; display:flex; gap:12px; align-items:center; padding:0 12px; flex:none;
            white-space:nowrap; border-left:1px solid var(--rule); color:var(--dim); font-size:11.5px; }
   .stats b { color:var(--black); font-weight:700; }
@@ -55,6 +58,9 @@
   button.b.key:hover { background:#f1ff5e; }
   button.b.ghost { background:transparent; font-weight:500; }
   button.b[aria-pressed=true] { background:var(--black); color:var(--white); }
+  /* a toggle in the top bar must not shout louder than the thing that makes a plate */
+  .acts .b.ghost[aria-pressed=true] { background:var(--grey); color:var(--black); }
+  .acts .b.ghost[aria-pressed=true]::before { content:"\2713 "; color:var(--blu); }
 
   main { display:grid; grid-template-columns:1fr 372px; min-height:0; }
   .stage { position:relative; display:grid; place-items:center; padding:26px; min-height:0; overflow:hidden; }
@@ -62,7 +68,9 @@
   .sheet svg { display:block; max-width:none; max-height:none; }
   .stagenote { position:absolute; left:22px; bottom:11px; font-size:10.5px; color:#3f3f3b;
                font-stretch:112%; letter-spacing:.1em; text-transform:uppercase;
-               background:var(--ground); padding:3px 7px; pointer-events:none; }
+               background:var(--ground); padding:3px 7px; pointer-events:none;
+               max-width:calc(100% - 260px); overflow:hidden; text-overflow:ellipsis;
+               white-space:nowrap; }
   .viewport { position:absolute; inset:0; overflow:hidden; display:grid; place-items:center; cursor:grab; }
   .viewport.dragging { cursor:grabbing; }
   .sheet { transform-origin:center center; will-change:transform; }
@@ -70,7 +78,10 @@
   .zoom .b { padding:3px 8px; background:var(--white); }
   .zval { font-size:11px; font-weight:600; min-width:46px; text-align:center; color:#2c2c28;
           background:var(--white); border:1px solid var(--rule); padding:3px 0; }
-  .stagefail { padding:20px; background:var(--white); border:1px solid var(--rule); max-width:52ch; }
+  /* the sheet sets line-height:0 for the SVG it usually holds — anything with
+     words in it has to say otherwise */
+  .stagefail { padding:20px; background:var(--white); border:1px solid var(--rule);
+               max-width:52ch; line-height:1.5; }
   .stagefail h3 { font-size:12px; margin-bottom:6px; }
   .stagefail code { color:var(--blu); }
   .sheetnine { position:fixed; inset:0; background:rgba(20,20,16,.94); z-index:20; display:flex;
@@ -93,6 +104,18 @@
   .busy.on { opacity:1; }
 
   .panel { background:var(--white); border-left:1px solid var(--rule); overflow-y:auto; min-height:0; }
+  .modes { display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--rule); }
+  .modes button { display:flex; flex-direction:column; gap:2px; align-items:flex-start; text-align:left;
+                  padding:11px 13px; border:0; border-right:1px solid var(--rule); cursor:pointer;
+                  background:var(--white); font-size:11px; font-weight:600; font-stretch:112%;
+                  letter-spacing:.09em; text-transform:uppercase; }
+  .modes button:last-child { border-right:0; }
+  .modes button:hover { background:var(--grey); }
+  .modes button .sub { font-size:10.5px; font-weight:400; font-stretch:100%; letter-spacing:0;
+                       text-transform:none; color:var(--dim); }
+  .modes button[aria-pressed=true] { background:var(--black); color:var(--white); }
+  .modes button[aria-pressed=true] .sub { color:#a3a39e; }
+  .modes button:focus-visible { outline:2px solid var(--blu); outline-offset:-2px; }
   .presets { padding:11px 13px; border-bottom:1px solid var(--rule); display:flex; flex-wrap:wrap; gap:5px; }
   .presets .lab { width:100%; font-size:10px; color:var(--dim); margin-bottom:3px;
                   font-stretch:118%; letter-spacing:.14em; text-transform:uppercase; }
@@ -137,16 +160,24 @@
   .sw-black{background:#141410}.sw-white{background:#f4f4f2}.sw-fluo{background:#e8ff00}
   .sw-blu{background:#001ef7}.sw-grey{background:#e4e4e0}
   .sw-none{background:repeating-linear-gradient(45deg,#fff,#fff 3px,#cfcfcb 3px,#cfcfcb 6px)}
-  .chk { display:flex; align-items:center; gap:7px; grid-column:1/-1; cursor:pointer; background:transparent;
-         border:1px solid var(--rule); padding:3px 7px; font-size:11.5px; font-weight:500; }
+  /* a switch is a small thing; it should not be the widest mark on the page */
+  .chk { display:flex; align-items:center; gap:7px; grid-column:1/-1; width:max-content; min-width:96px;
+         cursor:pointer; background:transparent; border:1px solid var(--rule); padding:3px 9px 3px 7px;
+         font-size:11.5px; font-weight:500; }
   .chk .box { width:12px; height:12px; border:1px solid var(--rule); background:var(--white); flex:none; }
   .chk[aria-pressed=true] { background:var(--black); color:var(--white); }
   .chk[aria-pressed=true] .box { background:var(--fluo); border-color:var(--fluo); }
   .seedrow { display:flex; gap:5px; grid-column:1/-1; }
   .seedrow input { flex:1; }
-  .imgpick { grid-column:1/-1; display:grid; grid-template-columns:58px 1fr; gap:9px;
-             border:1px solid var(--rule); background:var(--grey); padding:6px; }
-  .imgpick .th { width:58px; height:58px; background:var(--white); border:1px solid var(--rule);
+  .imgpick { grid-column:1/-1; display:grid; grid-template-columns:64px 1fr; gap:10px;
+             border:1px solid var(--rule); background:var(--grey); padding:7px; }
+  .imgpick.none { grid-template-columns:1fr; border-style:dashed; border-width:2px;
+                  background:transparent; padding:14px; text-align:center; cursor:pointer; }
+  .imgpick.none:hover { background:var(--grey); }
+  .imgpick.none .th { display:none; }
+  .imgpick.none .meta { align-items:center; }
+  .imgpick.none .row { justify-content:center; }
+  .imgpick .th { width:64px; height:64px; background:var(--white); border:1px solid var(--rule);
                  display:grid; place-items:center; overflow:hidden; }
   .imgpick .th img { max-width:100%; max-height:100%; display:block; }
   .imgpick .th.empty::after { content:"?"; color:var(--dimmer); font-weight:700; }
@@ -161,6 +192,12 @@
   .dropveil div { border:3px dashed var(--fluo); color:var(--white); padding:34px 46px;
                   font-size:12px; font-stretch:118%; letter-spacing:.14em; text-transform:uppercase; }
   .stagefail .b { margin-top:9px; }
+  .invite { padding:34px 40px; background:var(--white); border:2px dashed var(--rule);
+            max-width:46ch; text-align:center; cursor:pointer; line-height:1.5; }
+  .invite h3 { font-size:12px; font-stretch:118%; letter-spacing:.14em; text-transform:uppercase;
+               margin-bottom:8px; }
+  .invite p { margin:0 0 12px; color:#3f3f3b; }
+  .invite kbd { border:1px solid var(--rule); padding:0 4px; font:inherit; background:var(--grey); }
 
   footer { background:var(--black); color:var(--white); border-top:1px solid var(--rule); }
   .draw { display:flex; align-items:center; gap:10px; padding:8px 14px; cursor:pointer; }
@@ -202,11 +239,13 @@
   <div class="acts">
     <button class="b key" id="roll" title="roll a whole plate at random (R)">Roll</button>
     <button class="b" id="nine" title="roll nine and pick one (N)">Nine</button>
-    <button class="b" id="img" title="put an image through the same press (I)">Image</button>
+    <span class="sep"></span>
+    <span class="lab">save</span>
     <button class="b" id="save" title="save the plate as SVG (S)">SVG</button>
     <button class="b" id="png" title="save a 2× PNG of the plate">PNG</button>
     <button class="b" id="ttf" title="build a font from the lettering settings and save it">TTF</button>
     <button class="b" id="copycode" title="copy the code that rebuilds this plate (C)">Code</button>
+    <span class="sep"></span>
     <button class="b ghost" id="explain" aria-pressed="true" title="show what each control does">Explain</button>
     <button class="b ghost" id="reset" title="back to the default plate">Reset</button>
   </div>
@@ -219,7 +258,7 @@
 <main>
   <div class="stage">
     <div class="viewport" id="viewport"><div class="sheet" id="sheet"></div></div>
-    <div class="stagenote">one plate — a body, an appetite, a press, and its furniture</div>
+    <div class="stagenote" id="stagenote">one plate — a body, an appetite, a press, and its furniture</div>
     <div class="zoom">
       <button class="b ghost" id="zout" title="zoom out">−</button>
       <button class="b ghost" id="zfit" title="fit the sheet (0)">Fit</button>
@@ -229,7 +268,13 @@
     <div class="busy" id="busy"></div>
   </div>
   <div class="panel" id="panel">
-    <div class="presets" id="presets"><span class="lab">start from a plate that exists</span></div>
+    <div class="modes" id="modes">
+      <button type="button" data-mode="body" aria-pressed="true">Grow a body
+        <span class="sub">sun, cell, spiral, seed head…</span></button>
+      <button type="button" data-mode="image" aria-pressed="false">Use an image
+        <span class="sub">a photograph, through the same press</span></button>
+    </div>
+    <div class="presets" id="presets"><span class="lab" id="plab">start from a plate that exists</span></div>
   </div>
 </main>
 
@@ -1692,8 +1737,30 @@ const PARAMS = [
     { id: "trimMarks", type: "bool", label: "trim marks", def: true,
       help: "Crop crosses in the four corners, the way a press hands a sheet over." },
   ] },
-  { id: "corps", label: "THE BODY", note: "one form — the sun, the cell, or something grown out of them", fields: [
-    { id: "sym", type: "select", label: "body", def: "sun", options: [
+  { id: "image", label: "THE IMAGE", note: "levels first, then the same screen as everything else",
+    when: (s) => s.sym === "image", fields: [
+    { id: "imgName", type: "image", label: "the file", def: "image.png",
+      help: "Any photograph, drawing or frame. It is never redrawn — it is only ever asked how much ink it would hold, exactly as plate 95 asks it of a borrowed body. Drop a file anywhere on the sheet, or paste one." },
+    { id: "imgCrop", type: "bool", label: "crop to the body", def: true,
+      help: "Frame what the image actually occupies rather than the empty canvas around it. Only tells them apart where there is transparency." },
+    { id: "imgLo", type: "range", label: "lights", min: 0, max: 0.6, step: 0.01, def: 0.12,
+      help: "How much ink a place has to hold before it prints at all. Raise it and the pale half of the image empties out." },
+    { id: "imgHi", type: "range", label: "darks", min: 0.2, max: 1, step: 0.01, def: 0.72,
+      help: "The point at which a dot is solid. Lower it and the dark half floods together." },
+    { id: "imgGamma", type: "range", label: "midtones", min: 0.4, max: 2, step: 0.05, def: 0.95,
+      help: "Everything between the two. Under 1 opens them up, over 1 closes them down." },
+    { id: "imgSoft", type: "range", label: "softness", min: 0.3, max: 2, step: 0.05, def: 0.8,
+      help: "How much of the image one dot reads. Wide is the blur a real screen has; narrow keeps the detail and starts to sparkle." },
+    { id: "imgMin", type: "range", label: "faint dots", min: 0.005, max: 0.2, step: 0.005, def: 0.015,
+      help: "The coverage a dot has to reach to be printed at all. Raise it to clear the loose dots off the ground — that is what plates 98 and 99 do." },
+    { id: "imgInvert", type: "bool", label: "negative", def: false,
+      help: "The image read the other way round: the light holds the ink." },
+  ] },
+  { id: "corps", label: "THE BODY", note: "one form — the sun, the cell, or something grown out of them",
+    alt: (s) => s.sym === "image"
+      ? { label: "PLACING", note: "how large the image prints, and where it sits" } : null,
+    fields: [
+    { id: "sym", type: "select", label: "body", def: "sun", when: notImage, options: [
       { v: "sun", label: "sun — disc and rays" },
       { v: "corona", label: "corona — rays, no disc" },
       { v: "cell", label: "cell — soma, spikes, satellites" },
@@ -1738,22 +1805,6 @@ const PARAMS = [
       help: "Thickness at the outer end — it tapers to nothing at the middle." },
     { id: "ringN", type: "range", label: "how many rings", min: 2, max: 14, step: 1, def: 5, when: is("sym", "rings") },
     { id: "ringW", type: "range", label: "ring width", min: 1, max: 40, step: 1, def: 8, when: is("sym", "rings") },
-    { id: "imgName", type: "image", label: "the file", def: "image.png", when: is("sym", "image"),
-      help: "Any photograph, drawing or frame. It is never redrawn — it is only ever asked how much ink it would hold, exactly as plate 95 asks it of a borrowed body. Drop a file anywhere on the sheet, or paste one." },
-    { id: "imgCrop", type: "bool", label: "crop to the body", def: true, when: is("sym", "image"),
-      help: "Frame what the image actually occupies rather than the empty canvas around it. Only tells them apart where there is transparency." },
-    { id: "imgLo", type: "range", label: "floor", min: 0, max: 0.6, step: 0.01, def: 0.12, when: is("sym", "image"),
-      help: "Below this much ink nothing prints — where the gloves stay light. Raise it to empty the pale half of the image." },
-    { id: "imgHi", type: "range", label: "ceiling", min: 0.2, max: 1, step: 0.01, def: 0.72, when: is("sym", "image"),
-      help: "Above this the dot is solid. Lower it and the darks flood together." },
-    { id: "imgGamma", type: "range", label: "curve", min: 0.4, max: 2, step: 0.05, def: 0.95, when: is("sym", "image"),
-      help: "Bends everything between the two. Under 1 opens the midtones, over 1 closes them." },
-    { id: "imgSoft", type: "range", label: "softness", min: 0.3, max: 2, step: 0.05, def: 0.8, when: is("sym", "image"),
-      help: "How much of the image one dot reads. Wide is the blur a real screen has; narrow keeps the detail and starts to sparkle." },
-    { id: "imgMin", type: "range", label: "faint dots", min: 0.005, max: 0.2, step: 0.005, def: 0.015, when: is("sym", "image"),
-      help: "The coverage a dot has to reach to be printed at all. Raise it to clear the loose dots off the ground — that is what plates 98 and 99 do." },
-    { id: "imgInvert", type: "bool", label: "negative", def: false, when: is("sym", "image"),
-      help: "The image read the other way round: the light holds the ink." },
   ] },
   { id: "appetit", label: "APPETITE", note: "what the body does to itself before it is printed",
     when: notImage, fields: [
@@ -2466,7 +2517,8 @@ global.MINOR = {
     h.onclick = function () { sec.classList.toggle("shut"); };
     var box = el("div", "fields");
     sec.appendChild(h); sec.appendChild(box); panel.appendChild(sec);
-    groups.push({ sec: sec, grp: grp });
+    var gn = h.lastChild;
+    groups.push({ sec: sec, grp: grp, label: gl, note: gn });
 
     grp.fields.forEach(function (f) {
       var row = el("div", "f");
@@ -2506,20 +2558,27 @@ global.MINOR = {
         input.onchange = function () { set(f.id, input.value, false); };
         row.appendChild(input);
       } else if (f.type === "image") {
-        input = el("div", "imgpick");
-        var th = el("div", "th empty"), thumb = el("img");
+        input = el("div", "imgpick none");
+        var th = el("div", "th"), thumb = el("img");
         thumb.alt = ""; th.appendChild(thumb);
-        var meta = el("div", "meta"), nm = el("b", null, "no image yet"), dm = el("span", "dim", "\u2014");
+        var meta = el("div", "meta"), nm = el("b", null, "No image yet");
+        var dm = el("span", "dim", "drop one here, paste it, or choose a file");
         var rw = el("div", "row");
         var bChoose = el("button", "b", "Choose\u2026"); bChoose.type = "button";
-        bChoose.onclick = function () { openPicker(); };
-        var bClear = el("button", "b ghost", "Clear"); bClear.type = "button";
-        bClear.onclick = function () { forgetImage(); };
-        rw.appendChild(bChoose); rw.appendChild(bClear);
+        bChoose.onclick = function (e) { e.stopPropagation(); openPicker(); };
+        var bFit = el("button", "b ghost", "Fit"); bFit.type = "button";
+        bFit.title = "sit the image square in the middle of the sheet";
+        bFit.onclick = function (e) {
+          e.stopPropagation(); remember(null); fitBox(); sync(); render(false);
+        };
+        var bClear = el("button", "b ghost", "Remove"); bClear.type = "button";
+        bClear.onclick = function (e) { e.stopPropagation(); forgetImage(); };
+        rw.appendChild(bChoose); rw.appendChild(bFit); rw.appendChild(bClear);
         meta.appendChild(nm); meta.appendChild(dm); meta.appendChild(rw);
         input.appendChild(th); input.appendChild(meta);
+        input.onclick = function () { if (!HELD.url) openPicker(); };
         row.appendChild(input);
-        picker = { th: th, img: thumb, name: nm, dim: dm };
+        picker = { card: input, th: th, img: thumb, name: nm, dim: dm, fit: bFit, clear: bClear };
       } else if (f.type === "seed") {
         input = el("div", "seedrow");
         var num = el("input"); num.type = "number"; num.id = "c_" + f.id;
@@ -2535,9 +2594,10 @@ global.MINOR = {
     });
   });
 
-  var pbox = document.getElementById("presets");
+  var pbox = document.getElementById("presets"), pbuttons = [];
   PRESETS.forEach(function (p) {
     var b = el("button", null, p[0]); b.type = "button";
+    pbuttons.push({ b: b, image: p[1].sym === "image" });
     b.onclick = function () {
       state = Object.assign({}, M.DEFAULTS, p[1],
         { num: state.num, name: p[0].replace(/ \d+$/, "").replace(/[^a-z]+/gi, "-").toLowerCase() });
@@ -2548,12 +2608,32 @@ global.MINOR = {
     pbox.appendChild(b);
   });
 
+  /* the two ways in. Which one you are on decides most of the panel, so it is
+     the first thing in it and not the thirteenth item of a menu. */
+  var modeBtns = [].slice.call(document.querySelectorAll("#modes button"));
+  var lastBody = state.sym === "image" ? "sun" : state.sym;
+  function setMode(m) {
+    if (m === "image") {
+      if (state.sym === "image") return HELD.url ? undefined : openPicker();
+      remember(null); lastBody = state.sym; state.sym = "image";
+      if (HELD.url) state.imgName = HELD.name;
+      fitBox(); sync(); render(false);
+      if (!HELD.url) openPicker();
+    } else {
+      if (state.sym !== "image") return;
+      remember(null); state.sym = lastBody || "sun"; sync(); render(false);
+    }
+  }
+  modeBtns.forEach(function (b) {
+    b.onclick = function () { setMode(b.getAttribute("data-mode")); };
+  });
+
   function decimals(step) { var s = String(step); return s.indexOf(".") > 0 ? s.split(".")[1].length : 0; }
   function sync() {
     Object.keys(rows).forEach(function (id) {
       var r = rows[id], v = state[id], f = r.f;
       r.row.classList.toggle("hide", !M.visible(f, state));
-      var changed = v !== f.def && f.type !== "select";
+      var changed = v !== f.def && f.type !== "select" && f.type !== "image";
       r.val.className = "val" + (changed ? " touched" : "");
       if (f.type === "range") { r.input.value = v; r.val.textContent = (+v).toFixed(decimals(f.step)); }
       else if (f.type === "select") { r.input.value = v; r.val.textContent = ""; }
@@ -2566,13 +2646,29 @@ global.MINOR = {
         r.input.setAttribute("aria-pressed", v ? "true" : "false");
         r.input.children[1].textContent = v ? "on" : "off"; r.val.textContent = "";
       } else if (f.type === "seed") { r.input.value = v; r.val.textContent = ""; }
-      else if (f.type === "image") { r.val.textContent = HELD.url ? "loaded" : ""; }
+      else if (f.type === "image") { r.val.textContent = ""; }
       else if (f.type === "text") {          /* leave the caret alone while typing */
         if (r.input.value !== v) r.input.value = v;
         r.val.textContent = String(v).length;
       }
     });
-    groups.forEach(function (g) { g.sec.hidden = !M.visible(g.grp, state); });
+    var onImage = state.sym === "image";
+    groups.forEach(function (g) {
+      g.sec.hidden = !M.visible(g.grp, state);
+      var a = g.grp.alt && g.grp.alt(state);
+      g.label.textContent = a ? a.label : g.grp.label;
+      g.note.textContent = a ? a.note : g.grp.note;
+    });
+    modeBtns.forEach(function (b) {
+      b.setAttribute("aria-pressed",
+        (b.getAttribute("data-mode") === "image") === onImage ? "true" : "false");
+    });
+    pbuttons.forEach(function (p) { p.b.hidden = p.image !== onImage; });
+    document.getElementById("plab").textContent = onImage
+      ? "start from one of the borrowed plates" : "start from a plate that exists";
+    document.getElementById("stagenote").textContent = onImage
+      ? "an image, printed like everything else on this page"
+      : "one plate \u2014 a body, an appetite, a press, and its furniture";
     paintPicker();
     document.getElementById("num").value = state.num;
     document.getElementById("nom").value = state.name;
@@ -2676,11 +2772,13 @@ global.MINOR = {
   function paintPicker() {
     if (!picker) return;
     var on = !!HELD.url;
-    picker.th.classList.toggle("empty", !on);
+    picker.card.classList.toggle("none", !on);
     picker.img.style.display = on ? "block" : "none";
     if (on && picker.src !== HELD.url) { picker.img.src = HELD.url; picker.src = HELD.url; }
-    picker.name.textContent = on ? HELD.name : "no image yet";
-    picker.dim.textContent = on ? HELD.w + "\u00d7" + HELD.h + " px" : "drop one anywhere, or paste it";
+    picker.name.textContent = on ? HELD.name : "No image yet";
+    picker.dim.textContent = on ? HELD.w + "\u00d7" + HELD.h + " px"
+      : "drop one here, paste it, or choose a file";
+    picker.fit.hidden = !on; picker.clear.hidden = !on;
   }
   /* dropped on the sheet, or pasted — both are how an image actually arrives */
   var veil = document.getElementById("dropveil"), depth = 0;
@@ -2710,12 +2808,6 @@ global.MINOR = {
       if (f) { e.preventDefault(); return takeFile(f); }
     }
   });
-  document.getElementById("img").onclick = function () {
-    if (!HELD.url || state.sym === "image") return openPicker();
-    remember(null); state.sym = "image"; state.imgName = HELD.name; fitBox();
-    sync(); render(false);
-  };
-
   function set(id, v, dragging) {
     if (!dragging) remember(id);
     state[id] = v;
@@ -2779,12 +2871,15 @@ global.MINOR = {
       } catch (err) {
         busy.classList.remove("on");
         if (String(err && err.message) === "no image yet") {
-          sheetEl.innerHTML = '<div class="stagefail"><h3>No image yet.</h3>'
-            + "<p>Choose one, drop it anywhere on the sheet, or paste it. It is never "
-            + "redrawn \u2014 it is only ever asked how much ink it would hold, and then it goes "
-            + "through the same press as everything else.</p>"
-            + '<button class="b key" id="pickhere">Choose image\u2026</button></div>';
-          document.getElementById("pickhere").onclick = function () { openPicker(); };
+          sheetEl.innerHTML = '<div class="invite" id="invite"><h3>Drop an image here</h3>'
+            + "<p>Or paste it with <kbd>\u2318V</kbd>, or choose a file. It is never redrawn: "
+            + "it is only read for how much ink it would hold, and then printed like "
+            + "everything else on this page.</p>"
+            + '<button class="b key" type="button">Choose a file\u2026</button></div>';
+          document.getElementById("invite").onclick = function () { openPicker(); };
+          ["sdim", "sdots", "skb", "sms"].forEach(function (id) {
+            document.getElementById(id).textContent = "\u2014";
+          });
           return;
         }
         sheetEl.innerHTML = '<div class="stagefail"><h3>That plate would not print.</h3>'
@@ -2992,7 +3087,7 @@ global.MINOR = {
     if (e.key === "s" || e.key === "S") document.getElementById("save").click();
     if (e.key === "0") fit();
     if (e.key === "t" || e.key === "T") document.getElementById("ttf").click();
-    if (e.key === "i" || e.key === "I") document.getElementById("img").click();
+    if (e.key === "i" || e.key === "I") setMode("image");
   });
 
   /* the typeface page is next door on the site, and online when this is not */
