@@ -7,6 +7,8 @@
  * 8-bit, non-interlaced, colour types 0/2/4/6 — which is every PNG anything
  * on this machine writes.
  */
+/* node has these; in the browser the bundle hands over undefined and only
+   readPNG is unavailable — screenImage takes the pixels it is given */
 const fs = require("fs");
 const zlib = require("zlib");
 const { n, rng } = require("./_mark.js");
@@ -19,6 +21,7 @@ const paeth = (a, b, c) => {
 
 /** → { w, h, px } with px as RGBA bytes */
 function readPNG(file) {
+  if (!fs) throw new Error("readPNG needs node — in a page, decode the image with a canvas");
   const b = fs.readFileSync(file);
   if (b.readUInt32BE(0) !== 0x89504e47) throw new Error(file + ": not a PNG");
   let o = 8, hdr = null;
@@ -98,19 +101,23 @@ function screenImage(o) {
 
   const ink = (ix, iy) => {                 /* one lattice point → 0..1 of ink */
     const px = sx + Math.round((ix - ox) / s), py = sy + Math.round((iy - oy) / s);
-    let acc = 0, cnt = 0;
+    let acc = 0, cnt = 0, op = 0;
     for (let j = -R; j <= R; j++) for (let i = -R; i <= R; i++) {
       const X = px + i, Y = py + j;
       cnt++;
       if (X < 0 || Y < 0 || X >= im.w || Y >= im.h) continue;
       const k = (Y * im.w + X) * 4;
       const lum = (im.px[k] * 0.299 + im.px[k + 1] * 0.587 + im.px[k + 2] * 0.114) / 255;
-      acc += (im.px[k + 3] / 255) * (1 - lum);
+      const a = im.px[k + 3] / 255;
+      acc += a * (1 - lum);
+      op += a;
     }
     let v = (acc / (cnt || 1) - opt.lo) / (opt.hi - opt.lo);
     v = Math.max(0, Math.min(1, v));
     if (opt.gamma !== 1) v = Math.pow(v, opt.gamma);
-    return opt.invert ? 1 - v : v;
+    /* read the other way round, but only where there is an image to read:
+       what the canvas left empty stays empty */
+    return opt.invert ? (1 - v) * (op / (cnt || 1)) : v;
   };
 
   const r = rng(opt.seed);

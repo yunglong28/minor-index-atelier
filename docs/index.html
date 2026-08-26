@@ -145,6 +145,23 @@
   .chk[aria-pressed=true] .box { background:var(--fluo); border-color:var(--fluo); }
   .seedrow { display:flex; gap:5px; grid-column:1/-1; }
   .seedrow input { flex:1; }
+  .imgpick { grid-column:1/-1; display:grid; grid-template-columns:58px 1fr; gap:9px;
+             border:1px solid var(--rule); background:var(--grey); padding:6px; }
+  .imgpick .th { width:58px; height:58px; background:var(--white); border:1px solid var(--rule);
+                 display:grid; place-items:center; overflow:hidden; }
+  .imgpick .th img { max-width:100%; max-height:100%; display:block; }
+  .imgpick .th.empty::after { content:"?"; color:var(--dimmer); font-weight:700; }
+  .imgpick .meta { min-width:0; display:flex; flex-direction:column; gap:3px; justify-content:center; }
+  .imgpick .meta b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11.5px; }
+  .imgpick .meta .dim { color:var(--dim); font-size:11px; }
+  .imgpick .row { display:flex; gap:4px; }
+  .imgpick .row .b { padding:3px 8px; }
+  .dropveil { position:fixed; inset:0; z-index:30; background:rgba(20,20,16,.72);
+              display:grid; place-items:center; }
+  .dropveil[hidden] { display:none; }
+  .dropveil div { border:3px dashed var(--fluo); color:var(--white); padding:34px 46px;
+                  font-size:12px; font-stretch:118%; letter-spacing:.14em; text-transform:uppercase; }
+  .stagefail .b { margin-top:9px; }
 
   footer { background:var(--black); color:var(--white); border-top:1px solid var(--rule); }
   .draw { display:flex; align-items:center; gap:10px; padding:8px 14px; cursor:pointer; }
@@ -186,6 +203,7 @@
   <div class="acts">
     <button class="b key" id="roll" title="roll a whole plate at random (R)">Roll</button>
     <button class="b" id="nine" title="roll nine and pick one (N)">Nine</button>
+    <button class="b" id="img" title="put an image through the same press (I)">Image</button>
     <button class="b" id="save" title="save the plate as SVG (S)">SVG</button>
     <button class="b" id="png" title="save a 2× PNG of the plate">PNG</button>
     <button class="b" id="ttf" title="build a font from the lettering settings and save it">TTF</button>
@@ -225,6 +243,8 @@
   <pre id="code"></pre>
 </footer>
 <div class="toast" id="toast"></div>
+<div class="dropveil" id="dropveil" hidden><div>drop it — this image goes through the same press</div></div>
+<input type="file" id="imgfile" accept="image/*" hidden>
 <div class="sheetnine" id="nineview" hidden>
   <div class="ninebar">
     <h3>Nine rolls</h3><span class="note">click one to take it — Esc to leave</span>
@@ -238,9 +258,13 @@
 (function () {
   "use strict";
   var M = window.MINOR;
-  var KEY = "minor-atelier-v2";
+  var KEY = "minor-atelier-v2", KIMG = "minor-atelier-image";
   var state = Object.assign({}, M.DEFAULTS, { name: "untitled" });
   try { var kept = localStorage.getItem(KEY); if (kept) state = Object.assign(state, JSON.parse(kept)); } catch (e) {}
+  /* the image the press currently holds. A photograph is not a plate setting:
+     it stays out of the state, out of the undo stack and out of the emitted
+     code, and is kept beside them under its own key. */
+  var HELD = { url: "", name: "", w: 0, h: 0 };
 
   /* twelve starting points — one per body, each taken off a plate that exists */
   var PRESETS = [
@@ -268,10 +292,20 @@
       py:-70, sat:5, seed:23, pitch:7, falloff:15, dspread:0.68, grain:0.26, wobAmp:7, wobScale:46 }],
     ["lace 129", { format:"carre760", bg:"black", ink:"white", sym:"lace", size:700, px:30, py:30,
       rays:30, disc:0.24, seeds:430, gspace:15.5, seed:129, pitch:3.4, falloff:6, angle:75,
-      pseed:7, fInk:"white" }]
+      pseed:7, fInk:"white" }],
+    ["borrowed body 95", { sym:"image", bg:"white", ink:"black", format:"carre", size:676,
+      px:-18, py:-6, pitch:6.6, angle:15, dspread:0.68, grain:0.24, pseed:5,
+      imgLo:0.12, imgHi:0.72, imgGamma:0.95, imgSoft:0.8 }],
+    ["knocked out 96", { sym:"image", bg:"black", ink:"white", fInk:"white", format:"carre",
+      size:676, px:-18, py:-6, pitch:5.4, angle:75, dspread:0.6, grain:0.18, pseed:9,
+      imgLo:0.12, imgHi:0.72, imgGamma:0.95, imgSoft:0.8 }],
+    ["out of register 97", { sym:"image", bg:"white", ink:"black", format:"carre", size:676,
+      px:-18, py:-6, pitch:5, angle:15, dspread:0.52, grain:0.14, pseed:7,
+      plate2:"registre", p2ink:"blu", p2dx:-7, p2dy:5,
+      imgLo:0.12, imgHi:0.72, imgGamma:0.95, imgSoft:0.8 }]
   ];
 
-  var panel = document.getElementById("panel"), rows = {};
+  var panel = document.getElementById("panel"), rows = {}, groups = [], picker = null;
   function el(t, cls, txt) { var e = document.createElement(t); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
 
   M.PARAMS.forEach(function (grp) {
@@ -282,6 +316,7 @@
     h.onclick = function () { sec.classList.toggle("shut"); };
     var box = el("div", "fields");
     sec.appendChild(h); sec.appendChild(box); panel.appendChild(sec);
+    groups.push({ sec: sec, grp: grp });
 
     grp.fields.forEach(function (f) {
       var row = el("div", "f");
@@ -320,6 +355,21 @@
         input.oninput = function () { set(f.id, input.value, true); };
         input.onchange = function () { set(f.id, input.value, false); };
         row.appendChild(input);
+      } else if (f.type === "image") {
+        input = el("div", "imgpick");
+        var th = el("div", "th empty"), thumb = el("img");
+        thumb.alt = ""; th.appendChild(thumb);
+        var meta = el("div", "meta"), nm = el("b", null, "no image yet"), dm = el("span", "dim", "\u2014");
+        var rw = el("div", "row");
+        var bChoose = el("button", "b", "Choose\u2026"); bChoose.type = "button";
+        bChoose.onclick = function () { openPicker(); };
+        var bClear = el("button", "b ghost", "Clear"); bClear.type = "button";
+        bClear.onclick = function () { forgetImage(); };
+        rw.appendChild(bChoose); rw.appendChild(bClear);
+        meta.appendChild(nm); meta.appendChild(dm); meta.appendChild(rw);
+        input.appendChild(th); input.appendChild(meta);
+        row.appendChild(input);
+        picker = { th: th, img: thumb, name: nm, dim: dm };
       } else if (f.type === "seed") {
         input = el("div", "seedrow");
         var num = el("input"); num.type = "number"; num.id = "c_" + f.id;
@@ -341,7 +391,9 @@
     b.onclick = function () {
       state = Object.assign({}, M.DEFAULTS, p[1],
         { num: state.num, name: p[0].replace(/ \d+$/, "").replace(/[^a-z]+/gi, "-").toLowerCase() });
+      if (state.sym === "image" && HELD.url) state.imgName = HELD.name;
       sync(); render(false);
+      if (state.sym === "image" && !HELD.url) openPicker();
     };
     pbox.appendChild(b);
   });
@@ -364,11 +416,14 @@
         r.input.setAttribute("aria-pressed", v ? "true" : "false");
         r.input.children[1].textContent = v ? "on" : "off"; r.val.textContent = "";
       } else if (f.type === "seed") { r.input.value = v; r.val.textContent = ""; }
+      else if (f.type === "image") { r.val.textContent = HELD.url ? "loaded" : ""; }
       else if (f.type === "text") {          /* leave the caret alone while typing */
         if (r.input.value !== v) r.input.value = v;
         r.val.textContent = String(v).length;
       }
     });
+    groups.forEach(function (g) { g.sec.hidden = !M.visible(g.grp, state); });
+    paintPicker();
     document.getElementById("num").value = state.num;
     document.getElementById("nom").value = state.name;
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
@@ -391,6 +446,125 @@
     hp = to; state = JSON.parse(hist[hp]); lastId = null;
     sync(); render(false); toast(dir < 0 ? "undone" : "redone");
   }
+
+  /* ---- a body that is not ours ----------------------------------------
+   * The plates screen a distance field; an image is screened by _raster.js —
+   * the same code plates 95–99 were printed with, running here instead of in
+   * node. All the page has to do is hand over pixels, and a canvas will
+   * decode whatever the browser can open: PNG, JPEG, WebP, a frame someone
+   * pulled out of a film. Nothing is redrawn. The image is only ever asked
+   * how much ink it would hold.
+   */
+  var fileInput = document.getElementById("imgfile");
+  function openPicker() { fileInput.value = ""; fileInput.click(); }
+  fileInput.onchange = function () {
+    if (fileInput.files && fileInput.files[0]) takeFile(fileInput.files[0]);
+  };
+  function takeFile(file) {
+    if (!file) return;
+    if (!/^image\//.test(file.type)) return toast("that is not an image");
+    var fr = new FileReader();
+    fr.onerror = function () { toast("the file would not open"); };
+    fr.onload = function () { adopt(String(fr.result), file.name, false); };
+    fr.readAsDataURL(file);
+  }
+  /* 1200px on the long side is finer than any screen pitch can read, and it
+     keeps one pull well under a tenth of a second */
+  var MAXPX = 1200;
+  function adopt(url, name, quiet) {
+    var im = new Image();
+    im.onerror = function () { toast("that image would not decode"); if (quiet) render(false); };
+    im.onload = function () {
+      var sc = Math.min(1, MAXPX / Math.max(im.width, im.height));
+      var w = Math.max(1, Math.round(im.width * sc)), h = Math.max(1, Math.round(im.height * sc));
+      var c = document.createElement("canvas"); c.width = w; c.height = h;
+      var ctx = c.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(im, 0, 0, w, h);
+      var data;
+      try { data = ctx.getImageData(0, 0, w, h); }
+      catch (e) { return toast("this browser would not read the pixels"); }
+      M.useImage({ w: w, h: h, px: data.data });
+      /* a cut-out has to survive being kept, so anything with transparency
+         stays a PNG and everything else becomes a much smaller JPEG */
+      var clear = false, d = data.data, i;
+      for (i = 3; i < d.length; i += 4) if (d[i] < 250) { clear = true; break; }
+      var keep = url;
+      if (sc < 1 || !clear) {
+        try { keep = c.toDataURL(clear ? "image/png" : "image/jpeg", 0.88); } catch (e) {}
+      }
+      HELD = { url: keep, name: name || "image.png", w: w, h: h };
+      if (!quiet) {
+        remember(null);
+        if (state.sym !== "image") { state.sym = "image"; fitBox(); }
+        state.imgName = HELD.name;
+      }
+      keepImage();
+      sync();
+      if (!quiet || state.sym === "image") render(false);
+      if (!quiet) toast(w + "\u00d7" + h + " \u2014 through the press");
+    };
+    im.src = url;
+  }
+  /* an image arriving on a sun's settings would land off the sheet */
+  function fitBox() {
+    var sh = M.sheetOf(state), box = Math.round(Math.min(sh.w, sh.h) * 0.86);
+    state.size = box;
+    state.px = Math.round((sh.w - box) / 2); state.py = Math.round((sh.h - box) / 2);
+  }
+  function keepImage() {
+    try {
+      if (!HELD.url || HELD.url.length > 3.4e6) { localStorage.removeItem(KIMG); return; }
+      localStorage.setItem(KIMG, JSON.stringify({ url: HELD.url, name: HELD.name }));
+    } catch (e) { try { localStorage.removeItem(KIMG); } catch (e2) {} }
+  }
+  function forgetImage() {
+    HELD = { url: "", name: "", w: 0, h: 0 };
+    M.useImage(null);
+    try { localStorage.removeItem(KIMG); } catch (e) {}
+    sync(); render(false);
+  }
+  function paintPicker() {
+    if (!picker) return;
+    var on = !!HELD.url;
+    picker.th.classList.toggle("empty", !on);
+    picker.img.style.display = on ? "block" : "none";
+    if (on && picker.src !== HELD.url) { picker.img.src = HELD.url; picker.src = HELD.url; }
+    picker.name.textContent = on ? HELD.name : "no image yet";
+    picker.dim.textContent = on ? HELD.w + "\u00d7" + HELD.h + " px" : "drop one anywhere, or paste it";
+  }
+  /* dropped on the sheet, or pasted — both are how an image actually arrives */
+  var veil = document.getElementById("dropveil"), depth = 0;
+  function hasFiles(e) {
+    var t = e.dataTransfer;
+    return !!t && Array.prototype.indexOf.call(t.types || [], "Files") >= 0;
+  }
+  window.addEventListener("dragenter", function (e) {
+    if (!hasFiles(e)) return;
+    e.preventDefault(); depth++; veil.hidden = false;
+  });
+  window.addEventListener("dragover", function (e) { if (hasFiles(e)) e.preventDefault(); });
+  window.addEventListener("dragleave", function (e) {
+    if (!hasFiles(e)) return;
+    if (--depth <= 0) { depth = 0; veil.hidden = true; }
+  });
+  window.addEventListener("drop", function (e) {
+    if (!hasFiles(e)) return;
+    e.preventDefault(); depth = 0; veil.hidden = true;
+    takeFile(e.dataTransfer.files[0]);
+  });
+  document.addEventListener("paste", function (e) {
+    var items = (e.clipboardData && e.clipboardData.items) || [], i;
+    for (i = 0; i < items.length; i++) {
+      if (!/^image\//.test(items[i].type)) continue;
+      var f = items[i].getAsFile();
+      if (f) { e.preventDefault(); return takeFile(f); }
+    }
+  });
+  document.getElementById("img").onclick = function () {
+    if (!HELD.url || state.sym === "image") return openPicker();
+    remember(null); state.sym = "image"; state.imgName = HELD.name; fitBox();
+    sync(); render(false);
+  };
 
   function set(id, v, dragging) {
     if (!dragging) remember(id);
@@ -454,6 +628,15 @@
         out = M.buildPlate(st);
       } catch (err) {
         busy.classList.remove("on");
+        if (String(err && err.message) === "no image yet") {
+          sheetEl.innerHTML = '<div class="stagefail"><h3>No image yet.</h3>'
+            + "<p>Choose one, drop it anywhere on the sheet, or paste it. It is never "
+            + "redrawn \u2014 it is only ever asked how much ink it would hold, and then it goes "
+            + "through the same press as everything else.</p>"
+            + '<button class="b key" id="pickhere">Choose image\u2026</button></div>';
+          document.getElementById("pickhere").onclick = function () { openPicker(); };
+          return;
+        }
         sheetEl.innerHTML = '<div class="stagefail"><h3>That plate would not print.</h3>'
           + "<p>The press threw <code>" + String(err && err.message).replace(/[<>&]/g, "") + "</code>. "
           + "Undo with ⌘Z, or press Reset — nothing else was lost.</p></div>";
@@ -478,7 +661,9 @@
       busy.classList.remove("on");
     }, draft ? 40 : 90);
   }
-  function current() { return last || M.buildPlate(state).svg; }
+  function current() {
+    try { return last || M.buildPlate(state).svg; } catch (e) { return null; }
+  }
 
   function toast(msg) {
     var t = document.getElementById("toast");
@@ -517,6 +702,7 @@
   function toPNG(cb) {
     try {
       var text = current(), w = lastSize[0], h = lastSize[1];
+      if (!text) { cb(null); return; }
       var img = new Image();
       img.onload = function () {
         try {
@@ -532,6 +718,7 @@
     } catch (e) { cb(null); }
   }
   document.getElementById("png").onclick = function () {
+    if (!current()) return toast("there is no plate to save yet");
     toast("rendering…");
     toPNG(function (blob) {
       if (!blob) return toast("this browser would not rasterise it — use SVG");
@@ -612,6 +799,7 @@
 
   document.getElementById("save").onclick = function () {
     var name = String(state.num) + "-" + state.name + ".svg", text = current();
+    if (!text) return toast("there is no plate to save yet");
     var ask = (window.claude && window.claude.use) ? window.claude.use("downloads") : Promise.resolve(null);
     ask.then(function (dl) {
       if (!dl) return localSave(name, text);
@@ -654,6 +842,7 @@
     if (e.key === "s" || e.key === "S") document.getElementById("save").click();
     if (e.key === "0") fit();
     if (e.key === "t" || e.key === "T") document.getElementById("ttf").click();
+    if (e.key === "i" || e.key === "I") document.getElementById("img").click();
   });
 
   /* the typeface page is next door on the site, and online when this is not */
@@ -664,6 +853,15 @@
   })();
 
   remember(null);
-  sync(); render(false);
+  /* the image the last visit left behind */
+  var stored = null;
+  try { stored = JSON.parse(localStorage.getItem(KIMG) || "null"); } catch (e) {}
+  if (stored && stored.url) {
+    adopt(stored.url, stored.name, true);
+    sync();
+    if (state.sym !== "image") render(false);
+  } else {
+    sync(); render(false);
+  }
 })();
 </script>

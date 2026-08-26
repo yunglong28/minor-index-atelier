@@ -16,7 +16,7 @@ const fs = require("fs");
 const path = require("path");
 
 /* in dependency order */
-const SRC = ["_mark.js", "_glyphs.js", "_letters.js", "_font.js", "_studio.js"];
+const SRC = ["_mark.js", "_glyphs.js", "_letters.js", "_font.js", "_raster.js", "_studio.js"];
 /* what the page gets on window.MINOR */
 const EXPOSE = {
   "_mark.js": ["INK", "GROT", "MONO", "n", "rng", "pick", "segDist", "L", "axes", "brackets",
@@ -25,8 +25,9 @@ const EXPOSE = {
     "cellGeom", "cellSDF", "phylloPts", "sPts", "sScatter", "spiralPath", "spiralWalls",
     "sSpiral", "sDisc", "sRing", "sBox", "sUnion", "sSub", "sShift", "sTwist", "sGrow",
     "sSmooth", "sMorph", "noise2", "sWobble", "contour", "sBite", "sunBound", "cellBound"],
+  "_raster.js": ["screenImage", "bbox"],
   "_studio.js": ["PARAMS", "FIELDS", "DEFAULTS", "SHEETS", "INKS", "buildPlate", "emitPlate",
-    "rollState", "sheetOf", "visible", "stMetrics", "compactDots"],
+    "rollState", "sheetOf", "visible", "stMetrics", "compactDots", "useImage", "theImage"],
 };
 /* and two namespaces, kept whole */
 const NAMESPACES = { text: "_letters.js", font: "_font.js" };

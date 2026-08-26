@@ -17,7 +17,9 @@
 const M = require("./_mark.js");
 const Y = require("./_glyphs.js");
 const LT = require("./_letters.js");
+const RA = require("./_raster.js");
 const { INK, n, rng, axes, brackets, polar, swipe, trim, svg, G } = M;
+const { screenImage, bbox } = RA;
 const { cell, sunGeom, sunSolid, sunSDF, sunWhirl, screen, cellGeom, cellSDF,
         phylloPts, sPts, sScatter, sunBound, cellBound, spiralPath, spiralWalls, sSpiral, sDisc, sRing, sUnion, sSub, sShift,
         sTwist, sGrow, sSmooth, sMorph, sWobble, contour, sBite } = Y;
@@ -43,6 +45,9 @@ const CELLY = ["cell", "network", "two"];
 
 /* ---- every control, in the order a plate is built ----------------------- */
 const is = (k, ...v) => (s) => v.indexOf(s[k]) >= 0;
+/* an image has no field to cut solid, so it is screened whatever the pass says */
+const screened = (s) => s.sym === "image" || s.mode === "ecran";
+const notImage = (s) => s.sym !== "image";
 const PARAMS = [
   { id: "sheet", label: "THE SHEET", note: "size, ground, and the marks that say it was printed", fields: [
     { id: "format", type: "select", label: "format", def: "carre",
@@ -69,11 +74,12 @@ const PARAMS = [
       { v: "rings", label: "rings — concentric" },
       { v: "two", label: "two bodies — sun and cell grown together" },
       { v: "field", label: "field — a scatter of small suns" },
-      { v: "disc", label: "disc — the plain kernel" } ],
+      { v: "disc", label: "disc — the plain kernel" },
+      { v: "image", label: "image — a body that is not ours" } ],
       help: "Every body is a distance field, not a shape: it answers how far outside you are. That is why anything can be cut into anything." },
     { id: "size", type: "range", label: "size", min: 100, max: 1400, step: 10, def: 520,
       help: "The body's box. Push it past the sheet to make it bleed off the edge — plates 78 and 101 do." },
-    { id: "seed", type: "seed", label: "body seed", def: 7,
+    { id: "seed", type: "seed", label: "body seed", def: 7, when: notImage,
       help: "Which particular organism grows. Same seed, same body, every time." },
     { id: "px", type: "range", label: "position x", min: -500, max: 1200, step: 5, def: 60 },
     { id: "py", type: "range", label: "position y", min: -500, max: 1200, step: 5, def: 60 },
@@ -101,8 +107,25 @@ const PARAMS = [
       help: "Thickness at the outer end — it tapers to nothing at the middle." },
     { id: "ringN", type: "range", label: "how many rings", min: 2, max: 14, step: 1, def: 5, when: is("sym", "rings") },
     { id: "ringW", type: "range", label: "ring width", min: 1, max: 40, step: 1, def: 8, when: is("sym", "rings") },
+    { id: "imgName", type: "image", label: "the file", def: "image.png", when: is("sym", "image"),
+      help: "Any photograph, drawing or frame. It is never redrawn — it is only ever asked how much ink it would hold, exactly as plate 95 asks it of a borrowed body. Drop a file anywhere on the sheet, or paste one." },
+    { id: "imgCrop", type: "bool", label: "crop to the body", def: true, when: is("sym", "image"),
+      help: "Frame what the image actually occupies rather than the empty canvas around it. Only tells them apart where there is transparency." },
+    { id: "imgLo", type: "range", label: "floor", min: 0, max: 0.6, step: 0.01, def: 0.12, when: is("sym", "image"),
+      help: "Below this much ink nothing prints — where the gloves stay light. Raise it to empty the pale half of the image." },
+    { id: "imgHi", type: "range", label: "ceiling", min: 0.2, max: 1, step: 0.01, def: 0.72, when: is("sym", "image"),
+      help: "Above this the dot is solid. Lower it and the darks flood together." },
+    { id: "imgGamma", type: "range", label: "curve", min: 0.4, max: 2, step: 0.05, def: 0.95, when: is("sym", "image"),
+      help: "Bends everything between the two. Under 1 opens the midtones, over 1 closes them." },
+    { id: "imgSoft", type: "range", label: "softness", min: 0.3, max: 2, step: 0.05, def: 0.8, when: is("sym", "image"),
+      help: "How much of the image one dot reads. Wide is the blur a real screen has; narrow keeps the detail and starts to sparkle." },
+    { id: "imgMin", type: "range", label: "faint dots", min: 0.005, max: 0.2, step: 0.005, def: 0.015, when: is("sym", "image"),
+      help: "The coverage a dot has to reach to be printed at all. Raise it to clear the loose dots off the ground — that is what plates 98 and 99 do." },
+    { id: "imgInvert", type: "bool", label: "negative", def: false, when: is("sym", "image"),
+      help: "The image read the other way round: the light holds the ink." },
   ] },
-  { id: "appetit", label: "APPETITE", note: "what the body does to itself before it is printed", fields: [
+  { id: "appetit", label: "APPETITE", note: "what the body does to itself before it is printed",
+    when: notImage, fields: [
     { id: "morph", type: "range", label: "toward the cell", min: 0, max: 1, step: 0.02, def: 0, when: is("sym", "sun"),
       help: "Slides the sun into the cell. The middle is neither — plate 123 is this slider in five steps." },
     { id: "grow", type: "range", label: "fatten / starve", min: -34, max: 44, step: 1, def: 0,
@@ -123,21 +146,22 @@ const PARAMS = [
     { id: "occR", type: "range", label: "eclipse radius", min: 20, max: 420, step: 5, def: 150, when: (s) => s.occ },
   ] },
   { id: "presse", label: "THE PRESS", note: "toner at 15°, blu at 75° — anything else is a pass nobody paid for", fields: [
-    { id: "mode", type: "select", label: "pass", def: "ecran",
+    { id: "mode", type: "select", label: "pass", def: "ecran", when: notImage,
       options: [{ v: "ecran", label: "screened — through the copier" }, { v: "plein", label: "flat — cut solid" }],
       help: "Screened turns coverage into dots. Flat cuts the form in one colour, the way plates 77 and 80 were cut." },
     { id: "ink", type: "ink", label: "ink", def: "black" },
-    { id: "pitch", type: "range", label: "screen pitch", min: 1.6, max: 13, step: 0.2, def: 4.4, when: is("mode", "ecran"),
+    { id: "pitch", type: "range", label: "screen pitch", min: 1.6, max: 13, step: 0.2, def: 4.4, when: screened,
       help: "Distance between dot centres. Fine reads as a photograph; coarse reads as a bad photocopy, which is the house style." },
-    { id: "angle", type: "range", label: "screen angle", min: 0, max: 90, step: 1, def: 15, when: is("mode", "ecran"),
+    { id: "angle", type: "range", label: "screen angle", min: 0, max: 90, step: 1, def: 15, when: screened,
       help: "15° is the toner plate, 75° the blu one. Keeping them apart is what stops the two passes moiring." },
-    { id: "dspread", type: "range", label: "dot size", min: 0.3, max: 0.82, step: 0.01, def: 0.54, when: is("mode", "ecran"),
+    { id: "dspread", type: "range", label: "dot size", min: 0.3, max: 0.82, step: 0.01, def: 0.54, when: screened,
       help: "Dot radius against the pitch. Above 0.6 neighbouring dots touch and the form floods — that is plate 78." },
-    { id: "falloff", type: "range", label: "fringe", min: 2, max: 60, step: 0.5, def: 9, when: is("mode", "ecran"),
+    { id: "falloff", type: "range", label: "fringe", min: 2, max: 60, step: 0.5, def: 9,
+      when: (s) => s.mode === "ecran" && s.sym !== "image",
       help: "How far outside the body dots keep appearing. A wide fringe is a soft halo; plate 128 is nothing but fringe." },
-    { id: "grain", type: "range", label: "grain", min: 0, max: 0.5, step: 0.01, def: 0.18, when: is("mode", "ecran"),
+    { id: "grain", type: "range", label: "grain", min: 0, max: 0.5, step: 0.01, def: 0.18, when: screened,
       help: "Random noise in the coverage — dirt on the glass. It also scatters loose dots across the empty sheet." },
-    { id: "pseed", type: "seed", label: "screen seed", def: 5, when: is("mode", "ecran"),
+    { id: "pseed", type: "seed", label: "screen seed", def: 5, when: screened,
       help: "Which particular run through the copier." },
     { id: "plate2", type: "select", label: "second plate", def: "aucune", options: [
       { v: "aucune", label: "none — one pass" },
@@ -328,6 +352,37 @@ function stBody(s) {
   return { f, solid, cx, cy, geom };
 }
 
+/* ---- a body that is not ours -------------------------------------------
+ * An image is not a distance field. It cannot be twisted, bitten or grown,
+ * so it skips the appetite and goes straight to the press — and the press is
+ * the same press: pitch, angle, dot, grain, the second plate. Nothing here
+ * redraws anything. The image is only ever asked how much ink it would hold,
+ * which is what plates 95–99 ask of a body that was never drawn for this.
+ *
+ * The pixels stay here rather than in the state: a state is JSON, it goes
+ * into undo, into localStorage and into the emitted code, and a photograph
+ * belongs in none of those.
+ */
+let LOADED = null;
+const useImage = (img) => { LOADED = img && img.px ? img : null; return LOADED; };
+const theImage = () => LOADED;
+/* the crop is a full scan of the pixels — do it once per image */
+const stCrop = (img) => (img.box || (img.box = bbox(img)));
+
+function stImage(s, img) {
+  return { img, src: s.imgCrop ? stCrop(img) : [0, 0, img.w, img.h],
+    x: s.px, y: s.py, w: s.size, h: s.size,
+    lo: s.imgLo, hi: s.imgHi, gamma: s.imgGamma, soft: s.imgSoft,
+    invert: s.imgInvert, min: s.imgMin,
+    cell: s.pitch, angle: s.angle, spread: s.dspread, grain: s.grain,
+    seed: s.pseed | 0 };
+}
+/* the second plate, read for an image: shifted, or let out under the first */
+const stImage2 = (s) => s.plate2 === "registre"
+  ? { x: q4(s.px + s.p2dx), y: q4(s.py + s.p2dy) }
+  : { spread: q4(Math.min(0.82, s.dspread * (1 + s.p2grow / 40))),
+      lo: q4(Math.max(0, s.imgLo - s.p2grow / 150)) };
+
 /* ---- what the body does to itself, in the order a press would allow ----- */
 function stAppetite(f, s, cx, cy, rand) {
   if (s.morph > 0 && s.sym === "sun") {
@@ -376,20 +431,36 @@ function buildPlate(state) {
   const { w: W, h: H } = sheetOf(s);
   const t0 = Date.now();
   const rand = rng((s.seed | 0) * 7 + 11);
-  const { f, solid, cx, cy } = stBody(s);
+  const img = s.sym === "image" ? theImage() : null;
+  if (s.sym === "image" && !img) throw new Error("no image yet");
+  const { f, solid, cx, cy } = img ? { f: null, solid: null, cx: 0, cy: 0 } : stBody(s);
   const tOpt = { weight: s.tweight, hand: s.thand, track: s.ttrack, slant: s.tslant,
                  width: s.twidth, seed: s.tseed | 0 };
   /* printed lettering joins the plate before anything is done to it */
-  const base = s.tmode === "printed"
+  const base = s.tmode === "printed" && !img
     ? sUnion(f, LT.textField(s.text, s.tx, s.ty, s.tcap, tOpt)) : f;
-  const field = stAppetite(base, s, cx, cy, rand);
+  const field = img ? null : stAppetite(base, s, cx, cy, rand);
   const ink = INK[s.ink], k = stMetrics(W, H);
   const pr = (sdf, color, o) => screen(Object.assign({ x: 0, y: 0, w: W, h: H, sdf,
     cell: s.pitch, angle: s.angle, spread: s.dspread, falloff: s.falloff,
     grain: s.grain, seed: s.pseed | 0, color }, o));
   const layers = [];
   if (s.fSwipe) layers.push(swipe(k.swX, k.swY, k.swW, k.swH, -4, rand, INK[s.fSwipeInk]));
-  if (s.mode === "plein") {
+  if (img) {
+    const box = stImage(s, img);
+    const pi = (o) => screenImage(Object.assign({}, box, o));
+    if (s.plate2 !== "aucune") {
+      layers.push(pi(Object.assign({ angle: 75, seed: (s.pseed | 0) + 4, color: INK[s.p2ink] },
+        stImage2(s))));
+    }
+    layers.push(pi({ color: ink }));
+    /* the word cannot be fused into a photograph, but it can go through the
+       same screen on the same pull */
+    if (s.tmode === "printed") {
+      layers.push(pr(LT.textField(s.text, s.tx, s.ty, s.tcap, tOpt), ink,
+        { seed: (s.pseed | 0) + 1 }));
+    }
+  } else if (s.mode === "plein") {
     layers.push(solid || "");
   } else {
     if (s.plate2 === "registre") {
@@ -417,6 +488,11 @@ function emitPlate(state) {
   const K = (v) => `INK.${v}`;
   const L = [], size = s.size, cx = q4(s.px + size / 2), cy = q4(s.py + size / 2);
   const sym = s.sym, k = stMetrics(W, H);
+  if (sym === "image") {
+    L.push(`/* the image itself is not in this file — put ${s.imgName} beside the script */`);
+    L.push(`const IMG = readPNG(path.join(__dirname, ${JSON.stringify(s.imgName)}));`);
+    L.push("");
+  }
   L.push(`plate("${String(s.num).padStart(2, "0")}-${s.name}", ${W}, ${H}, () => {`);
   L.push(`  const q = rng(${(s.seed | 0) * 7 + 11});   /* the atelier's hand, so this plate is that plate */`);
 
@@ -468,16 +544,17 @@ function emitPlate(state) {
 
   const tOpts = `{ weight: ${s.tweight}, hand: ${s.thand}, track: ${s.ttrack}, `
     + `slant: ${s.tslant}, width: ${s.twidth}, seed: ${s.tseed | 0} }`;
-  if (s.tmode === "printed")
+  const isImg = sym === "image";
+  if (s.tmode === "printed" && !isImg)
     L.push(`  f = sUnion(f, textField(${JSON.stringify(s.text)}, ${s.tx}, ${s.ty}, ${s.tcap}, ${tOpts}));`);
-  if (s.morph > 0 && sym === "sun")
+  if (s.morph > 0 && sym === "sun" && !isImg)
     L.push(`  f = sMorph(f, sShift(cellSDF(cellGeom({ size: ${size}, seed: ${s.seed}, `
       + `sat: ${s.sat} })), ${s.px}, ${s.py}), ${s.morph});`);
-  if (s.grow) L.push(`  f = sGrow(f, ${s.grow});`);
-  if (s.wobAmp > 0) L.push(`  f = sWobble(f, ${s.wobAmp}, ${s.wobScale}, ${s.seed | 0});`);
-  if (s.twist) L.push(`  f = sTwist(f, ${cx}, ${cy}, ${s.twist});`);
-  if (s.occ) L.push(`  f = sSub(f, sDisc(${q4(cx + s.occX)}, ${q4(cy + s.occY)}, ${s.occR}));`);
-  if (s.bites > 0)
+  if (s.grow && !isImg) L.push(`  f = sGrow(f, ${s.grow});`);
+  if (s.wobAmp > 0 && !isImg) L.push(`  f = sWobble(f, ${s.wobAmp}, ${s.wobScale}, ${s.seed | 0});`);
+  if (s.twist && !isImg) L.push(`  f = sTwist(f, ${cx}, ${cy}, ${s.twist});`);
+  if (s.occ && !isImg) L.push(`  f = sSub(f, sDisc(${q4(cx + s.occX)}, ${q4(cy + s.occY)}, ${s.occR}));`);
+  if (s.bites > 0 && !isImg)
     L.push(`  f = sBite(f, mouths(f, ${cx}, ${cy}, ${q4(size * 0.62)}, ${s.bites}, ${s.biteSize}, q));`);
 
   const scr = (sdf, color, angle, seed) => `screen({ x: 0, y: 0, w: ${W}, h: ${H}, sdf: ${sdf}, `
@@ -485,7 +562,27 @@ function emitPlate(state) {
     + `angle: ${angle}, seed: ${seed}, color: ${K(color)} })`;
   const body = [];
   if (s.fSwipe) body.push(`swipe(${k.swX}, ${k.swY}, ${k.swW}, ${k.swH}, -4, q, ${K(s.fSwipeInk)})`);
-  if (s.mode === "plein") {
+  if (isImg) {
+    const img = theImage();
+    const src = img ? (s.imgCrop ? stCrop(img) : [0, 0, img.w, img.h]) : null;
+    const im = (o) => {
+      const g = Object.assign({ angle: s.angle, spread: s.dspread, lo: s.imgLo,
+        x: s.px, y: s.py, seed: s.pseed | 0, color: s.ink }, o);
+      return `screenImage({ img: IMG, src: ${src ? `[${src.join(", ")}]` : "bbox(IMG)"}, `
+        + `x: ${g.x}, y: ${g.y}, w: ${size}, h: ${size},\n      `
+        + `lo: ${g.lo}, hi: ${s.imgHi}, gamma: ${s.imgGamma}, soft: ${s.imgSoft}, `
+        + `min: ${s.imgMin},${s.imgInvert ? " invert: true," : ""}\n      `
+        + `cell: ${s.pitch}, angle: ${g.angle}, spread: ${g.spread}, grain: ${s.grain}, `
+        + `seed: ${g.seed}, color: ${K(g.color)} })`;
+    };
+    if (s.plate2 !== "aucune") {
+      body.push(im(Object.assign({ angle: 75, seed: (s.pseed | 0) + 4, color: s.p2ink },
+        stImage2(s))));
+    }
+    body.push(im({}));
+    if (s.tmode === "printed") body.push(scr(`textField(${JSON.stringify(s.text)}, `
+      + `${s.tx}, ${s.ty}, ${s.tcap}, ${tOpts})`, s.ink, s.angle, (s.pseed | 0) + 1));
+  } else if (s.mode === "plein") {
     const rr = [];
     for (let i = 0; i < s.ringN; i++) rr.push(q4((size * 0.5 * (i + 1)) / s.ringN));
     const solids = {
@@ -537,8 +634,11 @@ function emitPlate(state) {
   const FROM_SHEET = ["rng", "place", "G", "swipe", "axes", "brackets", "polar", "ticks",
     "band", "reg", "frame", "mouths", "discs"].filter((k) => new RegExp("\\b" + k + "\\(").test(code));
   const FROM_LETTERS = ["textField", "textSolid"].filter((k) => new RegExp("\\b" + k + "\\(").test(code));
-  return `/* from _glyphs.js: ${NEEDS.join(", ")}\n   from _sheet.js:  ${FROM_SHEET.join(", ")}`
-    + (FROM_LETTERS.length ? `\n   from _letters.js: ${FROM_LETTERS.join(", ")}` : "") + " */\n" + code;
+  const FROM_RASTER = ["readPNG", "screenImage", "bbox"]
+    .filter((k) => new RegExp("\\b" + k + "\\(").test(code));
+  const from = [["_glyphs.js", NEEDS], ["_sheet.js", FROM_SHEET],
+    ["_letters.js", FROM_LETTERS], ["_raster.js", FROM_RASTER]].filter((p) => p[1].length);
+  return "/* " + from.map((p) => `from ${p[0]}: ${p[1].join(", ")}`).join("\n   ") + " */\n" + code;
 }
 
 /* ---- the same plate, cheap enough to look at ---------------------------
@@ -599,4 +699,4 @@ function rollState(seed) {
 }
 
 module.exports = { PARAMS, FIELDS, DEFAULTS, SHEETS, INKS, INK, stMetrics, compactDots,
-  buildPlate, emitPlate, rollState, sheetOf, visible };
+  buildPlate, emitPlate, rollState, sheetOf, visible, useImage, theImage };

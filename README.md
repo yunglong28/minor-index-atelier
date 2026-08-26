@@ -56,7 +56,7 @@ do four things, in this order.
 
 | | |
 |---|---|
-| **the body** | one of twelve: sun, corona, cell, network, seed head, lace, spiral, shell, rings, two bodies grown together, a field of small suns, or a plain disc. Geometry first, so the solid cut and the screened one are the same body. |
+| **the body** | one of twelve: sun, corona, cell, network, seed head, lace, spiral, shell, rings, two bodies grown together, a field of small suns, or a plain disc. Geometry first, so the solid cut and the screened one are the same body. A thirteenth is not ours at all — an image, which skips the appetite because there is no field to bite, and goes straight to the press. |
 | **appetite** | what is done to it as a distance field: `sTwist` turn · `sGrow` spread and choke · `sWobble` tremble · `sMorph` one body arriving at another · `sSub` eclipse · `sBite` mouths taken at the contour |
 | **the press** | `screen` — coverage becomes dot area on a rotated screen. Pitch, angle, dot, fringe, grain. A second plate is the same field shifted (out of register) or let out (choke and spread). |
 | **furniture** | what a press leaves that is not the image: trim marks, brackets, ticked axes, polar, a ring of ticks, a band at the foot, a marker swipe, registration crosses. |
@@ -94,6 +94,14 @@ A press console: the sheet on the left, the four moves on the right, the plate
 redrawn as you pull anything. Dragging pulls a proof — a coarser screen at the
 same everything else. Wheel to zoom, drag to pan, `0` to fit, ⌘Z to undo, `N` for
 nine rolls to choose from.
+
+**Drop an image on the sheet** and it is screened by the same press: the pitch,
+the angle, the dot, the grain and the second plate are the controls that were
+already there, and levels are added under the body — floor, ceiling, curve,
+softness. Nothing is redrawn and nothing is traced. The image is only ever asked
+how much ink it would hold, which is the whole of `_raster.js` and the whole of
+plates 95–99. It is dropped, pasted or chosen; it is kept beside the plate
+rather than inside it, because a photograph is not a setting.
 
 What comes out of **Code** is a `plate(...)` block that can be pasted into the
 next `mk*.js`, and it rebuilds the plate that was on screen **byte for byte**.
