@@ -18,7 +18,7 @@ const M = require("./_mark.js");
 const Y = require("./_glyphs.js");
 const LT = require("./_letters.js");
 const RA = require("./_raster.js");
-const { INK, n, rng, axes, brackets, polar, swipe, trim, svg, G } = M;
+const { INK, n, rng, axes, brackets, polar, swipe, trim, under, svg, svgOpen, SVG_CLOSE, G } = M;
 const { screenImage, bbox } = RA;
 const { cell, sunGeom, sunSolid, sunSDF, sunWhirl, screen, cellGeom, cellSDF,
         phylloPts, sPts, sScatter, sunBound, cellBound, spiralPath, spiralWalls, sSpiral, sDisc, sRing, sUnion, sSub, sShift,
@@ -42,12 +42,16 @@ const SHEETS = [
 const INKS = ["black", "white", "fluo", "blu", "grey"];
 const SUNNY = ["sun", "corona", "lace", "two", "field"];
 const CELLY = ["cell", "network", "two"];
+/* the bodies whose solid cut is warped too, not only their field */
+const FIELDY = ["sun", "two"];
 
 /* ---- every control, in the order a plate is built ----------------------- */
 const is = (k, ...v) => (s) => v.indexOf(s[k]) >= 0;
 /* an image has no field to cut solid, so it is screened whatever the pass says */
 const screened = (s) => s.sym === "image" || s.mode === "ecran";
 const notImage = (s) => s.sym !== "image";
+/* a flat cut is not screened and has no field: half the appetite is idle */
+const notFlat = (s) => s.mode !== "plein";
 const PARAMS = [
   { id: "sheet", label: "THE SHEET", note: "size, ground, and the marks that say it was printed", fields: [
     { id: "format", type: "select", label: "format", def: "carre",
@@ -131,25 +135,34 @@ const PARAMS = [
     { id: "ringW", type: "range", label: "ring width", min: 1, max: 40, step: 1, def: 8, when: is("sym", "rings") },
   ] },
   { id: "appetit", label: "APPETITE", note: "what the body does to itself before it is printed",
-    when: notImage, fields: [
-    { id: "morph", type: "range", label: "toward the cell", min: 0, max: 1, step: 0.02, def: 0, when: is("sym", "sun"),
+    /* the appetite is something done to a distance field. A flat cut is the
+       geometry itself, and only the twist is in the geometry (sunWhirl), so
+       on a flat pass this group shows what a flat cut can actually take —
+       and disappears entirely for the bodies that can take nothing. */
+    when: (s) => s.sym !== "image" && (s.mode !== "plein" || FIELDY.indexOf(s.sym) >= 0),
+    alt: (s) => s.mode === "plein"
+      ? { label: "APPETITE", note: "a flat cut is the body itself — only the twist is in the geometry" } : null,
+    fields: [
+    { id: "morph", type: "range", label: "toward the cell", min: 0, max: 1, step: 0.02, def: 0,
+      when: (s) => s.sym === "sun" && notFlat(s),
       help: "Slides the sun into the cell. The middle is neither — plate 123 is this slider in five steps." },
-    { id: "grow", type: "range", label: "fatten / starve", min: -34, max: 44, step: 1, def: 0,
+    { id: "grow", type: "range", label: "fatten / starve", min: -34, max: 44, step: 1, def: 0, when: notFlat,
       help: "Weight, in units of ink. A printer calls it spread and choke: right fattens the whole form, left eats it back until only the kernel is left." },
     { id: "twist", type: "range", label: "twist", min: -0.03, max: 0.03, step: 0.0005, def: 0,
+      when: (s) => notFlat(s) || FIELDY.indexOf(s.sym) >= 0,
       help: "Turns the field by an amount that grows with the radius, so straight rays bend into a vortex. This is the whole SPIRALE batch." },
-    { id: "wobAmp", type: "range", label: "tremble", min: 0, max: 22, step: 0.5, def: 0,
+    { id: "wobAmp", type: "range", label: "tremble", min: 0, max: 22, step: 0.5, def: 0, when: notFlat,
       help: "Pushes the edge around with noise, so nothing is machine-true." },
-    { id: "wobScale", type: "range", label: "tremble scale", min: 8, max: 130, step: 2, def: 46, when: (s) => s.wobAmp > 0,
+    { id: "wobScale", type: "range", label: "tremble scale", min: 8, max: 130, step: 2, def: 46, when: (s) => s.wobAmp > 0 && notFlat(s),
       help: "Small is a jitter along the edge; large is a slow swell through the whole body." },
-    { id: "bites", type: "range", label: "bites", min: 0, max: 16, step: 1, def: 0,
+    { id: "bites", type: "range", label: "bites", min: 0, max: 16, step: 1, def: 0, when: notFlat,
       help: "Mouths taken out where the body actually ends — the edge is found first, then bitten." },
-    { id: "biteSize", type: "range", label: "bite size", min: 8, max: 160, step: 2, def: 54, when: (s) => s.bites > 0 },
-    { id: "occ", type: "bool", label: "eclipse", def: false,
+    { id: "biteSize", type: "range", label: "bite size", min: 8, max: 160, step: 2, def: 54, when: (s) => s.bites > 0 && notFlat(s) },
+    { id: "occ", type: "bool", label: "eclipse", def: false, when: notFlat,
       help: "Another body passes in front. The dots stop dead where it starts." },
-    { id: "occX", type: "range", label: "eclipse x", min: -400, max: 400, step: 5, def: 90, when: (s) => s.occ },
-    { id: "occY", type: "range", label: "eclipse y", min: -400, max: 400, step: 5, def: -60, when: (s) => s.occ },
-    { id: "occR", type: "range", label: "eclipse radius", min: 20, max: 420, step: 5, def: 150, when: (s) => s.occ },
+    { id: "occX", type: "range", label: "eclipse x", min: -400, max: 400, step: 5, def: 90, when: (s) => s.occ && notFlat(s) },
+    { id: "occY", type: "range", label: "eclipse y", min: -400, max: 400, step: 5, def: -60, when: (s) => s.occ && notFlat(s) },
+    { id: "occR", type: "range", label: "eclipse radius", min: 20, max: 420, step: 5, def: 150, when: (s) => s.occ && notFlat(s) },
   ] },
   { id: "presse", label: "THE PRESS", note: "toner at 15°, blu at 75° — anything else is a pass nobody paid for", fields: [
     { id: "mode", type: "select", label: "pass", def: "ecran", when: notImage,
@@ -173,11 +186,12 @@ const PARAMS = [
       { v: "aucune", label: "none — one pass" },
       { v: "registre", label: "out of register — shifted" },
       { v: "grossi", label: "spread underneath — a rim" } ],
-      help: "A second colour under the first. Shifted gives the misprint of plate 107; spread gives the choke-and-spread rim of plate 119." },
+      help: "A second colour under the first, on either pass. Shifted gives the misprint of plate 107; spread gives the choke-and-spread rim of plate 119." },
     { id: "p2ink", type: "ink", label: "second ink", def: "blu", when: (s) => s.plate2 !== "aucune" },
     { id: "p2dx", type: "range", label: "shift x", min: -30, max: 30, step: 1, def: -8, when: is("plate2", "registre") },
     { id: "p2dy", type: "range", label: "shift y", min: -30, max: 30, step: 1, def: 6, when: is("plate2", "registre") },
-    { id: "p2grow", type: "range", label: "spread by", min: 2, max: 30, step: 1, def: 9, when: is("plate2", "grossi") },
+    { id: "p2grow", type: "range", label: "spread by", min: 2, max: 30, step: 1, def: 9, when: is("plate2", "grossi"),
+      help: "How far the plate underneath is let out past the one on top. On a flat cut it is a pen of that ink laid round the edge \u2014 which is what a press does to spread a plate." },
   ] },
   { id: "lettrage", label: "LETTERING", note: "words made of the same material as the bodies", fields: [
     { id: "tmode", type: "select", label: "lettering", def: "none", options: [
@@ -238,33 +252,11 @@ const sheetOf = (s) => {
   return p.id === "libre" ? { w: s.w, h: s.h } : { w: p.w, h: p.h };
 };
 
-/* ---- page furniture, the parts every batch keeps redefining ------------- */
-const stTicks = (cx, cy, r, count, size, color) => {
-  const out = [];
-  for (let i = 0; i < count; i++) {
-    const a = (i / count) * Math.PI * 2 - Math.PI / 2;
-    out.push(`<rect x="${n(cx + Math.cos(a) * r - size / 2)}" y="${n(cy + Math.sin(a) * r - size / 2)}" `
-      + `width="${n(size)}" height="${n(size)}"/>`);
-  }
-  return `<g fill="${color}">${out.join("")}</g>`;
-};
-const stReg = (cx, cy, r, color) =>
-  G(color, 1.2, `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(r)}" fill="none"/>`
-    + `<line x1="${n(cx - r * 1.7)}" y1="${n(cy)}" x2="${n(cx + r * 1.7)}" y2="${n(cy)}"/>`
-    + `<line x1="${n(cx)}" y1="${n(cy - r * 1.7)}" x2="${n(cx)}" y2="${n(cy + r * 1.7)}"/>`);
-const stBand = (x, y, w, h, color) =>
-  `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" fill="${color}"/>`;
-/* mouths, taken where the body actually ends */
-function stMouths(f, cx, cy, rMax, count, size, rand) {
-  const edge = contour(f, cx, cy, count * 6, rMax);
-  const out = [];
-  if (!edge.length) return out;
-  for (let i = 0; i < count; i++) {
-    const p = edge[Math.floor((i / count) * edge.length + rand() * 3) % edge.length];
-    if (p) out.push({ x: p.x, y: p.y, r0: size * (0.55 + rand() * 0.9) });
-  }
-  return out;
-}
+/* the page furniture is `_furniture.js` — the same file `_sheet.js` hands to
+   the batch scripts, so the emitted code and the plate on screen are calling
+   one function and not two that look alike */
+const { ticks: stTicks, reg: stReg, band: stBand, discs: stDiscs,
+        mouths: stMouths } = require("./_furniture.js");
 
 /* ---- the body, then what is done to it --------------------------------- */
 /* a scatter placed by the body seed, computed once and read by both the
@@ -283,18 +275,34 @@ function stScatter(s) {
 const stSunOpts = (s, size, seed) => ({ size, seed, rays: s.rays, disc: s.disc,
   short: s.reachA, long: s.reachB });
 const stSpiralA = (s) => q4((s.size * 0.45) / Math.exp(s.tight * s.turns * Math.PI * 2));
-const stDiscs = (pts, color) => `<g fill="${color}">` + pts.map((p) =>
-  `<circle cx="${n(p.x)}" cy="${n(p.y)}" r="${n(p.r)}"/>`).join("") + "</g>";
+
+/* the smallest circle that certainly holds two others */
+function bJoin(a, b) {
+  if (!a) return b;
+  if (!b) return a;
+  const d = Math.hypot(b.cx - a.cx, b.cy - a.cy);
+  if (d + b.r <= a.r) return a;
+  if (d + a.r <= b.r) return b;
+  const r = (a.r + b.r + d) / 2, t = d ? (r - a.r) / d : 0;
+  return { cx: a.cx + (b.cx - a.cx) * t, cy: a.cy + (b.cy - a.cy) * t, r };
+}
+const bPad = (b, d) => (b ? { cx: b.cx, cy: b.cy, r: b.r + d } : null);
+const bPts = (pts, extra) => {
+  let b = null;
+  for (const p of pts) b = bJoin(b, { cx: p.x, cy: p.y, r: (p.r || 0) + (extra || 0) });
+  return b;
+};
 
 function stBody(s) {
   const size = s.size, cx = q4(s.px + size / 2), cy = q4(s.py + size / 2);
   const ink = INK[s.ink], sym = s.sym;
   const T = (b) => `<g transform="translate(${n(s.px)} ${n(s.py)})">${b}</g>`;
-  let f = null, solid = null, geom = null;
+  let f = null, solid = null, geom = null, bound = null;
 
   if (sym === "sun" || sym === "two" || sym === "corona" || sym === "lace") {
     geom = sunGeom(stSunOpts(s, size, s.seed));
     f = sShift(sunSDF(geom), s.px, s.py);
+    bound = { cx, cy, r: sunBound(geom) };
     solid = T(s.twist ? sunWhirl(geom, ink, s.twist) : sunSolid(geom, ink));
     if (sym === "corona") {                       /* the body gone, the light still arriving */
       f = sSub(f, sDisc(cx, cy, q4(size * s.disc * 0.98)));
@@ -304,6 +312,7 @@ function stBody(s) {
       const holes = phylloPts(cx, cy, s.seeds, { c: s.gspace,
         r0: q4(s.gspace * 0.36), r1: q4(s.gspace * 0.82) });
       f = sSub(sGrow(f, q4(size * 0.028)), sPts(holes, 1.5));
+      bound = bPad(bound, size * 0.028);
       solid = T(sunSolid(geom, ink)) + stDiscs(holes, s.bg === "none" ? INK.white : INK[s.bg]);
     }
   }
@@ -314,20 +323,27 @@ function stBody(s) {
     const cf = sShift(cellSDF(cg), s.px + off, s.py + off);
     const cSolid = `<g transform="translate(${n(s.px + off)} ${n(s.py + off)})">`
       + cell({ size: cs, seed: s.seed, sat: s.sat, color: ink }) + "</g>";
+    const cb = { cx: q4(s.px + off + cs / 2), cy: q4(s.py + off + cs / 2), r: cellBound(cg) };
+    /* two bodies over-inked bulge a little past either of them at the join */
+    bound = f ? bPad(bJoin(bound, cb), size * 0.12) : cb;
     f = f ? sSmooth(f, cf, q4(size * 0.12)) : cf;
     solid = sym === "two" ? solid + cSolid : cSolid;
   }
   if (sym === "network") {                          /* plate 82, as a control */
     const at = stScatter(s);
-    f = sScatter(at.map((a) => ({ f: sShift(cellSDF(cellGeom({ size: a[2], seed: a[3], sat: s.sat })), a[0], a[1]),
-      cx: a[0] + a[2] / 2, cy: a[1] + a[2] / 2, r: a[4] })));
+    const items = at.map((a) => ({ f: sShift(cellSDF(cellGeom({ size: a[2], seed: a[3], sat: s.sat })), a[0], a[1]),
+      cx: a[0] + a[2] / 2, cy: a[1] + a[2] / 2, r: a[4] }));
+    bound = bPts(items.map((it) => ({ x: it.cx, y: it.cy, r: it.r })));
+    f = sScatter(items);
     solid = at.map((a) => `<g transform="translate(${n(a[0])} ${n(a[1])})">`
       + cell({ size: a[2], seed: a[3], sat: s.sat, color: ink }) + "</g>").join("");
   }
   if (sym === "field") {                            /* plates 94, 110, 125 */
     const at = stScatter(s);
-    f = sScatter(at.map((a) => ({ f: sShift(sunSDF(sunGeom(stSunOpts(s, a[2], a[3]))), a[0], a[1]),
-      cx: a[0] + a[2] / 2, cy: a[1] + a[2] / 2, r: a[4] })));
+    const items = at.map((a) => ({ f: sShift(sunSDF(sunGeom(stSunOpts(s, a[2], a[3]))), a[0], a[1]),
+      cx: a[0] + a[2] / 2, cy: a[1] + a[2] / 2, r: a[4] }));
+    bound = bPts(items.map((it) => ({ x: it.cx, y: it.cy, r: it.r })));
+    f = sScatter(items);
     solid = at.map((a) => `<g transform="translate(${n(a[0])} ${n(a[1])})">`
       + sunSolid(sunGeom(stSunOpts(s, a[2], a[3])), ink) + "</g>").join("");
   }
@@ -335,12 +351,14 @@ function stBody(s) {
     const pts = phylloPts(cx, cy, s.seeds, { c: s.gspace,
       r0: q4(s.gspace * 0.25), r1: q4(s.gspace * 0.85) });
     f = sPts(pts);
+    bound = bPts(pts);
     solid = stDiscs(pts, ink);
   }
   if (sym === "spiral" || sym === "shell") {
     const a = stSpiralA(s), taper = q4(s.sband / 120);
     f = sSpiral(cx, cy, { a, b: s.tight, turns: s.turns,
       w: (r) => Math.max(2.5, Math.min(s.sband, r * taper)) });
+    bound = { cx, cy, r: a * Math.exp(s.tight * s.turns * Math.PI * 2) + s.sband };
     solid = G(ink, q4(s.sband * 0.35), spiralPath(cx, cy, { a, b: s.tight, turns: s.turns, step: 7 }));
     if (sym === "shell") solid = G(ink, 0.9, spiralWalls(cx, cy, { a, b: s.tight, turns: s.turns })) + solid;
   }
@@ -348,14 +366,16 @@ function stBody(s) {
     const rr = [];
     for (let i = 0; i < s.ringN; i++) rr.push(q4((size * 0.5 * (i + 1)) / s.ringN));
     f = sUnion.apply(null, rr.map((r) => sRing(cx, cy, r, s.ringW)));
+    bound = { cx, cy, r: rr[rr.length - 1] + s.ringW / 2 };
     solid = G(ink, s.ringW, rr.map((r) =>
       `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(r)}" fill="none"/>`).join(""));
   }
   if (sym === "disc") {
     f = sDisc(cx, cy, q4(size * 0.32));
+    bound = { cx, cy, r: q4(size * 0.32) };
     solid = `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(q4(size * 0.32))}" fill="${ink}"/>`;
   }
-  return { f, solid, cx, cy, geom };
+  return { f, solid, cx, cy, geom, bound };
 }
 
 /* ---- a body that is not ours -------------------------------------------
@@ -431,26 +451,74 @@ function stFurniture(s, W, H, rand) {
   return out.join("");
 }
 
-/** state → a finished plate. The same route a batch script takes. */
-function buildPlate(state) {
+/* how far a word reaches, generously: accents above the cap line, a tail
+   below the baseline, and the pen on top of both */
+function stTextBound(s, tOpt) {
+  const w = LT.textBox(s.text, s.tx, s.ty, s.tcap, tOpt).w;
+  return { cx: s.tx + w / 2, cy: s.ty + s.tcap / 2,
+           r: Math.hypot(w, s.tcap * 1.9) / 2 + s.tcap * s.tweight };
+}
+
+/** state → a finished plate. The same route a batch script takes.
+ *
+ * `hooks` is for a press that is being watched: `open` gets the sheet and
+ * everything printed before the long pass, `band` gets each strip of dots as
+ * the copier reaches it, `close` gets the rest. The plate that comes back is
+ * the same plate either way — the hooks only say when.
+ */
+function buildPlate(state, hooks) {
   const s = Object.assign({}, DEFAULTS, state);
   const { w: W, h: H } = sheetOf(s);
   const t0 = Date.now();
   const rand = rng((s.seed | 0) * 7 + 11);
   const img = s.sym === "image" ? theImage() : null;
   if (s.sym === "image" && !img) throw new Error("no image yet");
-  const { f, solid, cx, cy } = img ? { f: null, solid: null, cx: 0, cy: 0 } : stBody(s);
+  const B = img ? { f: null, solid: null, cx: 0, cy: 0, bound: null } : stBody(s);
+  const { f, solid, cx, cy } = B;
   const tOpt = { weight: s.tweight, hand: s.thand, track: s.ttrack, slant: s.tslant,
                  width: s.twidth, seed: s.tseed | 0 };
+  /* A flat pass never reads the field, so it is never built — and `sBite`
+     draws on the same hand the furniture does, so building one nobody looks
+     at would move every mark that comes after it. */
+  const flat = !img && s.mode === "plein";
   /* printed lettering joins the plate before anything is done to it */
-  const base = s.tmode === "printed" && !img
+  const base = s.tmode === "printed" && !img && !flat
     ? sUnion(f, LT.textField(s.text, s.tx, s.ty, s.tcap, tOpt)) : f;
-  const field = img ? null : stAppetite(base, s, cx, cy, rand);
+  const field = img || flat ? null : stAppetite(base, s, cx, cy, rand);
+
+  /* the same moves, done to the circle that holds the body. Every one of them
+     only ever adds, so what comes out certainly contains the field — which is
+     the only thing the copier needs in order to stop asking it. */
+  let bound = B.bound;
+  if (s.tmode === "printed" && !img && !flat) bound = bJoin(bound, stTextBound(s, tOpt));
+  if (bound && !img && !flat) {
+    if (s.morph > 0 && s.sym === "sun") {
+      bound = bJoin(bound, { cx, cy, r: cellBound(cellGeom({ size: s.size, seed: s.seed, sat: s.sat })) });
+    }
+    if (s.grow > 0) bound = bPad(bound, s.grow);
+    if (s.wobAmp > 0) bound = bPad(bound, s.wobAmp);
+    if (s.twist) {
+      /* the warp turns the field about the middle of the body, so a circle
+         drawn there still holds it — and it slackens distance, so the fringe
+         reaches further than the fringe alone would */
+      bound = { cx, cy, r: Math.hypot(bound.cx - cx, bound.cy - cy) + bound.r
+        + s.falloff * Math.abs(s.twist) * Math.hypot(W, H) * 0.55 };
+    }
+  }
+
   const ink = INK[s.ink], k = stMetrics(W, H);
   const pr = (sdf, color, o) => screen(Object.assign({ x: 0, y: 0, w: W, h: H, sdf,
     cell: s.pitch, angle: s.angle, spread: s.dspread, falloff: s.falloff,
-    grain: s.grain, seed: s.pseed | 0, color }, o));
+    grain: s.grain, seed: s.pseed | 0, color, bound }, o));
   const layers = [];
+  /* the one pass worth watching arrive: it is the plate, the rest is furniture */
+  let watched = -1;
+  const bg = s.bg === "none" ? null : INK[s.bg];
+  const openAt = (color) => {
+    watched = layers.length;
+    if (hooks) hooks.open(svgOpen(W, H, bg) + layers.join("") + `<g fill="${color}">`, W, H);
+    return hooks ? { onBand: hooks.band } : null;
+  };
   if (s.fSwipe) layers.push(swipe(k.swX, k.swY, k.swW, k.swH, -4, rand, INK[s.fSwipeInk]));
   if (img) {
     const box = stImage(s, img);
@@ -459,28 +527,45 @@ function buildPlate(state) {
       layers.push(pi(Object.assign({ angle: 75, seed: (s.pseed | 0) + 4, color: INK[s.p2ink] },
         stImage2(s))));
     }
-    layers.push(pi({ color: ink }));
+    layers.push(pi(Object.assign({ color: ink }, openAt(ink))));
     /* the word cannot be fused into a photograph, but it can go through the
        same screen on the same pull */
     if (s.tmode === "printed") {
       layers.push(pr(LT.textField(s.text, s.tx, s.ty, s.tcap, tOpt), ink,
-        { seed: (s.pseed | 0) + 1 }));
+        { seed: (s.pseed | 0) + 1, bound: stTextBound(s, tOpt) }));
     }
-  } else if (s.mode === "plein") {
-    layers.push(solid || "");
+  } else if (flat) {
+    /* a flat pass has a second plate as much as a screened one does: the same
+       cut, shifted out of register, or let out underneath as a rim.
+       And a word set "printed" has no screen to go through here, so it is cut
+       with the body instead — one pass, so the second plate takes it too. */
+    const cut = (solid || "")
+      + (s.tmode === "printed"
+         ? LT.textSolid(s.text, s.tx, s.ty, s.tcap, Object.assign({ color: ink }, tOpt)) : "");
+    if (s.plate2 === "registre") {
+      layers.push(`<g transform="translate(${n(s.p2dx)} ${n(s.p2dy)})">`
+        + under(cut, INK[s.p2ink]) + "</g>");
+    } else if (s.plate2 === "grossi") {
+      layers.push(under(cut, INK[s.p2ink], s.p2grow));
+    }
+    layers.push(cut);
   } else {
     if (s.plate2 === "registre") {
-      layers.push(pr(sShift(field, s.p2dx, s.p2dy), INK[s.p2ink], { angle: 75, seed: (s.pseed | 0) + 4 }));
+      layers.push(pr(sShift(field, s.p2dx, s.p2dy), INK[s.p2ink], { angle: 75, seed: (s.pseed | 0) + 4,
+        bound: bound && { cx: bound.cx + s.p2dx, cy: bound.cy + s.p2dy, r: bound.r } }));
     } else if (s.plate2 === "grossi") {
-      layers.push(pr(sGrow(field, s.p2grow), INK[s.p2ink], { angle: 75, seed: (s.pseed | 0) + 4 }));
+      layers.push(pr(sGrow(field, s.p2grow), INK[s.p2ink], { angle: 75, seed: (s.pseed | 0) + 4,
+        bound: bPad(bound, Math.max(0, s.p2grow)) }));
     }
-    layers.push(pr(field, ink));
+    layers.push(pr(field, ink, openAt(ink)));
   }
   if (s.tmode === "cut") layers.push(LT.textSolid(s.text, s.tx, s.ty, s.tcap,
     Object.assign({ color: ink }, tOpt)));
   layers.push(stFurniture(s, W, H, rand));
-  const bg = s.bg === "none" ? null : INK[s.bg];
   const marks = s.trimMarks ? G(INK[s.fInk], 1.1, trim(W, H, 16, 8)) : "";
+  if (hooks && watched >= 0) {
+    hooks.close("</g>" + layers.slice(watched + 1).join("") + marks + SVG_CLOSE);
+  }
   const out = svg(W, H, layers.join("") + marks, bg);
   return { svg: out, w: W, h: H,
     dots: (out.match(/<circle/g) || []).length,
@@ -494,6 +579,10 @@ function emitPlate(state) {
   const K = (v) => `INK.${v}`;
   const L = [], size = s.size, cx = q4(s.px + size / 2), cy = q4(s.py + size / 2);
   const sym = s.sym, k = stMetrics(W, H);
+  /* a flat pass never reads the field. Emitting `let f = ...` and an appetite
+     that nothing looks at would say the plate was twisted when it was not. */
+  const field = s.mode !== "plein";
+  const F = (line) => { if (field) L.push(line); };
   if (sym === "image") {
     L.push(`/* the image itself is not in this file — put ${s.imgName} beside the script */`);
     L.push(`const IMG = readPNG(path.join(__dirname, ${JSON.stringify(s.imgName)}));`);
@@ -505,26 +594,26 @@ function emitPlate(state) {
   if (sym === "sun" || sym === "two" || sym === "corona" || sym === "lace") {
     L.push(`  const g = sunGeom({ size: ${size}, seed: ${s.seed}, rays: ${s.rays}, `
       + `disc: ${s.disc}, short: ${s.reachA}, long: ${s.reachB} });`);
-    L.push(`  let f = sShift(sunSDF(g), ${s.px}, ${s.py});`);
-    if (sym === "corona") L.push(`  f = sSub(f, sDisc(${cx}, ${cy}, ${q4(size * s.disc * 0.98)}));`);
+    F(`  let f = sShift(sunSDF(g), ${s.px}, ${s.py});`);
+    if (sym === "corona") F(`  f = sSub(f, sDisc(${cx}, ${cy}, ${q4(size * s.disc * 0.98)}));`);
     if (sym === "lace") {
       L.push(`  const holes = phylloPts(${cx}, ${cy}, ${s.seeds}, { c: ${s.gspace}, `
         + `r0: ${q4(s.gspace * 0.36)}, r1: ${q4(s.gspace * 0.82)} });`);
-      L.push(`  f = sSub(sGrow(f, ${q4(size * 0.028)}), sPts(holes, 1.5));`);
+      F(`  f = sSub(sGrow(f, ${q4(size * 0.028)}), sPts(holes, 1.5));`);
     }
   }
   if (sym === "cell" || sym === "two") {
     const off = sym === "two" ? q4(size * 0.34) : 0;
     const cs = sym === "two" ? q4(size * 0.85) : size;
     L.push(`  const cg = cellGeom({ size: ${cs}, seed: ${s.seed}, sat: ${s.sat} });`);
-    L.push(sym === "two"
+    F(sym === "two"
       ? `  f = sSmooth(f, sShift(cellSDF(cg), ${q4(s.px + off)}, ${q4(s.py + off)}), ${q4(size * 0.12)});`
       : `  let f = sShift(cellSDF(cg), ${s.px}, ${s.py});`);
   }
   if (sym === "network" || sym === "field") {
     const at = stScatter(s);
     L.push(`  const at = [${at.map((a) => "[" + a.join(", ") + "]").join(", ")}];`);
-    L.push(sym === "network"
+    F(sym === "network"
       ? `  let f = sScatter(at.map(([x, y, z, d, b]) => ({ f: sShift(cellSDF(cellGeom({ size: z, seed: d, `
         + `sat: ${s.sat} })), x, y), cx: x + z / 2, cy: y + z / 2, r: b })));`
       : `  let f = sScatter(at.map(([x, y, z, d, b]) => ({ f: sShift(sunSDF(sunGeom({ size: z, seed: d, `
@@ -534,34 +623,34 @@ function emitPlate(state) {
   if (sym === "seed") {
     L.push(`  const pts = phylloPts(${cx}, ${cy}, ${s.seeds}, { c: ${s.gspace}, `
       + `r0: ${q4(s.gspace * 0.25)}, r1: ${q4(s.gspace * 0.85)} });`);
-    L.push(`  let f = sPts(pts);`);
+    F(`  let f = sPts(pts);`);
   }
   if (sym === "spiral" || sym === "shell") {
-    L.push(`  const taper = ${q4(s.sband / 120)};`);
-    L.push(`  let f = sSpiral(${cx}, ${cy}, { a: ${stSpiralA(s)}, b: ${s.tight}, turns: ${s.turns}, `
+    F(`  const taper = ${q4(s.sband / 120)};`);
+    F(`  let f = sSpiral(${cx}, ${cy}, { a: ${stSpiralA(s)}, b: ${s.tight}, turns: ${s.turns}, `
       + `w: (rr) => Math.max(2.5, Math.min(${s.sband}, rr * taper)) });`);
   }
   if (sym === "rings") {
     const rr = [];
     for (let i = 0; i < s.ringN; i++) rr.push(q4((size * 0.5 * (i + 1)) / s.ringN));
-    L.push(`  let f = sUnion(${rr.map((r) => `sRing(${cx}, ${cy}, ${r}, ${s.ringW})`).join(", ")});`);
+    F(`  let f = sUnion(${rr.map((r) => `sRing(${cx}, ${cy}, ${r}, ${s.ringW})`).join(", ")});`);
   }
-  if (sym === "disc") L.push(`  let f = sDisc(${cx}, ${cy}, ${q4(size * 0.32)});`);
+  if (sym === "disc") F(`  let f = sDisc(${cx}, ${cy}, ${q4(size * 0.32)});`);
 
   const tOpts = `{ weight: ${s.tweight}, hand: ${s.thand}, track: ${s.ttrack}, `
     + `slant: ${s.tslant}, width: ${s.twidth}, seed: ${s.tseed | 0} }`;
   const isImg = sym === "image";
   if (s.tmode === "printed" && !isImg)
-    L.push(`  f = sUnion(f, textField(${JSON.stringify(s.text)}, ${s.tx}, ${s.ty}, ${s.tcap}, ${tOpts}));`);
+    F(`  f = sUnion(f, textField(${JSON.stringify(s.text)}, ${s.tx}, ${s.ty}, ${s.tcap}, ${tOpts}));`);
   if (s.morph > 0 && sym === "sun" && !isImg)
-    L.push(`  f = sMorph(f, sShift(cellSDF(cellGeom({ size: ${size}, seed: ${s.seed}, `
+    F(`  f = sMorph(f, sShift(cellSDF(cellGeom({ size: ${size}, seed: ${s.seed}, `
       + `sat: ${s.sat} })), ${s.px}, ${s.py}), ${s.morph});`);
-  if (s.grow && !isImg) L.push(`  f = sGrow(f, ${s.grow});`);
-  if (s.wobAmp > 0 && !isImg) L.push(`  f = sWobble(f, ${s.wobAmp}, ${s.wobScale}, ${s.seed | 0});`);
-  if (s.twist && !isImg) L.push(`  f = sTwist(f, ${cx}, ${cy}, ${s.twist});`);
-  if (s.occ && !isImg) L.push(`  f = sSub(f, sDisc(${q4(cx + s.occX)}, ${q4(cy + s.occY)}, ${s.occR}));`);
+  if (s.grow && !isImg) F(`  f = sGrow(f, ${s.grow});`);
+  if (s.wobAmp > 0 && !isImg) F(`  f = sWobble(f, ${s.wobAmp}, ${s.wobScale}, ${s.seed | 0});`);
+  if (s.twist && !isImg) F(`  f = sTwist(f, ${cx}, ${cy}, ${s.twist});`);
+  if (s.occ && !isImg) F(`  f = sSub(f, sDisc(${q4(cx + s.occX)}, ${q4(cy + s.occY)}, ${s.occR}));`);
   if (s.bites > 0 && !isImg)
-    L.push(`  f = sBite(f, mouths(f, ${cx}, ${cy}, ${q4(size * 0.62)}, ${s.bites}, ${s.biteSize}, q));`);
+    F(`  f = sBite(f, mouths(f, ${cx}, ${cy}, ${q4(size * 0.62)}, ${s.bites}, ${s.biteSize}, q));`);
 
   const scr = (sdf, color, angle, seed) => `screen({ x: 0, y: 0, w: ${W}, h: ${H}, sdf: ${sdf}, `
     + `cell: ${s.pitch}, falloff: ${s.falloff}, spread: ${s.dspread}, grain: ${s.grain}, `
@@ -588,7 +677,7 @@ function emitPlate(state) {
     body.push(im({}));
     if (s.tmode === "printed") body.push(scr(`textField(${JSON.stringify(s.text)}, `
       + `${s.tx}, ${s.ty}, ${s.tcap}, ${tOpts})`, s.ink, s.angle, (s.pseed | 0) + 1));
-  } else if (s.mode === "plein") {
+  } else if (!field) {
     const rr = [];
     for (let i = 0; i < s.ringN; i++) rr.push(q4((size * 0.5 * (i + 1)) / s.ringN));
     const solids = {
@@ -608,7 +697,13 @@ function emitPlate(state) {
       shell: `G(${K(s.ink)}, 0.9, spiralWalls(${cx}, ${cy}, { a: ${stSpiralA(s)}, b: ${s.tight}, turns: ${s.turns} }))\n    + G(${K(s.ink)}, ${q4(s.sband * 0.35)}, spiralPath(${cx}, ${cy}, { a: ${stSpiralA(s)}, b: ${s.tight}, turns: ${s.turns}, step: 7 }))`,
       disc: JSON.stringify(`<circle cx="${cx}" cy="${cy}" r="${q4(size * 0.32)}" fill="${INK[s.ink]}"/>`),
     };
-    body.push(solids[sym] || `/* ${sym}: cut it solid in the atelier, or screen it here */`);
+    const cut = (solids[sym] || `/* ${sym}: cut it solid in the atelier, or screen it here */`)
+      + (s.tmode === "printed"
+         ? `\n    + textSolid(${JSON.stringify(s.text)}, ${s.tx}, ${s.ty}, ${s.tcap}, `
+           + `Object.assign({ color: ${K(s.ink)} }, ${tOpts}))` : "");
+    if (s.plate2 === "registre") body.push(`place(${s.p2dx}, ${s.p2dy}, under(${cut}, ${K(s.p2ink)}))`);
+    if (s.plate2 === "grossi") body.push(`under(${cut}, ${K(s.p2ink)}, ${s.p2grow})`);
+    body.push(cut);
   } else {
     const p2seed = (s.pseed | 0) + 4;
     if (s.plate2 === "registre") body.push(scr(`sShift(f, ${s.p2dx}, ${s.p2dy})`, s.p2ink, 75, p2seed));
@@ -638,7 +733,7 @@ function emitPlate(state) {
     "sShift", "sTwist", "sGrow", "sSmooth", "sMorph", "sWobble", "sBite"]
     .filter((k) => new RegExp("\\b" + k + "\\(").test(code));
   const FROM_SHEET = ["rng", "place", "G", "swipe", "axes", "brackets", "polar", "ticks",
-    "band", "reg", "frame", "mouths", "discs"].filter((k) => new RegExp("\\b" + k + "\\(").test(code));
+    "band", "reg", "frame", "mouths", "discs", "under"].filter((k) => new RegExp("\\b" + k + "\\(").test(code));
   const FROM_LETTERS = ["textField", "textSolid"].filter((k) => new RegExp("\\b" + k + "\\(").test(code));
   const FROM_RASTER = ["readPNG", "screenImage", "bbox"]
     .filter((k) => new RegExp("\\b" + k + "\\(").test(code));

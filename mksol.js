@@ -18,7 +18,8 @@ const { INK, n, pick, axes, brackets, polar, swipe, G, place, run,
 const { cell, sunGeom, sunSolid, sunSDF, screen, sDisc, sSub, sShift } = Y;
 
 const P = [];
-const plate = (name, w, h, draw) => P.push({ name, w, h, draw });
+/* `seed` pins the roll a plate was kept from; see run() in _sheet.js */
+const plate = (name, w, h, draw, seed) => P.push({ name, w, h, draw, seed });
 
 
 /* 77 — the emblem. The sun, and the ring the words used to sit in. */
@@ -178,7 +179,7 @@ plate("88-rouleau", 820, 1140, (r) => {
     sw.push(swipe(10 + r() * 120, 140 + r() * 820, 420 + r() * 380, 38 + r() * 46, (r() - 0.5) * 9, r, acc));
   }
   return { bg, ink: fg, body: sw.join("") + sym + G(fg, n(1 + r() * 1.3), body.join("")) };
-});
+}, 88);   /* the roll this plate was kept from: `node mksol.js 88` */
 
 /* 89 — out of register. One sun, two plates, and the press did not line
    them up: blu at 75°, toner at 15°. */

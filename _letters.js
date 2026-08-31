@@ -11,7 +11,7 @@
  * Segments: ["l", x1,y1,x2,y2] | ["a", cx,cy,rx,ry, a0,a1] (deg, y-down,
  * increasing = clockwise on screen).
  */
-const { n, rng, segDist } = require("./_mark.js");
+const { INK, n, rng, segDist } = require("./_mark.js");
 const l = (a, b, c, d) => ["l", a, b, c, d];
 const a = (cx, cy, rx, ry, a0, a1) => ["a", cx, cy, rx, ry, a0, a1];
 
@@ -117,25 +117,34 @@ const fitCap = (s, maxW, track) => maxW / (textW(s, 1, track) || 1);
 const centerX = (s, cap, W, track) => (W - textW(s, cap, track)) / 2;
 const rightX = (s, cap, x, track) => x - textW(s, cap, track);
 
-/* one segment → a wobbling polyline, because a ruled line is a machine's */
-function seg2path(sg, x, y, cap, hand, rnd) {
-  const P = [];
-  const push = (ux, uy) => P.push([x + ux * cap + (rnd() - 0.5) * hand * cap,
-                                   y + uy * cap + (rnd() - 0.5) * hand * cap]);
+/* One segment, walked out into the points that stand for it — a line at four
+ * samples per unit, an arc at eleven degrees a step. Both ways of reading a
+ * glyph go through here, so a letter that is drawn and a letter that is
+ * printed are sampled at the same places and can only differ by what the
+ * hand does to them afterwards.
+ */
+function walkSeg(sg, at) {
   if (sg[0] === "l") {
     const N = Math.max(2, Math.round(Math.hypot(sg[3] - sg[1], sg[4] - sg[2]) * 4) + 1);
     for (let i = 0; i <= N; i++) {
       const t = i / N;
-      push(sg[1] + (sg[3] - sg[1]) * t, sg[2] + (sg[4] - sg[2]) * t);
+      at(sg[1] + (sg[3] - sg[1]) * t, sg[2] + (sg[4] - sg[2]) * t);
     }
   } else {
     const [, cx, cy, rx, ry, a0, a1] = sg;
     const N = Math.max(5, Math.ceil(Math.abs(a1 - a0) / 11));
     for (let i = 0; i <= N; i++) {
       const ang = ((a0 + (a1 - a0) * (i / N)) * Math.PI) / 180;
-      push(cx + Math.cos(ang) * rx, cy + Math.sin(ang) * ry);
+      at(cx + Math.cos(ang) * rx, cy + Math.sin(ang) * ry);
     }
   }
+}
+
+/* one segment → a wobbling polyline, because a ruled line is a machine's */
+function seg2path(sg, x, y, cap, hand, rnd) {
+  const P = [];
+  walkSeg(sg, (ux, uy) => P.push([x + ux * cap + (rnd() - 0.5) * hand * cap,
+                                  y + uy * cap + (rnd() - 0.5) * hand * cap]));
   return P.map((p, i) => `${i ? "L" : "M"} ${n(p[0])} ${n(p[1])}`).join(" ");
 }
 
@@ -145,9 +154,8 @@ function seg2path(sg, x, y, cap, hand, rnd) {
  *   hand    wobble, in fractions of cap
  */
 function strokeText(s, x, y, cap, opts) {
-  const o = Object.assign({ color: "#141410", weight: 0.11, hand: 0.02, track: TRACK, seed: 7 }, opts);
-  let sd = o.seed;
-  const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+  const o = Object.assign({ color: INK.black, weight: 0.11, hand: 0.02, track: TRACK, seed: 7 }, opts);
+  const rnd = rng(o.seed);
   const out = [];
   let cx = x;
   for (const ch of [...s]) {
@@ -163,10 +171,9 @@ function strokeText(s, x, y, cap, opts) {
  *  on the top arc the letters hang inward from it, on a flipped (bottom)
  *  arc they hang outward, tops toward the centre, the way a seal is cut. */
 function arcStrokeText(s, cx, cy, radius, midDeg, cap, opts) {
-  const o = Object.assign({ color: "#141410", weight: 0.11, hand: 0.02, track: TRACK,
+  const o = Object.assign({ color: INK.black, weight: 0.11, hand: 0.02, track: TRACK,
                             seed: 7, flip: false }, opts);
-  let sd = o.seed;
-  const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+  const rnd = rng(o.seed);
   const S = [...s];
   const deg = (u) => ((u * cap) / (radius - cap / 2)) * (180 / Math.PI);
   const total = S.reduce((t, ch) => t + advance(ch, o.track), 0) - o.track;
@@ -205,8 +212,7 @@ function arcStrokeText(s, cx, cy, radius, midDeg, cap, opts) {
 function textPaths(str, x, y, cap, opts) {
   const o = Object.assign({ weight: 0.11, hand: 0.02, track: TRACK, seed: 7,
                             slant: 0, width: 1 }, opts);
-  let sd = (o.seed | 0) || 7;
-  const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+  const rnd = rng((o.seed | 0) || 7);
   const sh = Math.tan((o.slant * Math.PI) / 180);
   const out = [];
   let cx = x;
@@ -222,20 +228,7 @@ function textPaths(str, x, y, cap, opts) {
           const py = y + uy * cap + wob;
           P.push([px - (py - y - cap) * sh, py]);      /* shear about the baseline */
         };
-        if (sg[0] === "l") {
-          const N = Math.max(2, Math.round(Math.hypot(sg[3] - sg[1], sg[4] - sg[2]) * 4) + 1);
-          for (let i = 0; i <= N; i++) {
-            const t = i / N;
-            push(sg[1] + (sg[3] - sg[1]) * t, sg[2] + (sg[4] - sg[2]) * t);
-          }
-        } else {
-          const [, ax, ay, rx, ry, a0, a1] = sg;
-          const N = Math.max(5, Math.ceil(Math.abs(a1 - a0) / 11));
-          for (let i = 0; i <= N; i++) {
-            const ang = ((a0 + (a1 - a0) * (i / N)) * Math.PI) / 180;
-            push(ax + Math.cos(ang) * rx, ay + Math.sin(ang) * ry);
-          }
-        }
+        walkSeg(sg, push);
         runs.push(P);
       }
       out.push({ ch, runs, x: cx, w: g.w * cap * o.width });
@@ -286,7 +279,7 @@ function pathsField(tp, grow) {
 
 /* one call for each way of using it */
 const textSolid = (str, x, y, cap, o) =>
-  pathsSolid(textPaths(str, x, y, cap, o), (o && o.color) || "#141410");
+  pathsSolid(textPaths(str, x, y, cap, o), (o && o.color) || INK.black);
 const textField = (str, x, y, cap, o) =>
   pathsField(textPaths(str, x, y, cap, o), o && o.grow);
 /** where a line of type actually sits: x, y, width, height at this cap */
@@ -296,4 +289,5 @@ const textBox = (str, x, y, cap, o) => {
 };
 
 module.exports = { strokeText, arcStrokeText, textW, fitCap, centerX, rightX, glyph, G,
+  walkSeg,
   textPaths, pathsSolid, pathsField, textSolid, textField, textBox, advance, TRACK };

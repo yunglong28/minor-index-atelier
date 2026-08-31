@@ -20,7 +20,8 @@ const LV = { lo: 0.12, hi: 0.72, gamma: 0.95 };
 /* frame the body, not the canvas it was rendered on */
 const box = { img: IMG, src: bbox(IMG), x: -18, y: -6, w: 676, h: 652 };
 const P = [];
-const plate = (name, w, h, draw) => P.push({ name, w, h, draw });
+/* `seed` pins the roll a plate was kept from; see run() in _sheet.js */
+const plate = (name, w, h, draw, seed) => P.push({ name, w, h, draw, seed });
 
 /* 95 — plate 78's screen, on a body that is not ours. */
 plate("95-pokemon-surexpose", 640, 640, () => ({

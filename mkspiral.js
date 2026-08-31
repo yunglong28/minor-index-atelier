@@ -24,7 +24,8 @@ const { blob, cell, sunGeom, sunSolid, sunSDF, sunWhirl, screen, spiralPath, phy
         sDisc, sRing, sPts, sSub, sUnion, sShift, sTwist, sSpiral } = Y;
 
 const P = [];
-const plate = (name, w, h, draw) => P.push({ name, w, h, draw });
+/* `seed` pins the roll a plate was kept from; see run() in _sheet.js */
+const plate = (name, w, h, draw, seed) => P.push({ name, w, h, draw, seed });
 
 
 /* ---- the sun, wound ----------------------------------------------------- */

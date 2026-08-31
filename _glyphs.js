@@ -10,6 +10,7 @@
  * plates 08 and 09 were.
  */
 const { INK, n, rng, segDist } = require("./_mark.js");
+const { halftone, fieldCover } = require("./_press.js");
 
 /* ---- the grown parts (lifted out of mkalt.js so both can use them) ------ */
 function blob(cx, cy, r, wob, rand, lobes) {
@@ -102,6 +103,8 @@ function sunSDF(g) {
     x1: g.C + Math.cos(ry.a) * g.R * 0.5, y1: g.C + Math.sin(ry.a) * g.R * 0.5,
     x2: g.C + Math.cos(ry.a) * ry.r1, y2: g.C + Math.sin(ry.a) * ry.r1, w: ry.w * 2,
   }));
+  /* about thirty rays. Small enough that looking at every one of them beats
+     any index over them — measured, not assumed. */
   return (x, y) => {
     let d = Math.hypot(x - g.C, y - g.C) - g.R;
     for (const s of S) d = Math.min(d, segDist(x, y, s));
@@ -127,23 +130,12 @@ const sShift = (f, dx, dy) => (x, y) => f(x - dx, y - dy);
    plate 09 (knocked out). */
 function screen(o) {
   const opt = Object.assign({ x: 0, y: 0, w: 240, h: 240, cell: 4.4, angle: 15,
-    falloff: 9, grain: 0.2, spread: 0.5, color: INK.black, seed: 3, sdf: () => 1e9 }, o);
-  const r = rng(opt.seed);
-  const a = (opt.angle * Math.PI) / 180, ca = Math.cos(a), sa = Math.sin(a);
-  const cx = opt.x + opt.w / 2, cy = opt.y + opt.h / 2;
-  const N = Math.ceil((Math.max(opt.w, opt.h) * 1.5) / (2 * opt.cell)), out = [];
-  for (let i = -N; i <= N; i++) for (let j = -N; j <= N; j++) {
-    const lx = i * opt.cell, ly = j * opt.cell;
-    const x = cx + lx * ca - ly * sa, y = cy + lx * sa + ly * ca;
-    if (x < opt.x - 4 || x > opt.x + opt.w + 4 || y < opt.y - 4 || y > opt.y + opt.h + 4) continue;
-    let cov = Math.max(0, Math.min(1, 1 - opt.sdf(x, y) / opt.falloff));
-    cov += (r() - 0.5) * opt.grain * (cov > 0.02 ? 1 : 0.35);
-    if (cov <= 0.015) continue;
-    const rr = opt.cell * opt.spread * Math.sqrt(cov);
-    if (rr < 0.16) continue;
-    out.push(`<circle cx="${n(x + (r() - 0.5) * 1.1)}" cy="${n(y + (r() - 0.5) * 1.1)}" r="${n(rr)}"/>`);
-  }
-  return `<g fill="${opt.color}">${out.join("")}</g>`;
+    falloff: 9, grain: 0.2, spread: 0.5, color: INK.black, seed: 3, sdf: () => 1e9,
+    bound: null, onBand: null }, o);
+  return halftone({ x: opt.x, y: opt.y, w: opt.w, h: opt.h, cell: opt.cell,
+    angle: opt.angle, grain: opt.grain, spread: opt.spread, color: opt.color,
+    seed: opt.seed, onBand: opt.onBand,
+    cover: fieldCover(opt.sdf, opt.falloff, opt.bound) });
 }
 
 /* ---- the spiral: the same bodies, pulled in ----------------------------- */
@@ -240,28 +232,44 @@ function phylloPts(cx, cy, count, o) {
  * anything nearer. The answer is the same minimum the loop gave — this is an
  * index, not an approximation — which is why plates cut before it exist still
  * come out byte for byte. */
-function sPts(pts, grow) {
-  const g = grow || 0;
-  if (!pts.length) return () => 1e9;
+/* A pile of small parts, asked "which of you is nearest" hundreds of thousands
+ * of times. Not a loop over all of them: each part goes into a uniform grid by
+ * the circle that certainly contains it, and a query walks outward a ring at a
+ * time, stopping as soon as the next ring cannot hold anything nearer. The
+ * answer is the same minimum the loop gave — this is an index, not an
+ * approximation — which is why plates cut before it existed still come out byte
+ * for byte. `measure` says what a part is; the walk does not care.
+ */
+function nearest(items, measure) {
+  if (!items.length) return () => 1e9;
+  /* a handful is not worth binning */
+  if (items.length < 12) {
+    return (x, y) => {
+      let best = 1e9;
+      for (let i = 0; i < items.length; i++) {
+        const v = measure(x, y, items[i]);
+        if (v < best) best = v;
+      }
+      return best;
+    };
+  }
   let rMax = 0, x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (const p of pts) {
-    if (p.r > rMax) rMax = p.r;
+  for (const p of items) {
+    if (p.R > rMax) rMax = p.R;
     if (p.x < x0) x0 = p.x; if (p.x > x1) x1 = p.x;
     if (p.y < y0) y0 = p.y; if (p.y > y1) y1 = p.y;
   }
-  const cell = Math.max(2 * (rMax + g), 10);
+  const cell = Math.max(2 * rMax, 10);
   const cols = Math.max(1, Math.ceil((x1 - x0) / cell) + 1);
   const rows = Math.max(1, Math.ceil((y1 - y0) / cell) + 1);
   const bins = new Array(cols * rows);
-  for (const p of pts) {
+  for (const p of items) {
     const i = Math.min(cols - 1, Math.max(0, Math.floor((p.x - x0) / cell)));
     const j = Math.min(rows - 1, Math.max(0, Math.floor((p.y - y0) / cell)));
     (bins[j * cols + i] || (bins[j * cols + i] = [])).push(p);
   }
   return (x, y) => {
     const ci = Math.floor((x - x0) / cell), cj = Math.floor((y - y0) / cell);
-    /* a query far outside the field starts at the first ring that can hold a
-       cell at all, and never looks at rows the grid does not have */
     const first = Math.max(ci < 0 ? -ci : (ci > cols - 1 ? ci - (cols - 1) : 0),
                            cj < 0 ? -cj : (cj > rows - 1 ? cj - (rows - 1) : 0));
     const need = Math.max(Math.abs(ci), Math.abs(ci - (cols - 1)),
@@ -271,13 +279,12 @@ function sPts(pts, grow) {
       const b = bins[j * cols + i];
       if (!b) return;
       for (let k = 0; k < b.length; k++) {
-        const p = b[k], d = Math.hypot(x - p.x, y - p.y) - (p.r + g);
-        if (d < best) best = d;
+        const v = measure(x, y, b[k]);
+        if (v < best) best = v;
       }
     };
     for (let ring = first; ring <= need; ring++) {
-      /* nothing in this ring or beyond can be nearer than the best so far */
-      if ((ring - 1) * cell - rMax - g > best) break;
+      if ((ring - 1) * cell - rMax > best) break;
       const i0 = ci - ring, i1 = ci + ring, j0 = cj - ring, j1 = cj + ring;
       const iA = Math.max(i0, 0), iB = Math.min(i1, cols - 1);
       for (let j = Math.max(j0, 0), jB = Math.min(j1, rows - 1); j <= jB; j++) {
@@ -290,6 +297,12 @@ function sPts(pts, grow) {
     }
     return best;
   };
+}
+
+function sPts(pts, grow) {
+  const g = grow || 0;
+  return nearest(pts.map((p) => ({ x: p.x, y: p.y, R: p.r + g, r: p.r + g })),
+    (x, y, p) => Math.hypot(x - p.x, y - p.y) - p.r);
 }
 
 /* how far a body actually reaches from the centre of its box — the circle
@@ -443,5 +456,5 @@ function sunWhirl(g, color, k, o) {
 }
 
 module.exports = { blob, spikes, filament, cell, sunGeom, sunSolid, sunSDF, screen,
-  sDisc, sRing, sBox, sUnion, sSub, sShift, sTwist, sSpiral, spiralPath, spiralWalls, phylloPts, sPts, sScatter, sunBound, cellBound,
+  sDisc, sRing, sBox, sUnion, sSub, sShift, sTwist, sSpiral, spiralPath, spiralWalls, phylloPts, sPts, sScatter, nearest, sunBound, cellBound,
   sGrow, sSmooth, sMorph, noise2, sWobble, contour, sBite, cellGeom, cellSDF, sunWhirl };

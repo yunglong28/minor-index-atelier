@@ -14,7 +14,8 @@ const { INK, ARMS, n, rng, pick, axes, brackets, polar, trim, swipe, svg, G, L, 
 const { dotText, blockText, textWidth, fitCell, centerX, rightX, F } = T;
 
 const P = [];
-const plate = (name, draw) => P.push({ name, draw });
+/* `seed` pins the roll a plate was kept from; see run() in _sheet.js */
+const plate = (name, draw, seed) => P.push({ name, draw, seed });
 
 const STAMPS = ["PLATE 07 / 13", "COPY #3 OF ITSELF", "SCREEN 15°", "4096 PAGES",
   "NOT TO SCALE", "GEN. 4", "0.28 RAD", "MINOR-INDEX"];

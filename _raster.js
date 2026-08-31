@@ -11,7 +11,8 @@
    readPNG is unavailable — screenImage takes the pixels it is given */
 const fs = require("fs");
 const zlib = require("zlib");
-const { n, rng } = require("./_mark.js");
+const { INK, n, rng } = require("./_mark.js");
+const { halftone } = require("./_press.js");
 
 const CHANNELS = { 0: 1, 2: 3, 4: 2, 6: 4 };
 const paeth = (a, b, c) => {
@@ -91,7 +92,7 @@ function bbox(img, alphaMin) {
  */
 function screenImage(o) {
   const opt = Object.assign({ img: null, x: 0, y: 0, w: 240, h: 240, cell: 6, angle: 15,
-    spread: 0.6, grain: 0.22, seed: 3, color: "#141410", lo: 0.05, hi: 0.7, gamma: 1,
+    spread: 0.6, grain: 0.22, seed: 3, color: INK.black, lo: 0.05, hi: 0.7, gamma: 1,
     soft: 1, invert: false, min: 0.016, src: null }, o);
   const im = opt.img;
   const [sx, sy, sw, sh] = opt.src || [0, 0, im.w, im.h];
@@ -120,22 +121,9 @@ function screenImage(o) {
     return opt.invert ? (1 - v) * (op / (cnt || 1)) : v;
   };
 
-  const r = rng(opt.seed);
-  const a = (opt.angle * Math.PI) / 180, ca = Math.cos(a), sa = Math.sin(a);
-  const cx = opt.x + opt.w / 2, cy = opt.y + opt.h / 2;
-  const N = Math.ceil((Math.max(opt.w, opt.h) * 1.5) / (2 * opt.cell)), out = [];
-  for (let i = -N; i <= N; i++) for (let j = -N; j <= N; j++) {
-    const lx = i * opt.cell, ly = j * opt.cell;
-    const x = cx + lx * ca - ly * sa, y = cy + lx * sa + ly * ca;
-    if (x < opt.x - 4 || x > opt.x + opt.w + 4 || y < opt.y - 4 || y > opt.y + opt.h + 4) continue;
-    let cov = ink(x, y);
-    cov += (r() - 0.5) * opt.grain * (cov > 0.02 ? 1 : 0.35);
-    if (cov <= opt.min) continue;
-    const rr = opt.cell * opt.spread * Math.sqrt(Math.min(1, cov));
-    if (rr < 0.16) continue;
-    out.push(`<circle cx="${n(x + (r() - 0.5) * 1.1)}" cy="${n(y + (r() - 0.5) * 1.1)}" r="${n(rr)}"/>`);
-  }
-  return `<g fill="${opt.color}">${out.join("")}</g>`;
+  return halftone({ x: opt.x, y: opt.y, w: opt.w, h: opt.h, cell: opt.cell,
+    angle: opt.angle, grain: opt.grain, spread: opt.spread, color: opt.color,
+    seed: opt.seed, min: opt.min, cap: true, cover: ink });
 }
 
 module.exports = { readPNG, screenImage, bbox };

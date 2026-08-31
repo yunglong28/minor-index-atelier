@@ -1,6 +1,6 @@
 /* MINOR INDEX — instrument, further out and louder.
  * No oxide, no cream: black, cool white, Blu nCHANT 02, and the film's fluo
- * yellow #E8FF00 promoted from highlighter to ground.
+ * fluo yellow promoted from highlighter to ground. The table is in _mark.js.
  *
  *   node logo/mkwild.js           node logo/mkwild.js 8123   (reroll)
  */

@@ -1,28 +1,35 @@
 /* MINOR INDEX — the family, written out.
  *
- * Three weights of one drawing. The pen width was always a parameter of the
- * plates, so a weight is not a redraw: it is the same skeleton with a fatter
- * or thinner pen, outlined and packed into a TrueType file.
+ * One drawing, and the three dials it was always drawn with. The pen, the
+ * width and the slant were parameters of the plates long before they were
+ * axes of a font, so a weight is not a redraw: it is the same skeleton at a
+ * different setting.
  *
- *   node logo/mkfont.js            → docs/fonts/MinorIndex-*.ttf
+ * Four files come out. `MinorIndex.ttf` is the whole continuum — wght, wdth
+ * and slnt, with the axis bent so that asking for 300, 400 and 700 lands
+ * exactly on the three weights that were drawn. The three static files are
+ * the same three settings cut out of it, for anywhere a variable font is not
+ * welcome and for anyone who would rather download 35kb than 230kb.
  *
- * The specimen page (web/specimen.html) is maintained by hand and loads these
- * files by name, so it can never describe a font it is not showing.
+ *   node logo/mkfont.js            → docs/fonts/
  */
 const fs = require("fs");
 const path = require("path");
 const F = require("./_font.js");
 
-const WEIGHTS = [
-  { style: "Light", weight: 0.075, hand: 0.014 },
-  { style: "Regular", weight: 0.12, hand: 0.015 },
-  { style: "Bold", weight: 0.19, hand: 0.016 },
-];
+/* the family is declared in _font.js, so mkfont.js and the tests cannot
+   disagree about what the three weights are */
+const WEIGHTS = F.FAMILY;
 
 const dir = path.join(__dirname, "docs", "fonts");
 fs.mkdirSync(dir, { recursive: true });
 
 const made = [];
+const V = F.buildVF({ family: "Minor Index" });
+fs.writeFileSync(path.join(dir, "MinorIndex.ttf"), V.font);
+console.log(`${"Variable".padEnd(8)} ${Math.round(V.font.length / 1024)}kb  ${V.glyphs} glyphs  `
+  + F.AXES.map((a) => `${a.tag} ${a.min}\u2013${a.max}`).join("  "));
+
 for (const w of WEIGHTS) {
   const r = F.buildTTF({ family: "Minor Index", style: w.style,
                          weight: w.weight, hand: w.hand, seed: 7 });
@@ -35,6 +42,4 @@ for (const w of WEIGHTS) {
     + `${Object.keys(r.map).length} codepoints`);
 }
 
-/* the specimen page is hand-maintained (web/specimen.html) and loads these
-   files by name, so it can never describe a font it is not showing */
-console.log("→ docs/specimen.html loads them (open it, or `node logo/mkbundle.js` first)");
+console.log("→ docs/specimen.html loads them (run `node mkbundle.js` to build the site)");

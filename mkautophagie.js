@@ -27,7 +27,8 @@ const { cell, sunGeom, sunSolid, sunSDF, screen, cellGeom, cellSDF, phylloPts, s
         sWobble, contour, sBite } = Y;
 
 const P = [];
-const plate = (name, w, h, draw) => P.push({ name, w, h, draw });
+/* `seed` pins the roll a plate was kept from; see run() in _sheet.js */
+const plate = (name, w, h, draw, seed) => P.push({ name, w, h, draw, seed });
 
 const circ = (cx, cy, r, color, sw) =>
   G(color, sw || 1.2, `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(r)}" fill="none"/>`);

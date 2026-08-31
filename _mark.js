@@ -54,21 +54,15 @@ function markDots(o) {
     if (pd < 4.5 * k) d = Math.max(d, 4.5 * k - pd);
     return d;
   };
-  const r = rng(opt.seed);
-  const a = (opt.angle * Math.PI) / 180, ca = Math.cos(a), sa = Math.sin(a);
-  const N = Math.ceil((opt.size * 1.5) / opt.cell), out = [];
-  for (let i = -N; i <= N; i++) for (let j = -N; j <= N; j++) {
-    const lx = i * opt.cell, ly = j * opt.cell;
-    const x = C + lx * ca - ly * sa, y = C + lx * sa + ly * ca;
-    if (x < -4 || x > opt.size + 4 || y < -4 || y > opt.size + 4) continue;
-    let cov = Math.max(0, Math.min(1, 1 - sdf(x, y) / opt.falloff));
-    cov += (r() - 0.5) * opt.grain * (cov > 0.02 ? 1 : 0.35);
-    if (cov <= 0.015) continue;
-    const rr = opt.cell * opt.spread * Math.sqrt(cov);
-    if (rr < 0.16) continue;
-    out.push(`<circle cx="${n(x + (r() - 0.5) * 1.1)}" cy="${n(y + (r() - 0.5) * 1.1)}" r="${n(rr)}"/>`);
-  }
-  return `<g fill="${opt.color}">${out.join("")}</g>`;
+  /* the same press everything else goes through, over a square sheet the
+     size of the mark. The lattice reaches further than it needs to, which is
+     how it was printed and so how it stays. */
+  return require("./_press.js").halftone({
+    x: 0, y: 0, w: opt.size, h: opt.size, cell: opt.cell, angle: opt.angle,
+    grain: opt.grain, spread: opt.spread, color: opt.color, seed: opt.seed,
+    N: Math.ceil((opt.size * 1.5) / opt.cell),
+    cover: (x, y) => Math.max(0, Math.min(1, 1 - sdf(x, y) / opt.falloff)),
+  });
 }
 
 /* ---- instrument parts -------------------------------------------------- */
@@ -144,13 +138,41 @@ function swipe(x, y, len, h, ang, r, color) {
   return `<path d="${d}" fill="${color}" transform="rotate(${n(ang)} ${n(x)} ${n(y)})"/>`;
 }
 
-const svg = (w, h, body, bg) =>
+/* a body cut solid, put down again underneath itself in another ink.
+ *
+ * This is the second plate for a pass that is not screened. A printer spreads
+ * a plate by making it fatter, and the way to fatten an outline is a pen of
+ * its own colour laid round the edge — so a filled body gets a stroke, and a
+ * body that was already a line just gets a wider pen. Same geometry, one ink
+ * lower and a little larger: the rim between the two is the whole of it.
+ */
+const under = (body, color, grow) => {
+  const g = grow || 0;
+  return String(body).replace(/<g ([^>]*?)(\/?)>/g, (m, attrs, close) => {
+    if (!/fill="|stroke="/.test(attrs)) return m;          /* a transform, nothing to ink */
+    if (/fill="none"/.test(attrs)) {
+      const w = /stroke-width="([\d.]+)"/.exec(attrs);
+      return `<g ${attrs.replace(/stroke="[^"]*"/, `stroke="${color}"`)
+        .replace(/stroke-width="[\d.]+"/, `stroke-width="${n((w ? +w[1] : 1) + g * 2)}"`)}${close}>`;
+    }
+    return `<g ${attrs.replace(/fill="[^"]*"/, `fill="${color}"`)}`
+      + (g ? ` stroke="${color}" stroke-width="${n(g * 2)}" stroke-linejoin="round" stroke-linecap="round"` : "")
+      + `${close}>`;
+  });
+};
+
+/* the sheet, in two halves — so a plate can be handed over as it prints and
+   still be exactly the file it would have been if it had arrived at once */
+const svgOpen = (w, h, bg) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">\n`
   + (bg ? `  <rect width="${w}" height="${h}" fill="${bg}"/>\n` : "")
-  + "  " + body + "\n</svg>\n";
+  + "  ";
+const SVG_CLOSE = "\n</svg>\n";
+const svg = (w, h, body, bg) => svgOpen(w, h, bg) + body + SVG_CLOSE;
 const G = (stroke, sw, body) => `<g stroke="${stroke}" stroke-width="${sw}" fill="none">${body}</g>`;
 
 module.exports = {
   INK, GROT, MONO, ARMS, n, rng, pick, segDist,
-  markDots, L, axes, brackets, dimension, callout, trim, polar, swipe, svg, G,
+  markDots, L, axes, brackets, dimension, callout, trim, polar, swipe, under,
+  svg, svgOpen, SVG_CLOSE, G,
 };

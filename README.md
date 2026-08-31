@@ -6,22 +6,22 @@ It is not a logo with variations. It is a small machine that prints plates.
 **[The atelier](https://yunglong28.github.io/minor-index-atelier/)** — make a plate ·
 **[The typeface](https://yunglong28.github.io/minor-index-atelier/specimen.html)** — see it, try it, install it
 
+    npm test                               everything below, checked
     node mkautophagie.js                   print a batch
-    node mkautophagie.js 5150              reroll its seeded plates
+    node mkautophagie.js 5150              reroll it
     node mkautophagie.js --only 122,129    just these two
-    open plates/index.html                 the contact sheet, all 131
-    node mkfont.js                         three weights of the typeface
-    node mkbundle.js --inline              rebuild the atelier and the site
-
-Run a batch with `--only` unless you mean to rewrite all of it: the roll plates
-are seeded, and a bare run resets one that was rolled on purpose.
+    open plates/index.html                 the contact sheet, all 124
+    node mkfont.js                         the family: one variable file, three cut weights
+    node mkbundle.js                       rebuild docs/ — the whole site
+    npm run build                          both of the last two
 
 ## What it is
 
 Nothing here is drawn in an editor and nothing here contains a font. Every shape
-is code: 131 numbered plates, each written by a generator script, each
+is code: 124 numbered plates, each written by a generator script, each
 reproducible byte for byte from its seed. If a plate is wrong you do not retouch
-it — you change the number that made it and print it again.
+it — you change the number that made it and print it again. (The numbers run to
+131; 13–19 were never printed.)
 
 **A body is a distance field, not a shape.** Each form — the sun, the cell, the
 seed head at 137.5°, the spiral — is a function that answers *how far outside am
@@ -48,6 +48,9 @@ left.
 * **`cell` is left exactly as it is.** Every plate cut from it since 23 has to
   keep reproducing byte for byte, so the field version (`cellSDF`, plate 122) is
   a second growth of the same organism rather than a refactor of the first.
+* **Plates 01–40 keep their own palette.** Cream, oxide and toner were retired
+  with the mark, but the plates printed in them are printed in them. Those three
+  scripts are frozen, hexes and all.
 
 ## What a plate is made of
 
@@ -57,24 +60,28 @@ do four things, in this order.
 | | |
 |---|---|
 | **the body** | one of twelve: sun, corona, cell, network, seed head, lace, spiral, shell, rings, two bodies grown together, a field of small suns, or a plain disc. Geometry first, so the solid cut and the screened one are the same body. A thirteenth is not ours at all — an image, which skips the appetite because there is no field to bite, and goes straight to the press. |
-| **appetite** | what is done to it as a distance field: `sTwist` turn · `sGrow` spread and choke · `sWobble` tremble · `sMorph` one body arriving at another · `sSub` eclipse · `sBite` mouths taken at the contour |
-| **the press** | `screen` — coverage becomes dot area on a rotated screen. Pitch, angle, dot, fringe, grain. A second plate is the same field shifted (out of register) or let out (choke and spread). |
+| **appetite** | what is done to it as a distance field: `sTwist` turn · `sGrow` spread and choke · `sWobble` tremble · `sMorph` one body arriving at another · `sSub` eclipse · `sBite` mouths taken at the contour. A flat cut has no field, so it takes only the twist — and the panel shows only that. |
+| **the press** | `screen` — coverage becomes dot area on a rotated screen. Pitch, angle, dot, fringe, grain. A second plate is the same field shifted (out of register) or let out (choke and spread), on either pass: a flat cut spreads by taking a pen of the second ink round its own edge, which is what `under` does. |
 | **furniture** | what a press leaves that is not the image: trim marks, brackets, ticked axes, polar, a ring of ticks, a band at the foot, a marker swipe, registration crosses. |
 
 ## The repository
 
 ```
 _mark.js        the ink table, the retired mark, the instrument, svg/G
+_press.js       the copier: one rotated lattice, three things to put through it
 _glyphs.js      the bodies, and everything that can be done to one
 _letters.js     the drawn alphabet: skeletons, and the two ways to read them
-_font.js        the same letters as a TrueType binary, tables written by hand
-_sheet.js       the sheet, the writer, the CLI, the gallery, shared furniture
-_studio.js      the vocabulary declared once: PARAMS, buildPlate, emitPlate
+_furniture.js   ticks, crosses, bands, mouths, the sheet — no disk, so both share it
+_font.js        the alphabet as TrueType, static and variable, tables written by hand
 _raster.js      a PNG decoded here rather than by a library, screened like the rest
+_studio.js      the vocabulary declared once: PARAMS, buildPlate, emitPlate
+_sheet.js       the CLI, the writer, the gallery — the parts that touch a disk
 _type.js        the 5×7 dot alphabet — retired, kept because 53–76 used it
 mk*.js          one generator per batch, plus mkbundle and mkfont
-plates/         the 131 printed plates and their contact sheet
-docs/           the published site: the atelier, the specimen, the fonts
+src/            the two pages and the press worker, hand-written
+test/           what the paragraphs above are allowed to claim
+plates/         the 124 printed plates and their contact sheet
+docs/           the published site. Generated. Every file in it.
 ```
 
 | batch | plates |
@@ -88,6 +95,11 @@ each write their own files; from 65 on a batch is a table of plates —
 `{ name, w, h, draw(r, seed) }`, `draw` returning `{ bg, ink, body }` — and
 `_sheet.js` does the rest. New work takes the second form.
 
+**A roll plate pins its seed.** A plate kept out of a pile of rolls carries the
+pile it came from (`plate("88-rouleau", 820, 1140, draw, 88)`), so a bare run
+prints it again rather than printing a different one. Passing a seed on the
+command line still rerolls everything — that is what asking for a seed means.
+
 ## The atelier
 
 A press console: the sheet on the left, the four moves on the right, the plate
@@ -97,50 +109,81 @@ nine rolls to choose from.
 
 The panel opens on the choice that decides everything below it: **grow a body**,
 or **use an image**. Drop one on the sheet — or paste it, or choose a file — and
-it is screened by the same press: the pitch,
-the angle, the dot, the grain and the second plate are the controls that were
-already there, and levels are added under the body — floor, ceiling, curve,
-softness. Nothing is redrawn and nothing is traced. The image is only ever asked
-how much ink it would hold, which is the whole of `_raster.js` and the whole of
-plates 95–99. It is kept beside the plate rather than inside it, because a
-photograph is not a setting.
+it is screened by the same press: the pitch, the angle, the dot, the grain and
+the second plate are the controls that were already there, and levels are added
+under the body — floor, ceiling, curve, softness. Nothing is redrawn and nothing
+is traced. The image is only ever asked how much ink it would hold, which is the
+whole of `_raster.js` and the whole of plates 95–99. It is kept beside the plate
+rather than inside it, because a photograph is not a setting.
+
+**The plate arrives the way a plate arrives.** The press runs in a worker, and
+hands the sheet over in strips as the copier reaches them — so a coarse screen
+on a large sheet never stops the panel answering, and a second of work reads as
+printing rather than as a hang. The strips are only a matter of when: `buildPlate`
+returns the same file whether or not anybody is watching it, and the tests say so.
+If a worker cannot be started at all, the press runs on the page instead and the
+plate simply appears whole.
 
 What comes out of **Code** is a `plate(...)` block that can be pasted into the
 next `mk*.js`, and it rebuilds the plate that was on screen **byte for byte**.
-That is tested, not asserted: a round-trip check builds every body in both passes
-plus a set of rolls, both ways, and compares the files.
+That is tested, not asserted: seventy-one plates — every body in both passes,
+every appetite, both ways of setting a word, both second plates, and two dozen
+rolls — are built both ways and compared.
 
 ## The typeface
 
 **Minor Index** — 64 glyphs: caps, figures, the accents French needs, `&`, `?`,
-`Œ`. Lowercase types the caps. Three weights, which are not three drawings: the
-pen width was always a parameter of the plates, so Light, Regular and Bold are
-the same skeleton with a different pen.
+`Œ`. The pen, the width and the slant were parameters of the plates long before
+they were axes of a font, so the file that comes out is **variable**: `wght`
+100–900, `wdth` 75–125, `slnt` −15–0, and seven named instances. The three cut
+weights are the same three settings, for anywhere a variable font is not welcome.
+
+The pen is not linear in `wght` — the three weights that were drawn sit at 0.075,
+0.120 and 0.190 of the cap height, and 300 → 400 → 700 is not that shape. `gvar`
+only interpolates straight lines, so the bend goes in `avar`, which is what avar
+is for. Asked for 300 and for 700, the file gives the two weights that were
+drawn, to under one unit in a thousand. That is measured, in `test/font.js`, by
+interpolating the font with a reader written for the purpose — because a test
+that only reads a table header is a test that a font is shaped like a font.
 
 A font has no pen, only filled outlines, and the honest way to get an outline
 wrong is to offset a stroke — on a tight curve the inner offset folds back and
 eats a hole in the letter. So nothing is offset: every segment becomes a capsule
 and every joint a disc, all wound the same way, and TrueType's non-zero fill
-makes the pile of them into exactly the letter. `_font.js` writes the tables by
-hand, and the same code runs in node and in the browser, byte for byte.
+makes the pile of them into exactly the letter. A variable font needs one more
+thing: every instance of a letter must have the same points in the same order, so
+for the variable file no joint is ever dropped and every instance is wound the
+way the default was.
 
 ## Working on it
 
+* **`npm test` is the documentation that cannot go stale.** Five files: the font
+  tables read back the way a rasteriser reads them; every batch printing its
+  committed plates; a streamed plate against a whole one; the emitted code against
+  the plate it claims to rebuild; and `docs/` against what `mkbundle.js` writes.
+  No dependencies — for the same reason there is no font library and no PNG
+  library in here.
+* **`docs/` is generated.** Edit `src/index.html`, `src/specimen.html` and
+  `src/press.worker.js`, then `node mkbundle.js`. The ink table is written into
+  the pages from `_mark.js` at build time, so a page cannot invent a palette.
+  `mkbundle.js` also writes `docs/atelier.html` — one self-contained file, for
+  the Claude artifact and for opening straight off the disk, which is why it
+  carries the press worker inside it as text.
+* **Keep `docs/.nojekyll`.** GitHub Pages runs Jekyll, Jekyll drops any path
+  beginning with an underscore, and `_bundle.js` silently 404s — the pages still
+  load, only the tester and the figures stop working. `mkbundle.js` writes it.
 * **Preview with a real browser engine.** ImageMagick silently drops every stroke
   and every mask, so it lies about these files. Headless Chrome hangs on this
   machine; WebKit through QuickLook does not:
   `qlmanage -t -s 1400 -o /tmp/out plates/1*.svg`. It squares whatever it is
   given, so nest non-square plates in one square `<svg>` when framing matters.
-* **The site serves `docs/` directly.** `docs/index.html` is the atelier itself,
-  with `docs/_bundle.js` beside it — no build step to forget. `mkbundle.js
-  --inline` additionally writes `docs/atelier.html`, one self-contained file for
-  the Claude artifact, which wraps the page in a document of its own and so gets
-  the copy without a doctype.
-* **Keep `docs/.nojekyll`.** GitHub Pages runs Jekyll, Jekyll drops any path
-  beginning with an underscore, and `_bundle.js` silently 404s — the pages still
-  load, only the tester and the figures stop working.
 * **A missing doctype is not cosmetic.** Without it browsers run quirks mode,
   where a `<table>` stops inheriting colour from its ancestors. That is how the
-  specimen's metrics table came out white on white.
+  specimen's metrics table came out white on white. There is a test for it now.
+* **Anything that makes a plate faster has to leave the plate alone.** The copier
+  skips asking a body about points that are certainly outside it, and it can hand
+  the dots over in strips — and neither changes a single dot, because the round
+  trip builds every plate twice, once with the shortcuts and once with the plain
+  code the atelier emits, and compares the files.
 
 Made with [Claude Code](https://claude.com/claude-code).

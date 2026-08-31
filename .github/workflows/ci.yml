@@ -1,0 +1,50 @@
+# Everything this repository claims about itself, checked on every push.
+#
+#   the format   the tables are the tables a rasteriser expects
+#   the plates   every batch still prints the 124 files that are committed
+#   the press    a plate handed over in strips is the plate
+#   the code     what the atelier emits rebuilds the plate byte for byte
+#   the site     docs/ is exactly what mkbundle.js writes
+#
+# No dependencies to install: there are none, on purpose.
+name: the plates still print
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["18", "20", "22"]
+    name: node ${{ matrix.node }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: node --version
+      - name: everything
+        run: npm test
+
+  # the two things that are generated and committed: prove they are current
+  build-is-current:
+    runs-on: ubuntu-latest
+    name: docs/ and the fonts are current
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - run: node mkbundle.js && node mkfont.js
+      - name: nothing changed
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::the build is stale — run 'npm run build' and commit the result"
+            git --no-pager diff --stat
+            exit 1
+          fi
