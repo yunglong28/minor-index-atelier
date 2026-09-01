@@ -2288,6 +2288,10 @@ const SHEETS = [
   { id: "emblem", label: "emblem 820×1080", w: 820, h: 1080 },
   { id: "affiche", label: "poster 820×1140", w: 820, h: 1140 },
   { id: "paysage", label: "landscape 900×640", w: 900, h: 640 },
+  /* the film's own frame. Kept out of the roll: it is four times a square 640,
+     and nine of them at once would be nine seconds of waiting for a shape the
+     roll could have shown on a small sheet. Ask for it and it prints. */
+  { id: "cadre", label: "frame 1920×1080", w: 1920, h: 1080, roll: false },
   { id: "bande", label: "strip 1020×300", w: 1020, h: 300 },
   { id: "sceau", label: "seal 560×560", w: 560, h: 560 },
   { id: "libre", label: "custom", w: 0, h: 0 },
@@ -2308,10 +2312,10 @@ const notFlat = (s) => s.mode !== "plein";
 const PARAMS = [
   { id: "sheet", label: "THE SHEET", note: "size, ground, and the marks that say it was printed", fields: [
     { id: "format", type: "select", label: "format", def: "carre",
-      help: "Sizes taken from plates that exist. Custom frees the two sliders below.",
+      help: "Sizes taken from plates that exist, plus the frame the film itself is cut at. Custom frees the two sliders below.",
       options: SHEETS.map((f) => ({ v: f.id, label: f.label })) },
-    { id: "w", type: "range", label: "width", min: 240, max: 1400, step: 10, def: 640, when: is("format", "libre") },
-    { id: "h", type: "range", label: "height", min: 200, max: 1400, step: 10, def: 640, when: is("format", "libre") },
+    { id: "w", type: "range", label: "width", min: 240, max: 1920, step: 10, def: 640, when: is("format", "libre") },
+    { id: "h", type: "range", label: "height", min: 200, max: 1920, step: 10, def: 640, when: is("format", "libre") },
     { id: "bg", type: "ink", label: "ground", def: "white",
       help: "The paper. Black turns the plate into a knock-out — ink becomes the light. None leaves it transparent.",
       options: INKS.concat(["none"]) },
@@ -2356,12 +2360,12 @@ const PARAMS = [
       { v: "disc", label: "disc — the plain kernel" },
       { v: "image", label: "image — a body that is not ours" } ],
       help: "Every body is a distance field, not a shape: it answers how far outside you are. That is why anything can be cut into anything." },
-    { id: "size", type: "range", label: "size", min: 100, max: 1400, step: 10, def: 520,
+    { id: "size", type: "range", label: "size", min: 100, max: 1920, step: 10, def: 520,
       help: "The body's box. Push it past the sheet to make it bleed off the edge — plates 78 and 101 do." },
     { id: "seed", type: "seed", label: "body seed", def: 7, when: notImage,
       help: "Which particular organism grows. Same seed, same body, every time." },
-    { id: "px", type: "range", label: "position x", min: -500, max: 1200, step: 5, def: 60 },
-    { id: "py", type: "range", label: "position y", min: -500, max: 1200, step: 5, def: 60 },
+    { id: "px", type: "range", label: "position x", min: -500, max: 1900, step: 5, def: 60 },
+    { id: "py", type: "range", label: "position y", min: -500, max: 1900, step: 5, def: 60 },
     { id: "rays", type: "range", label: "rays", min: 6, max: 52, step: 1, def: 30, when: (s) => SUNNY.indexOf(s.sym) >= 0,
       help: "How many arms leave the disc. They alternate long and short." },
     { id: "disc", type: "range", label: "disc", min: 0.08, max: 0.36, step: 0.005, def: 0.22, when: (s) => SUNNY.indexOf(s.sym) >= 0,
@@ -3032,7 +3036,7 @@ function compactDots(svgText, prec) {
 function rollState(seed) {
   const r = rng(seed || Math.floor(Math.random() * 99999) + 1);
   const pick2 = (a) => a[Math.floor(r() * a.length) % a.length];
-  const fmt = pick2(SHEETS.filter((f) => f.id !== "libre")).id;
+  const fmt = pick2(SHEETS.filter((f) => f.id !== "libre" && f.roll !== false)).id;
   const dims = SHEETS.find((f) => f.id === fmt);
   const sym = pick2(["sun", "sun", "cell", "seed", "spiral", "two", "corona",
                      "network", "lace", "rings", "field", "shell"]);
@@ -5135,6 +5139,10 @@ const SHEETS = [
   { id: "emblem", label: "emblem 820×1080", w: 820, h: 1080 },
   { id: "affiche", label: "poster 820×1140", w: 820, h: 1140 },
   { id: "paysage", label: "landscape 900×640", w: 900, h: 640 },
+  /* the film's own frame. Kept out of the roll: it is four times a square 640,
+     and nine of them at once would be nine seconds of waiting for a shape the
+     roll could have shown on a small sheet. Ask for it and it prints. */
+  { id: "cadre", label: "frame 1920×1080", w: 1920, h: 1080, roll: false },
   { id: "bande", label: "strip 1020×300", w: 1020, h: 300 },
   { id: "sceau", label: "seal 560×560", w: 560, h: 560 },
   { id: "libre", label: "custom", w: 0, h: 0 },
@@ -5155,10 +5163,10 @@ const notFlat = (s) => s.mode !== "plein";
 const PARAMS = [
   { id: "sheet", label: "THE SHEET", note: "size, ground, and the marks that say it was printed", fields: [
     { id: "format", type: "select", label: "format", def: "carre",
-      help: "Sizes taken from plates that exist. Custom frees the two sliders below.",
+      help: "Sizes taken from plates that exist, plus the frame the film itself is cut at. Custom frees the two sliders below.",
       options: SHEETS.map((f) => ({ v: f.id, label: f.label })) },
-    { id: "w", type: "range", label: "width", min: 240, max: 1400, step: 10, def: 640, when: is("format", "libre") },
-    { id: "h", type: "range", label: "height", min: 200, max: 1400, step: 10, def: 640, when: is("format", "libre") },
+    { id: "w", type: "range", label: "width", min: 240, max: 1920, step: 10, def: 640, when: is("format", "libre") },
+    { id: "h", type: "range", label: "height", min: 200, max: 1920, step: 10, def: 640, when: is("format", "libre") },
     { id: "bg", type: "ink", label: "ground", def: "white",
       help: "The paper. Black turns the plate into a knock-out — ink becomes the light. None leaves it transparent.",
       options: INKS.concat(["none"]) },
@@ -5203,12 +5211,12 @@ const PARAMS = [
       { v: "disc", label: "disc — the plain kernel" },
       { v: "image", label: "image — a body that is not ours" } ],
       help: "Every body is a distance field, not a shape: it answers how far outside you are. That is why anything can be cut into anything." },
-    { id: "size", type: "range", label: "size", min: 100, max: 1400, step: 10, def: 520,
+    { id: "size", type: "range", label: "size", min: 100, max: 1920, step: 10, def: 520,
       help: "The body's box. Push it past the sheet to make it bleed off the edge — plates 78 and 101 do." },
     { id: "seed", type: "seed", label: "body seed", def: 7, when: notImage,
       help: "Which particular organism grows. Same seed, same body, every time." },
-    { id: "px", type: "range", label: "position x", min: -500, max: 1200, step: 5, def: 60 },
-    { id: "py", type: "range", label: "position y", min: -500, max: 1200, step: 5, def: 60 },
+    { id: "px", type: "range", label: "position x", min: -500, max: 1900, step: 5, def: 60 },
+    { id: "py", type: "range", label: "position y", min: -500, max: 1900, step: 5, def: 60 },
     { id: "rays", type: "range", label: "rays", min: 6, max: 52, step: 1, def: 30, when: (s) => SUNNY.indexOf(s.sym) >= 0,
       help: "How many arms leave the disc. They alternate long and short." },
     { id: "disc", type: "range", label: "disc", min: 0.08, max: 0.36, step: 0.005, def: 0.22, when: (s) => SUNNY.indexOf(s.sym) >= 0,
@@ -5879,7 +5887,7 @@ function compactDots(svgText, prec) {
 function rollState(seed) {
   const r = rng(seed || Math.floor(Math.random() * 99999) + 1);
   const pick2 = (a) => a[Math.floor(r() * a.length) % a.length];
-  const fmt = pick2(SHEETS.filter((f) => f.id !== "libre")).id;
+  const fmt = pick2(SHEETS.filter((f) => f.id !== "libre" && f.roll !== false)).id;
   const dims = SHEETS.find((f) => f.id === fmt);
   const sym = pick2(["sun", "sun", "cell", "seed", "spiral", "two", "corona",
                      "network", "lace", "rings", "field", "shell"]);
