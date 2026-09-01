@@ -45,6 +45,19 @@ watch("bitten, twisted and trembling", { twist: 0.005, wobAmp: 8, bites: 6, grow
 watch("on a strip", { format: "bande" });
 watch("no ground, no trim", { bg: "none", trimMarks: false });
 
+/* a word with nothing grown under it is a field like any other, and arrives
+   in bands like one */
+const w = watch("a word alone on the sheet", { sym: "none", tmode: "printed" });
+T.ok("and it too arrives in bands (" + w.bands + ")", w.bands > 0, w.bands);
+
+/* but a sheet with nothing on it at all has no pass to watch, and must still
+   come out a plate: a ground, its trim marks, and whatever furniture is set */
+const bare = ST.buildPlate(Object.assign({}, ST.DEFAULTS, { sym: "none", fBrackets: true }),
+  { open: () => T.ok("a bare sheet opens no stream", false), band: () => {}, close: () => {} });
+T.ok("a bare sheet still prints, and holds no dot",
+  bare.svg.indexOf("<svg") === 0 && bare.dots === 0 && bare.svg.indexOf("<path") > 0,
+  bare.dots + " dots, " + bare.kb + "kb");
+
 /* a flat cut has no long pass to watch — it must still come out whole */
 const flat = ST.buildPlate(Object.assign({}, ST.DEFAULTS, { mode: "plein" }),
   { open: () => T.ok("a flat cut opens no stream", false), band: () => {}, close: () => {} });

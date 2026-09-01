@@ -56,6 +56,10 @@ const screened = (s) => s.sym === "image" || s.mode === "ecran";
 const notImage = (s) => s.sym !== "image";
 /* a flat cut is not screened and has no field: half the appetite is idle */
 const notFlat = (s) => s.mode !== "plein";
+/* a sheet with nothing grown on it. It is still a plate — ground, trim
+   marks, furniture, and a word if one is set — it simply has no body. */
+const noBody = (s) => s.sym === "none";
+const grown = (s) => s.sym !== "none" && s.sym !== "image";
 const PARAMS = [
   { id: "sheet", label: "THE SHEET", note: "size, ground, and the marks that say it was printed", fields: [
     { id: "format", type: "select", label: "format", def: "carre",
@@ -89,8 +93,11 @@ const PARAMS = [
       help: "The image read the other way round: the light holds the ink." },
   ] },
   { id: "corps", label: "THE BODY", note: "one form — the sun, the cell, or something grown out of them",
-    alt: (s) => s.sym === "image"
-      ? { label: "PLACING", note: "how large the image prints, and where it sits" } : null,
+    alt: (s) => (s.sym === "image"
+      ? { label: "PLACING", note: "how large the image prints, and where it sits" }
+      : s.sym === "none"
+      ? { label: "NO BODY", note: "nothing is grown — the plate is its ground, its word and its furniture" }
+      : null),
     fields: [
     { id: "sym", type: "select", label: "body", def: "sun", when: notImage, options: [
       { v: "sun", label: "sun — disc and rays" },
@@ -105,14 +112,18 @@ const PARAMS = [
       { v: "two", label: "two bodies — sun and cell grown together" },
       { v: "field", label: "field — a scatter of small suns" },
       { v: "disc", label: "disc — the plain kernel" },
+      { v: "none", label: "none — no body at all" },
       { v: "image", label: "image — a body that is not ours" } ],
-      help: "Every body is a distance field, not a shape: it answers how far outside you are. That is why anything can be cut into anything." },
+      help: "Every body is a distance field, not a shape: it answers how far outside you are. That is why anything can be cut into anything. None grows nothing: the sheet keeps its ground, its word and its furniture, which is what a title card is." },
     { id: "size", type: "range", label: "size", min: 100, max: 1920, step: 10, def: 520,
+      when: (s) => !noBody(s),
       help: "The body's box. Push it past the sheet to make it bleed off the edge — plates 78 and 101 do." },
-    { id: "seed", type: "seed", label: "body seed", def: 7, when: notImage,
+    { id: "seed", type: "seed", label: "body seed", def: 7, when: (s) => notImage(s) && !noBody(s),
       help: "Which particular organism grows. Same seed, same body, every time." },
-    { id: "px", type: "range", label: "position x", min: -500, max: 1900, step: 5, def: 60 },
-    { id: "py", type: "range", label: "position y", min: -500, max: 1900, step: 5, def: 60 },
+    { id: "px", type: "range", label: "position x", min: -500, max: 1900, step: 5, def: 60,
+      when: (s) => !noBody(s) },
+    { id: "py", type: "range", label: "position y", min: -500, max: 1900, step: 5, def: 60,
+      when: (s) => !noBody(s) },
     { id: "rays", type: "range", label: "rays", min: 6, max: 52, step: 1, def: 30, when: (s) => SUNNY.indexOf(s.sym) >= 0,
       help: "How many arms leave the disc. They alternate long and short." },
     { id: "disc", type: "range", label: "disc", min: 0.08, max: 0.36, step: 0.005, def: 0.22, when: (s) => SUNNY.indexOf(s.sym) >= 0,
@@ -143,7 +154,8 @@ const PARAMS = [
        geometry itself, and only the twist is in the geometry (sunWhirl), so
        on a flat pass this group shows what a flat cut can actually take —
        and disappears entirely for the bodies that can take nothing. */
-    when: (s) => s.sym !== "image" && (s.mode !== "plein" || FIELDY.indexOf(s.sym) >= 0),
+    when: (s) => s.sym !== "image" && (s.mode !== "plein" || FIELDY.indexOf(s.sym) >= 0)
+      && (!noBody(s) || s.tmode === "printed"),
     alt: (s) => s.mode === "plein"
       ? { label: "APPETITE", note: "a flat cut is the body itself — only the twist is in the geometry" } : null,
     fields: [
@@ -496,16 +508,19 @@ function buildPlate(state, hooks) {
      draws on the same hand the furniture does, so building one nobody looks
      at would move every mark that comes after it. */
   const flat = !img && s.mode === "plein";
-  /* printed lettering joins the plate before anything is done to it */
-  const base = s.tmode === "printed" && !img && !flat
-    ? sUnion(f, LT.textField(s.text, s.tx, s.ty, s.tcap, tOpt)) : f;
-  const field = img || flat ? null : stAppetite(base, s, cx, cy, rand);
+  /* printed lettering joins the plate before anything is done to it — and
+     where nothing was grown it is the whole of the field, so the word alone
+     goes through the copier, and can be twisted and bitten like a body. */
+  const printed = s.tmode === "printed" && !img && !flat;
+  const word = () => LT.textField(s.text, s.tx, s.ty, s.tcap, tOpt);
+  const base = f ? (printed ? sUnion(f, word()) : f) : (printed ? word() : null);
+  const field = img || flat || !base ? null : stAppetite(base, s, cx, cy, rand);
 
   /* the same moves, done to the circle that holds the body. Every one of them
      only ever adds, so what comes out certainly contains the field — which is
      the only thing the copier needs in order to stop asking it. */
   let bound = B.bound;
-  if (s.tmode === "printed" && !img && !flat) bound = bJoin(bound, stTextBound(s, tOpt));
+  if (printed) bound = bJoin(bound, stTextBound(s, tOpt));
   if (bound && !img && !flat) {
     if (s.morph > 0 && s.sym === "sun") {
       bound = bJoin(bound, { cx, cy, r: cellBound(cellGeom({ size: s.size, seed: s.seed, sat: s.sat })) });
@@ -557,14 +572,16 @@ function buildPlate(state, hooks) {
     const cut = (solid || "")
       + (s.tmode === "printed"
          ? LT.textSolid(s.text, s.tx, s.ty, s.tcap, Object.assign({ color: ink }, tOpt)) : "");
-    if (s.plate2 === "registre") {
-      layers.push(`<g transform="translate(${n(s.p2dx)} ${n(s.p2dy)})">`
-        + under(cut, INK[s.p2ink]) + "</g>");
-    } else if (s.plate2 === "grossi") {
-      layers.push(under(cut, INK[s.p2ink], s.p2grow));
+    if (cut) {
+      if (s.plate2 === "registre") {
+        layers.push(`<g transform="translate(${n(s.p2dx)} ${n(s.p2dy)})">`
+          + under(cut, INK[s.p2ink]) + "</g>");
+      } else if (s.plate2 === "grossi") {
+        layers.push(under(cut, INK[s.p2ink], s.p2grow));
+      }
+      layers.push(cut);
     }
-    layers.push(cut);
-  } else {
+  } else if (field) {
     if (s.plate2 === "registre") {
       layers.push(pr(sShift(field, s.p2dx, s.p2dy), INK[s.p2ink], { angle: 75, seed: (s.pseed | 0) + 4,
         bound: bound && { cx: bound.cx + s.p2dx, cy: bound.cy + s.p2dy, r: bound.r } }));
@@ -597,7 +614,9 @@ function emitPlate(state) {
   /* a flat pass never reads the field. Emitting `let f = ...` and an appetite
      that nothing looks at would say the plate was twisted when it was not. */
   const field = s.mode !== "plein";
-  const F = (line) => { if (field) L.push(line); };
+  /* and a plate with no body has no field either, unless a word makes one */
+  const hasF = field && (sym !== "none" || s.tmode === "printed");
+  const F = (line) => { if (hasF) L.push(line); };
   if (sym === "image") {
     L.push(`/* the image itself is not in this file — put ${s.imgName} beside the script */`);
     L.push(`const IMG = readPNG(path.join(__dirname, ${JSON.stringify(s.imgName)}));`);
@@ -656,7 +675,9 @@ function emitPlate(state) {
     + `slant: ${s.tslant}, width: ${s.twidth}, seed: ${s.tseed | 0} }`;
   const isImg = sym === "image";
   if (s.tmode === "printed" && !isImg)
-    F(`  f = sUnion(f, textField(${JSON.stringify(s.text)}, ${s.tx}, ${s.ty}, ${s.tcap}, ${tOpts}));`);
+    F(sym === "none"
+      ? `  let f = textField(${JSON.stringify(s.text)}, ${s.tx}, ${s.ty}, ${s.tcap}, ${tOpts});`
+      : `  f = sUnion(f, textField(${JSON.stringify(s.text)}, ${s.tx}, ${s.ty}, ${s.tcap}, ${tOpts}));`);
   if (s.morph > 0 && sym === "sun" && !isImg)
     F(`  f = sMorph(f, sShift(cellSDF(cellGeom({ size: ${size}, seed: ${s.seed}, `
       + `sat: ${s.sat} })), ${s.px}, ${s.py}), ${s.morph});`);
@@ -713,14 +734,18 @@ function emitPlate(state) {
       shell: `G(${K(s.ink)}, 0.9, spiralWalls(${cx}, ${cy}, { a: ${stSpiralA(s)}, b: ${s.tight}, turns: ${s.turns} }))\n    + G(${K(s.ink)}, ${q4(s.sband * 0.35)}, spiralPath(${cx}, ${cy}, { a: ${stSpiralA(s)}, b: ${s.tight}, turns: ${s.turns}, step: 7 }))`,
       disc: JSON.stringify(`<circle cx="${cx}" cy="${cy}" r="${q4(size * 0.32)}" fill="${INK[s.ink]}"/>`),
     };
-    const cut = (solids[sym] || `/* ${sym}: cut it solid in the atelier, or screen it here */`)
-      + (s.tmode === "printed"
-         ? `\n    + textSolid(${JSON.stringify(s.text)}, ${s.tx}, ${s.ty}, ${s.tcap}, `
-           + `Object.assign({ color: ${K(s.ink)} }, ${tOpts}))` : "");
-    if (s.plate2 === "registre") body.push(`place(${s.p2dx}, ${s.p2dy}, under(${cut}, ${K(s.p2ink)}))`);
-    if (s.plate2 === "grossi") body.push(`under(${cut}, ${K(s.p2ink)}, ${s.p2grow})`);
-    body.push(cut);
-  } else {
+    const form = sym === "none" ? ""
+      : (solids[sym] || `/* ${sym}: cut it solid in the atelier, or screen it here */`);
+    const say = s.tmode === "printed"
+      ? `textSolid(${JSON.stringify(s.text)}, ${s.tx}, ${s.ty}, ${s.tcap}, `
+        + `Object.assign({ color: ${K(s.ink)} }, ${tOpts}))` : "";
+    const cut = form && say ? form + `\n    + ` + say : form + say;
+    if (cut) {
+      if (s.plate2 === "registre") body.push(`place(${s.p2dx}, ${s.p2dy}, under(${cut}, ${K(s.p2ink)}))`);
+      if (s.plate2 === "grossi") body.push(`under(${cut}, ${K(s.p2ink)}, ${s.p2grow})`);
+      body.push(cut);
+    }
+  } else if (hasF) {
     const p2seed = (s.pseed | 0) + 4;
     if (s.plate2 === "registre") body.push(scr(`sShift(f, ${s.p2dx}, ${s.p2dy})`, s.p2ink, 75, p2seed));
     if (s.plate2 === "grossi") body.push(scr(`sGrow(f, ${s.p2grow})`, s.p2ink, 75, p2seed));
@@ -740,7 +765,7 @@ function emitPlate(state) {
   if (s.fReg) body.push(`reg(${k.rgA[0]}, ${k.rgA[1]}, 10, ${K(s.fInk)}) + reg(${k.rgB[0]}, ${k.rgB[1]}, 10, ${K(s.fInk)})`);
   L.push(`  return { bg: ${s.bg === "none" ? "null" : K(s.bg)}, ink: ${K(s.fInk)}, `
     + `${s.trimMarks ? "" : "trim: false, "}body:`);
-  L.push("    " + body.join("\n    + ") + " };");
+  L.push("    " + (body.length ? body.join("\n    + ") : '""') + " };");
   L.push("});");
   /* say what the paste needs, so it drops into a batch script without hunting */
   const code = L.join("\n");

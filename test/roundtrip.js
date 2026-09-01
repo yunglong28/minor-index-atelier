@@ -92,6 +92,27 @@ trip("sheet · no trim marks", { trimMarks: false });
 trip("sheet · a strip", { format: "bande" });
 trip("sheet · custom", { format: "libre", w: 900, h: 420, size: 380 });
 
+/* a sheet with nothing grown on it. There is no body, so there may be no
+   field at all — and where a word is set, the word alone is the field. */
+const bare = (label, over) => trip("no body · " + label, Object.assign({ sym: "none" }, over));
+bare("the bare sheet", {});
+bare("flat, and just as bare", { mode: "plein" });
+bare("nothing but furniture", { fBrackets: true, fAxes: true, fPolar: true, fRing: true,
+  fTicks: true, fBand: true, fSwipe: true, fReg: true });
+bare("no ground, no trim, nothing on it", { bg: "none", trimMarks: false });
+bare("the word alone, printed", { tmode: "printed" });
+bare("the word alone, cut", { tmode: "cut" });
+bare("the word alone, flat and cut", { mode: "plein", tmode: "cut" });
+bare("the word alone, flat and printed", { mode: "plein", tmode: "printed" });
+bare("the word twisted and bitten", { tmode: "printed", twist: 0.004, wobAmp: 5, bites: 4, grow: 6 });
+bare("the word with a second plate under it", { tmode: "printed", plate2: "grossi" });
+bare("the word out of register", { tmode: "printed", plate2: "registre" });
+bare("a flat word with a rim", { mode: "plein", tmode: "printed", plate2: "grossi" });
+bare("on the frame", { format: "cadre", tmode: "printed", tcap: 150, tx: 300, ty: 470 });
+
+/* the frame the film is cut at, with a body on it */
+trip("sheet · the frame", { format: "cadre", size: 900, px: 500, py: 90 });
+
 /* the image, which until now was the one pass the promise never covered:
    the emitted code reads the file off the disk, so the plate on screen and
    the plate the code prints only agree if the levels, the crop, the placing
