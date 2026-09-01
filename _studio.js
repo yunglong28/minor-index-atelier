@@ -185,11 +185,16 @@ const PARAMS = [
     { id: "plate2", type: "select", label: "second plate", def: "aucune", options: [
       { v: "aucune", label: "none — one pass" },
       { v: "registre", label: "out of register — shifted" },
-      { v: "grossi", label: "spread underneath — a rim" } ],
-      help: "A second colour under the first, on either pass. Shifted gives the misprint of plate 107; spread gives the choke-and-spread rim of plate 119." },
+      { v: "grossi", label: "spread underneath — a rim" },
+      { v: "separation", label: "separation — the shadows on a plate of their own",
+        when: (s) => s.sym === "image" } ],
+      help: "A second colour under the first, on either pass. Shifted gives the misprint of plate 107; spread gives the choke-and-spread rim of plate 119. Separation is what a two-colour press does to a photograph: the ink underneath carries the whole picture, the ink on top only the shadows." },
     { id: "p2ink", type: "ink", label: "second ink", def: "blu", when: (s) => s.plate2 !== "aucune" },
     { id: "p2dx", type: "range", label: "shift x", min: -30, max: 30, step: 1, def: -8, when: is("plate2", "registre") },
     { id: "p2dy", type: "range", label: "shift y", min: -30, max: 30, step: 1, def: 6, when: is("plate2", "registre") },
+    { id: "p2from", type: "range", label: "shadows from", min: 0.15, max: 0.85, step: 0.05, def: 0.45,
+      when: (s) => s.plate2 === "separation" && s.sym === "image",
+      help: "Where on the tone scale the top plate starts to take ink. Below it the ink underneath prints alone; above it the two lie on each other, which is where a duotone finds a black neither ink has by itself." },
     { id: "p2grow", type: "range", label: "spread by", min: 2, max: 30, step: 1, def: 9, when: is("plate2", "grossi"),
       help: "How far the plate underneath is let out past the one on top. On a flat cut it is a pen of that ink laid round the edge \u2014 which is what a press does to spread a plate." },
   ] },
@@ -403,11 +408,17 @@ function stImage(s, img) {
     cell: s.pitch, angle: s.angle, spread: s.dspread, grain: s.grain,
     seed: s.pseed | 0 };
 }
-/* the second plate, read for an image: shifted, or let out under the first */
+/* the second plate, read for an image: shifted, let out under the first, or —
+   in a separation — the whole picture, with the plate on top keeping only the
+   shadows. That one changes nothing here: the range the ink underneath takes
+   is the range the image has, and the holding back is on the other plate. */
 const stImage2 = (s) => s.plate2 === "registre"
   ? { x: q4(s.px + s.p2dx), y: q4(s.py + s.p2dy) }
+  : s.plate2 === "separation" ? {}
   : { spread: q4(Math.min(0.82, s.dspread * (1 + s.p2grow / 40))),
       lo: q4(Math.max(0, s.imgLo - s.p2grow / 150)) };
+/* and what the plate on top holds back, on the pass that has one underneath */
+const stSep = (s) => (s.plate2 === "separation" ? { from: s.p2from } : null);
 
 /* ---- what the body does to itself, in the order a press would allow ----- */
 function stAppetite(f, s, cx, cy, rand) {
@@ -527,7 +538,7 @@ function buildPlate(state, hooks) {
       layers.push(pi(Object.assign({ angle: 75, seed: (s.pseed | 0) + 4, color: INK[s.p2ink] },
         stImage2(s))));
     }
-    layers.push(pi(Object.assign({ color: ink }, openAt(ink))));
+    layers.push(pi(Object.assign({ color: ink }, stSep(s), openAt(ink))));
     /* the word cannot be fused into a photograph, but it can go through the
        same screen on the same pull */
     if (s.tmode === "printed") {
@@ -661,12 +672,13 @@ function emitPlate(state) {
     const img = theImage();
     const src = img ? (s.imgCrop ? stCrop(img) : [0, 0, img.w, img.h]) : null;
     const im = (o) => {
-      const g = Object.assign({ angle: s.angle, spread: s.dspread, lo: s.imgLo,
+      const g = Object.assign({ angle: s.angle, spread: s.dspread, lo: s.imgLo, from: 0,
         x: s.px, y: s.py, seed: s.pseed | 0, color: s.ink }, o);
       return `screenImage({ img: IMG, src: ${src ? `[${src.join(", ")}]` : "bbox(IMG)"}, `
         + `x: ${g.x}, y: ${g.y}, w: ${size}, h: ${size},\n      `
         + `lo: ${g.lo}, hi: ${s.imgHi}, gamma: ${s.imgGamma}, soft: ${s.imgSoft}, `
-        + `min: ${s.imgMin},${s.imgInvert ? " invert: true," : ""}\n      `
+        + `min: ${s.imgMin},${s.imgInvert ? " invert: true," : ""}`
+        + `${g.from ? ` from: ${g.from},` : ""}\n      `
         + `cell: ${s.pitch}, angle: ${g.angle}, spread: ${g.spread}, grain: ${s.grain}, `
         + `seed: ${g.seed}, color: ${K(g.color)} })`;
     };
@@ -674,7 +686,7 @@ function emitPlate(state) {
       body.push(im(Object.assign({ angle: 75, seed: (s.pseed | 0) + 4, color: s.p2ink },
         stImage2(s))));
     }
-    body.push(im({}));
+    body.push(im(stSep(s) || {}));
     if (s.tmode === "printed") body.push(scr(`textField(${JSON.stringify(s.text)}, `
       + `${s.tx}, ${s.ty}, ${s.tcap}, ${tOpts})`, s.ink, s.angle, (s.pseed | 0) + 1));
   } else if (!field) {

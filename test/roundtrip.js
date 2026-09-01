@@ -92,6 +92,31 @@ trip("sheet · no trim marks", { trimMarks: false });
 trip("sheet · a strip", { format: "bande" });
 trip("sheet · custom", { format: "libre", w: 900, h: 420, size: 380 });
 
+/* the image, which until now was the one pass the promise never covered:
+   the emitted code reads the file off the disk, so the plate on screen and
+   the plate the code prints only agree if the levels, the crop, the placing
+   and the separation all survive being written out. */
+const PHOTO = RA.readPNG(path.join(ROOT, "pokemon.png"));
+ST.useImage(PHOTO);
+const shot = (label, over) => trip("image · " + label,
+  Object.assign({ sym: "image", imgName: "pokemon.png", size: 420, px: 110, py: 110 }, over));
+shot("as it comes", {});
+shot("cropped to the body", { imgCrop: true });
+shot("the whole canvas", { imgCrop: false });
+shot("levels wound in", { imgLo: 0.28, imgHi: 0.9, imgGamma: 1.6 });
+shot("soft, coarse and dirty", { imgSoft: 1.9, pitch: 8.4, grain: 0.34, dspread: 0.74 });
+shot("hard, fine and clean", { imgSoft: 0.35, pitch: 2.2, grain: 0.04, imgMin: 0.08 });
+shot("negative", { imgInvert: true, bg: "black", ink: "white" });
+shot("second plate · out of register", { plate2: "registre" });
+shot("second plate · spread underneath", { plate2: "grossi" });
+shot("second plate · separation", { plate2: "separation" });
+shot("second plate · separation, held high", { plate2: "separation", p2from: 0.75, p2ink: "fluo" });
+shot("with a word printed into it", { tmode: "printed" });
+shot("with a word cut over it", { tmode: "cut" });
+shot("on a strip, with all the furniture", { format: "bande", fBrackets: true, fAxes: true,
+  fTicks: true, fBand: true, fSwipe: true, fReg: true });
+ST.useImage(null);
+
 for (let s = 1; s <= 24; s++) {
   trip("roll " + s, Object.assign(ST.rollState(s), { num: 300 + s, name: "roll" }));
 }

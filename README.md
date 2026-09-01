@@ -61,7 +61,7 @@ do four things, in this order.
 |---|---|
 | **the body** | one of twelve: sun, corona, cell, network, seed head, lace, spiral, shell, rings, two bodies grown together, a field of small suns, or a plain disc. Geometry first, so the solid cut and the screened one are the same body. A thirteenth is not ours at all — an image, which skips the appetite because there is no field to bite, and goes straight to the press. |
 | **appetite** | what is done to it as a distance field: `sTwist` turn · `sGrow` spread and choke · `sWobble` tremble · `sMorph` one body arriving at another · `sSub` eclipse · `sBite` mouths taken at the contour. A flat cut has no field, so it takes only the twist — and the panel shows only that. |
-| **the press** | `screen` — coverage becomes dot area on a rotated screen. Pitch, angle, dot, fringe, grain. A second plate is the same field shifted (out of register) or let out (choke and spread), on either pass: a flat cut spreads by taking a pen of the second ink round its own edge, which is what `under` does. |
+| **the press** | `screen` — coverage becomes dot area on a rotated screen. Pitch, angle, dot, fringe, grain. A second plate is the same field shifted (out of register) or let out (choke and spread), on either pass: a flat cut spreads by taking a pen of the second ink round its own edge, which is what `under` does. On a photograph there is a third: a **separation**, where the ink underneath carries the whole picture and the ink on top only the shadows — a duotone, and the black neither ink has alone. |
 | **furniture** | what a press leaves that is not the image: trim marks, brackets, ticked axes, polar, a ring of ticks, a band at the foot, a marker swipe, registration crosses. |
 
 ## The repository
@@ -73,7 +73,7 @@ _glyphs.js      the bodies, and everything that can be done to one
 _letters.js     the drawn alphabet: skeletons, and the two ways to read them
 _furniture.js   ticks, crosses, bands, mouths, the sheet — no disk, so both share it
 _font.js        the alphabet as TrueType, static and variable, tables written by hand
-_raster.js      a PNG decoded here rather than by a library, screened like the rest
+_raster.js      a PNG decoded here rather than by a library, and read as light
 _studio.js      the vocabulary declared once: PARAMS, buildPlate, emitPlate
 _sheet.js       the CLI, the writer, the gallery — the parts that touch a disk
 _type.js        the 5×7 dot alphabet — retired, kept because 53–76 used it
@@ -116,6 +116,22 @@ is traced. The image is only ever asked how much ink it would hold, which is the
 whole of `_raster.js` and the whole of plates 95–99. It is kept beside the plate
 rather than inside it, because a photograph is not a setting.
 
+**And it is asked in light.** An sRGB byte is not an amount of light: it is a
+number a display raises to about 2.2, because eyes are not linear. Every dot on
+a screened photograph is the average of a patch, and adding encoded bytes and
+dividing gives something darker than the patch — most where the contrast inside
+it is highest, which is to say at every edge in the picture. So the patch is
+decoded to light, averaged there, weighted the way sRGB weights it
+(0.2126/0.7152/0.0722, not broadcast luma), and comes back to the perceptual
+scale only for the levels, which is the scale a hand adjusts on. The patch is
+read off a summed-area table, so it is four lookups whatever the softness, and
+the box sits where the dot actually fell rather than on the nearest whole pixel
+— fine screens used to staircase along the image's own grid — and is clipped to
+the picture rather than divided by pixels that were never there, which used to
+cost an edge a third of its ink and a corner two thirds. The sums are integers,
+because a plate has to reprint byte for byte and floating-point addition does
+not care what order it is done in.
+
 **The plate arrives the way a plate arrives.** The press runs in a worker, and
 hands the sheet over in strips as the copier reaches them — so a coarse screen
 on a large sheet never stops the panel answering, and a second of work reads as
@@ -126,9 +142,9 @@ plate simply appears whole.
 
 What comes out of **Code** is a `plate(...)` block that can be pasted into the
 next `mk*.js`, and it rebuilds the plate that was on screen **byte for byte**.
-That is tested, not asserted: seventy-one plates — every body in both passes,
-every appetite, both ways of setting a word, both second plates, and two dozen
-rolls — are built both ways and compared.
+That is tested, not asserted: eighty-five plates — every body in both passes,
+every appetite, both ways of setting a word, every second plate, fourteen ways of
+printing a photograph, and two dozen rolls — are built both ways and compared.
 
 ## The typeface
 
@@ -157,10 +173,11 @@ way the default was.
 
 ## Working on it
 
-* **`npm test` is the documentation that cannot go stale.** Five files: the font
+* **`npm test` is the documentation that cannot go stale.** Six claims: the font
   tables read back the way a rasteriser reads them; every batch printing its
-  committed plates; a streamed plate against a whole one; the emitted code against
-  the plate it claims to rebuild; and `docs/` against what `mkbundle.js` writes.
+  committed plates; a streamed plate against a whole one; the arithmetic the
+  image side of the press is built on; the emitted code against the plate it
+  claims to rebuild; and `docs/` against what `mkbundle.js` writes.
   No dependencies — for the same reason there is no font library and no PNG
   library in here.
 * **`docs/` is generated.** Edit `src/index.html`, `src/specimen.html` and

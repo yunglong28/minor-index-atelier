@@ -497,7 +497,20 @@
       var changed = v !== f.def && f.type !== "select" && f.type !== "image";
       r.val.className = "val" + (changed ? " touched" : "");
       if (f.type === "range") { r.input.value = v; r.val.textContent = (+v).toFixed(decimals(f.step)); }
-      else if (f.type === "select") { r.input.value = v; r.val.textContent = ""; }
+      else if (f.type === "select") {
+        /* an option can carry the same `when` a whole row does — a separation
+           is a thing to do to a photograph and to nothing else. If the one
+           that is chosen has just gone away, fall back to the default. */
+        var held = true;
+        f.options.forEach(function (o, i) {
+          var on = M.visible(o, state);
+          r.input.options[i].hidden = !on;
+          r.input.options[i].disabled = !on;
+          if (o.v === v && !on) held = false;
+        });
+        if (!held) v = state[id] = f.def;
+        r.input.value = v; r.val.textContent = "";
+      }
       else if (f.type === "ink") {
         r.val.textContent = v;
         Array.prototype.forEach.call(r.input.children, function (b, i) {
