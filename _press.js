@@ -24,11 +24,15 @@ const { INK, n, rng } = require("./_mark.js");
  *   onBand       handed each strip of dots as it is laid down. Observational
  *                only: the dots, their order and the random stream are what
  *                they would have been with nobody watching.
+ *   onDot        handed every dot as a place and a radius, for a caller that
+ *                needs the geometry rather than the mark — a screened letter
+ *                on its way into a font, which has outlines and no circles.
+ *                Observational in the same way.
  */
 function halftone(o) {
   const opt = Object.assign({ x: 0, y: 0, w: 240, h: 240, cell: 4.4, angle: 15,
     grain: 0.2, spread: 0.5, color: INK.black, seed: 3, min: 0.015, cap: false,
-    N: 0, cover: () => 0, onBand: null }, o);
+    N: 0, cover: () => 0, onBand: null, onDot: null }, o);
   const r = rng(opt.seed);
   const a = (opt.angle * Math.PI) / 180, ca = Math.cos(a), sa = Math.sin(a);
   const cx = opt.x + opt.w / 2, cy = opt.y + opt.h / 2;
@@ -46,7 +50,9 @@ function halftone(o) {
       if (cov <= opt.min) continue;
       const rr = opt.cell * opt.spread * Math.sqrt(opt.cap ? Math.min(1, cov) : cov);
       if (rr < 0.16) continue;
-      out.push(`<circle cx="${n(x + (r() - 0.5) * 1.1)}" cy="${n(y + (r() - 0.5) * 1.1)}" r="${n(rr)}"/>`);
+      const dx = n(x + (r() - 0.5) * 1.1), dy = n(y + (r() - 0.5) * 1.1), d = n(rr);
+      if (opt.onDot) opt.onDot(dx, dy, d);
+      out.push(`<circle cx="${dx}" cy="${dy}" r="${d}"/>`);
     }
     /* hand over what has printed so far, if anyone is watching */
     if (band && ++since >= band) {

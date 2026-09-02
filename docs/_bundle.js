@@ -219,11 +219,15 @@ const { INK, n, rng } = require("./_mark.js");
  *   onBand       handed each strip of dots as it is laid down. Observational
  *                only: the dots, their order and the random stream are what
  *                they would have been with nobody watching.
+ *   onDot        handed every dot as a place and a radius, for a caller that
+ *                needs the geometry rather than the mark — a screened letter
+ *                on its way into a font, which has outlines and no circles.
+ *                Observational in the same way.
  */
 function halftone(o) {
   const opt = Object.assign({ x: 0, y: 0, w: 240, h: 240, cell: 4.4, angle: 15,
     grain: 0.2, spread: 0.5, color: INK.black, seed: 3, min: 0.015, cap: false,
-    N: 0, cover: () => 0, onBand: null }, o);
+    N: 0, cover: () => 0, onBand: null, onDot: null }, o);
   const r = rng(opt.seed);
   const a = (opt.angle * Math.PI) / 180, ca = Math.cos(a), sa = Math.sin(a);
   const cx = opt.x + opt.w / 2, cy = opt.y + opt.h / 2;
@@ -241,7 +245,9 @@ function halftone(o) {
       if (cov <= opt.min) continue;
       const rr = opt.cell * opt.spread * Math.sqrt(opt.cap ? Math.min(1, cov) : cov);
       if (rr < 0.16) continue;
-      out.push(`<circle cx="${n(x + (r() - 0.5) * 1.1)}" cy="${n(y + (r() - 0.5) * 1.1)}" r="${n(rr)}"/>`);
+      const dx = n(x + (r() - 0.5) * 1.1), dy = n(y + (r() - 0.5) * 1.1), d = n(rr);
+      if (opt.onDot) opt.onDot(dx, dy, d);
+      out.push(`<circle cx="${dx}" cy="${dy}" r="${d}"/>`);
     }
     /* hand over what has printed so far, if anyone is watching */
     if (band && ++since >= band) {
@@ -1131,6 +1137,7 @@ var require = function (p) { return __MI__[p.replace("./", "")]; };
  * decodes its own PNGs should not import a library to write a font.
  */
 const T = require("./_letters.js");
+const P = require("./_press.js");   /* the copier, so a screened cut is the one on the sheet */
 
 const UPM = 1000, CAP = 700;          /* the em, and the cap height inside it */
 const ASC = 950, DESC = -180;
@@ -1154,6 +1161,7 @@ const weightClass = (pen) => {
 
 /* ---- pen into outlines -------------------------------------------------- */
 const ARCPTS = 12;                    /* points round a cap or a joint */
+const DOTPTS = 12;                   /* and round a halftone dot, which is set large */
 function capsule(x1, y1, x2, y2, r) {
   const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
   if (L < 1e-6) return disc(x1, y1, r);
@@ -1171,10 +1179,11 @@ function capsule(x1, y1, x2, y2, r) {
   }
   return pts;
 }
-function disc(cx, cy, r) {
+function disc(cx, cy, r, k) {
+  const N = k || ARCPTS * 2;
   const pts = [];
-  for (let i = 0; i < ARCPTS * 2; i++) {
-    const a = (i / (ARCPTS * 2)) * Math.PI * 2;
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2;
     pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
   }
   return pts;
@@ -1244,6 +1253,273 @@ function outlineGlyph(ch, opt) {
   const adv = Math.round((g.w + T.TRACK) * CAP * o.width);
   return { contours: rings.map((ring) => ring.map((p) => [Math.round(p[0]), Math.round(p[1])])),
            adv, flips };
+}
+
+/* ---- the same letter, through the press ---------------------------------
+ *
+ * A plate does not stop at the cut. The letters are a distance field like
+ * every body the atelier prints, so a word takes the screen, the flood and
+ * the knock-out exactly as a sun does — and each of those is a font too, as
+ * long as the ink it leaves can be written as filled outlines.
+ *
+ *   screened     the copier, once, on the letter's own field: every dot its
+ *                own contour. Built at the size a plate is printed at and
+ *                enlarged to the em, so the screen is the one that is on the
+ *                sheet and not a finer one invented for type.
+ *   over-inked   the same press run hot: the field grown, the cell coarser,
+ *                the dots spread until they touch. Overlaps cost nothing —
+ *                non-zero winding is a union.
+ *   knocked out  the letter as a hole in the slab. This one cannot be a pile
+ *                of capsules: two of them over each other wind to −2 inside
+ *                the slab's +1 and the ink comes back. So the field is traced
+ *                instead — marching squares along the contour — and what
+ *                comes back is the union's own edge, one loop per boundary,
+ *                which can be wound against the slab.
+ */
+const PLATE_CAP = 62;                 /* the cap height Fig. 05 prints at */
+const PRESSES = [
+  { cut: "screen", name: "Screened", label: "Screened",
+    weight: 0.13, hand: 0.02,
+    screen: { cell: 3.2, falloff: 5, spread: 0.54, grain: 0.1, angle: 15, seed: 5, grow: 0 } },
+  { cut: "hot", name: "Overinked", label: "Over-inked",
+    weight: 0.13, hand: 0.02,
+    screen: { cell: 4.8, falloff: 7, spread: 0.66, grain: 0.14, angle: 15, seed: 5, grow: 1.5 } },
+  { cut: "knock", name: "Knockout", label: "Knocked out",
+    weight: 0.155, hand: 0.02, slab: [-150, 840], step: 6, tol: 0.3 },
+];
+const press = (cut) => PRESSES.filter((p) => p.cut === cut)[0];
+
+const segD = (px, py, s) => {
+  const dx = s.x2 - s.x1, dy = s.y2 - s.y1;
+  const L2 = dx * dx + dy * dy || 1;
+  const t = Math.max(0, Math.min(1, ((px - s.x1) * dx + (py - s.y1) * dy) / L2));
+  return Math.hypot(px - (s.x1 + dx * t), py - (s.y1 + dy * t));
+};
+
+/**
+ * One character as a distance field, in font units: how far outside am I.
+ *
+ * The same walk `outlineGlyph` makes — the same skeleton, the same wobble,
+ * the same seed — read as distance rather than as capsules. `scale` is the
+ * cap height it is measured at: the em for a cut, and the plate for a screen,
+ * whose cell and grain are numbers in millimetres and not in em units.
+ */
+function glyphField(ch, opt) {
+  const o = Object.assign({ weight: 0.12, hand: 0.015, seed: 7, width: 1, slant: 0,
+                            scale: CAP }, opt);
+  const g = T.glyph(ch);
+  if (!g) return null;
+  const S = o.scale;
+  const tp = T.textPaths(ch, 0, 0, 1, { weight: o.weight, hand: o.hand, seed: o.seed,
+                                        width: o.width, slant: o.slant, track: 0 });
+  const r = (o.weight / 2) * S;
+  const F = (p) => [p[0] * S, (1 - p[1]) * S];
+  const segs = [];
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const gl of tp.glyphs) {
+    for (const run of gl.runs) {
+      for (let i = 0; i < run.length; i++) {
+        const p = F(run[i]), q = F(run[i > 0 ? i - 1 : 0]);
+        segs.push({ x1: q[0], y1: q[1], x2: p[0], y2: p[1] });   /* the ends are caps */
+        if (p[0] < x0) x0 = p[0];
+        if (p[0] > x1) x1 = p[0];
+        if (p[1] < y0) y0 = p[1];
+        if (p[1] > y1) y1 = p[1];
+      }
+    }
+  }
+  const adv = (g.w + T.TRACK) * S * o.width;
+  if (!segs.length) return { d: null, r, adv, scale: S, box: null, bound: null };
+  const d = (x, y) => {
+    let m = 1e9;
+    for (let i = 0; i < segs.length; i++) {
+      const v = segD(x, y, segs[i]);
+      if (v < m) m = v;
+    }
+    return m - r;
+  };
+  return { d, r, adv, scale: S,
+           box: { x0: x0 - r, y0: y0 - r, x1: x1 + r, y1: y1 + r },
+           bound: { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2,
+                    r: Math.hypot(x1 - x0, y1 - y0) / 2 + r } };
+}
+
+/**
+ * The press, on one letter: every dot a contour of its own.
+ *
+ * The lattice is pinned to the glyph's origin rather than to its bounding
+ * box, so the same letter is screened the same way wherever it is set and
+ * two letters side by side are two windows onto one screen.
+ */
+function screenGlyph(ch, o) {
+  const s = o.screen;
+  const S = o.plateCap || PLATE_CAP;
+  const f = glyphField(ch, Object.assign({}, o, { scale: S }));
+  if (!f) return null;
+  const k = CAP / S;                                   /* the plate, enlarged to the em */
+  if (!f.d) return { contours: [], adv: Math.round(f.adv * k) };
+  const grow = s.grow || 0;
+  const pad = s.falloff + s.cell;
+  /* the lattice is laid out from the middle of the window, so the window is
+     centred on the lattice point nearest the letter: tight around the ink —
+     a window twice as wide as the letter prints the empty half of it, and
+     that grain lands on the next letter along — and still in step with the
+     origin, so a letter is screened the same way wherever it is set */
+  const a = (s.angle * Math.PI) / 180, ca = Math.cos(a), sa = Math.sin(a);
+  const dx = (f.box.x0 + f.box.x1) / 2, dy = (f.box.y0 + f.box.y1) / 2 - S * 0.5;
+  const li = Math.round((dx * ca + dy * sa) / s.cell) * s.cell;
+  const lj = Math.round((-dx * sa + dy * ca) / s.cell) * s.cell;
+  const ax = li * ca - lj * sa, ay = S * 0.5 + li * sa + lj * ca;
+  const W = Math.max(Math.abs(f.box.x0 - ax), Math.abs(f.box.x1 - ax)) * 2 + pad * 2;
+  const H = Math.max(Math.abs(f.box.y0 - ay), Math.abs(f.box.y1 - ay)) * 2 + pad * 2;
+  const contours = [];
+  P.halftone({ x: ax - W / 2, y: ay - H / 2, w: W, h: H,
+    cell: s.cell, angle: s.angle, grain: s.grain, spread: s.spread, seed: s.seed,
+    cover: P.fieldCover((x, y) => f.d(x, y) - grow, s.falloff,
+                        { cx: f.bound.cx, cy: f.bound.cy, r: f.bound.r + grow }),
+    onDot: (x, y, r) => {
+      if (r * k < 3) return;                           /* under a third of a percent of the em */
+      contours.push(orient(disc(x * k, y * k, r * k, DOTPTS)));
+    } });
+  return { contours, adv: Math.round(f.adv * k) };
+}
+
+/**
+ * The edge of a field, as closed loops — marching squares, interpolated.
+ *
+ * A crossing is named by the grid edge it sits on rather than by where it
+ * landed, so the two cells that share it agree about it exactly and the
+ * loops close. Segments are laid down with the inside on the left, which
+ * winds an outer loop one way and a counter the other without either of
+ * them having to be measured.
+ */
+function traceField(f, box, step) {
+  const nx = Math.ceil((box[2] - box[0]) / step) + 1;
+  const ny = Math.ceil((box[3] - box[1]) / step) + 1;
+  const X = (i) => box[0] + i * step, Y = (j) => box[1] + j * step;
+  const V = new Float64Array(nx * ny);
+  for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) V[i * ny + j] = f(X(i), Y(j));
+  const at = (i, j) => V[i * ny + j];
+  const cut = (a, b) => (a === b ? 0.5 : a / (a - b));
+  /* an edge is (cell, horizontal or vertical); the point on it is found once */
+  const pt = (key) => {
+    const e = key & 1, c = (key - e) / 2, j = c % ny, i = (c - j) / ny;
+    return e ? [X(i), Y(j) + cut(at(i, j), at(i, j + 1)) * step]
+             : [X(i) + cut(at(i, j), at(i + 1, j)) * step, Y(j)];
+  };
+  const next = new Map();
+  const link = (a, b) => next.set(a, b);
+  for (let i = 0; i < nx - 1; i++) {
+    for (let j = 0; j < ny - 1; j++) {
+      const va = at(i, j), vb = at(i + 1, j), vc = at(i + 1, j + 1), vd = at(i, j + 1);
+      const m = (va < 0 ? 1 : 0) | (vb < 0 ? 2 : 0) | (vc < 0 ? 4 : 0) | (vd < 0 ? 8 : 0);
+      if (m === 0 || m === 15) continue;
+      const B = (i * ny + j) * 2, L = (i * ny + j) * 2 + 1;
+      const R = ((i + 1) * ny + j) * 2 + 1, A = (i * ny + j + 1) * 2;
+      const mid = (va + vb + vc + vd) / 4 < 0;
+      if (m === 1) link(B, L);
+      else if (m === 2) link(R, B);
+      else if (m === 4) link(A, R);
+      else if (m === 8) link(L, A);
+      else if (m === 3) link(R, L);
+      else if (m === 6) link(A, B);
+      else if (m === 12) link(L, R);
+      else if (m === 9) link(B, A);
+      else if (m === 7) link(A, L);
+      else if (m === 14) link(L, B);
+      else if (m === 13) link(B, R);
+      else if (m === 11) link(R, A);
+      else if (m === 5) { if (mid) { link(B, R); link(A, L); } else { link(B, L); link(A, R); } }
+      else if (m === 10) { if (mid) { link(L, B); link(R, A); } else { link(R, B); link(L, A); } }
+    }
+  }
+  const loops = [];
+  while (next.size) {
+    let key = next.keys().next().value;
+    const loop = [];
+    while (next.has(key)) {
+      const to = next.get(key);
+      next.delete(key);
+      loop.push(pt(key));
+      key = to;
+    }
+    if (loop.length >= 3) loops.push(loop);
+  }
+  return loops;
+}
+
+/* a traced loop is mostly points in a straight line: what the grid stepped
+   over, not what the letter turns through */
+function thin(loop, tol) {
+  const keep = [];
+  for (let i = 0; i < loop.length; i++) {
+    const p = loop[i];
+    const a = keep.length ? keep[keep.length - 1] : loop[loop.length - 1];
+    const b = loop[(i + 1) % loop.length];
+    const ux = b[0] - a[0], uy = b[1] - a[1];
+    const L = Math.hypot(ux, uy) || 1;
+    if (Math.abs((p[0] - a[0]) * uy - (p[1] - a[1]) * ux) / L > tol) keep.push(p);
+  }
+  return keep.length >= 3 ? keep : loop;
+}
+/* to the grid the font is written on, without a point twice */
+function toGrid(loop) {
+  const out = [];
+  for (const p of loop) {
+    const q = [Math.round(p[0]), Math.round(p[1])];
+    const last = out[out.length - 1];
+    if (!last || last[0] !== q[0] || last[1] !== q[1]) out.push(q);
+  }
+  while (out.length > 1 && out[0][0] === out[out.length - 1][0]
+                        && out[0][1] === out[out.length - 1][1]) out.pop();
+  return out;
+}
+
+/**
+ * The letter, knocked out of the slab.
+ *
+ * The slab is exactly one advance wide, so a word sets as one unbroken band —
+ * which is what a knock-out is, and why no two slabs may overlap: two of them
+ * over each other wind to ±2 and the hole between them closes.
+ *
+ * Which means the letter has to fit. A pen is half a stroke wider than the
+ * drawing on each side, and the tracking the cut letters are spaced on does
+ * not cover it, so a slab is let out to the ink where the ink is wider and
+ * the letter is centred in it. Anything still overhanging — an accent, a
+ * wobble — is trimmed by the trace itself: the field asked for is the letter
+ * *inside* the box, so no loop is ever left outside the ink for the winding
+ * to fill back in.
+ */
+function knockGlyph(ch, o) {
+  const f = glyphField(ch, o);
+  if (!f) return null;
+  const y0 = o.slab[0], y1 = o.slab[1];
+  const side = Math.round((o.side || 0.035) * CAP);
+  const inkW = f.box ? f.box.x1 - f.box.x0 : 0;
+  const adv = Math.max(Math.round(f.adv), Math.round(inkW + side * 2));
+  /* the slab runs a hair past its advance at both ends. Two slabs that only
+     touch leave a hairline where the rasteriser rounds them to pixels, and a
+     band with white threads through it is not a band. The overlap is a
+     fraction of the side bearing, so no letter is ever inside it. */
+  const b = o.bleed || 6;
+  const slab = orient([[-b, y0], [adv + b, y0], [adv + b, y1], [-b, y1]]);
+  if (!f.d || adv < 4) return { contours: [slab], adv };
+  const dx = (adv - inkW) / 2 - f.box.x0;              /* centred in its own slab */
+  const in0 = 0.5;                    /* a hair inside, so the two edges never coincide */
+  const boxD = (x, y) => Math.max(Math.max(in0 - b - x, x - (adv + b - in0)),
+                                  Math.max(y0 + in0 - y, y - (y1 - in0)));
+  const field = (x, y) => Math.max(f.d(x - dx, y), boxD(x, y));
+  const contours = [slab];
+  for (const loop of traceField(field, [-b - 2, y0 - 2, adv + b + 2, y1 + 2], o.step)) {
+    const ring = toGrid(thin(loop, o.tol));
+    if (ring.length >= 3) contours.push(ring);
+  }
+  return { contours, adv };
+}
+
+/** one letter, whichever press it went through */
+function pressGlyph(ch, o) {
+  return o.cut === "knock" ? knockGlyph(ch, o) : screenGlyph(ch, o);
 }
 
 /* ---- the binary ---------------------------------------------------------
@@ -1348,10 +1624,15 @@ function nameTable(records) {
  * A TrueType file from the drawn alphabet.
  *   weight  the pen, as a fraction of cap — the same number the plates use
  *   hand    how much shake is baked in (a font repeats it, so keep it small)
+ *   cut     which press it went through: nothing for the cut letter, or one
+ *           of "screen", "hot", "knock" — the rest of the file is the same
+ *           work either way, because a glyph is only ever contours and an
+ *           advance however the ink got there
  */
 function buildTTF(opt) {
   const o = Object.assign({ family: "Minor Index", style: "Regular", weight: 0.12,
                             hand: 0.015, seed: 7, width: 1, slant: 0, version: "1.000" }, opt);
+  if (o.cut) Object.assign(o, press(o.cut), opt);
   const bold = o.weight > 0.18;
   const wclass = o.usWeightClass || weightClass(o.weight);
   const extra = ["É", "È", "Ê", "Ë", "À", "Â", "Ç",
@@ -1361,10 +1642,16 @@ function buildTTF(opt) {
   const glyphs = [{ contours: [], adv: Math.round(0.32 * CAP) }];       /* 0 = .notdef */
   const map = {};
   const space = T.glyph(" ");
-  glyphs.push({ contours: [], adv: Math.round((space.w + T.TRACK) * CAP * o.width) });
+  const spaceAdv = Math.round((space.w + T.TRACK) * CAP * o.width);
+  /* a knocked-out space is a slab with nothing punched out of it, or the band
+     breaks between the words and the knock-out stops being one */
+  const sb = o.bleed || 6;
+  glyphs.push({ adv: spaceAdv, contours: o.cut === "knock"
+    ? [orient([[-sb, o.slab[0]], [spaceAdv + sb, o.slab[0]],
+               [spaceAdv + sb, o.slab[1]], [-sb, o.slab[1]]])] : [] });
   map[32] = 1;
   for (const ch of chars) {
-    const g = outlineGlyph(ch, o);
+    const g = o.cut ? pressGlyph(ch, o) : outlineGlyph(ch, o);
     if (!g) continue;
     map[ch.codePointAt(0)] = glyphs.length;
     /* lowercase types the caps — accented lowercase too, which French needs */
@@ -1384,19 +1671,25 @@ function tables(o, glyphs, map, k) {
   const bold = k.weight > 0.18;
   const wclass = k.usWeightClass;
   const extra = k.extra || [];
-  const allX = [0], allY = [0];
+  /* the extremes are walked rather than spread: a screened glyph is a few
+     hundred dots, and a whole alphabet of them is more arguments than a call
+     is allowed to have */
   let maxPts = 0, maxCts = 0;
+  let xMin = 0, xMax = 0, yMin = 0, yMax = 0;
   for (const g of glyphs) {
     maxCts = Math.max(maxCts, g.contours.length);
     let np = 0;
     for (const c of g.contours) {
       np += c.length;
-      for (const p of c) { allX.push(p[0]); allY.push(p[1]); }
+      for (const p of c) {
+        if (p[0] < xMin) xMin = p[0];
+        if (p[0] > xMax) xMax = p[0];
+        if (p[1] < yMin) yMin = p[1];
+        if (p[1] > yMax) yMax = p[1];
+      }
     }
     maxPts = Math.max(maxPts, np);
   }
-  const xMin = Math.min.apply(null, allX), xMax = Math.max.apply(null, allX);
-  const yMin = Math.min.apply(null, allY), yMax = Math.max.apply(null, allY);
 
   const glyfParts = [], loca = [];
   let off = 0;
@@ -1695,7 +1988,9 @@ function buildVF(opt) {
 }
 const pad2 = (b) => (b.length % 2 ? cat(b, buf(1)) : b);
 
-module.exports = { buildTTF, buildVF, outlineGlyph, FAMILY, AXES, INSTANCES, weightClass, UPM, CAP, ASC, DESC, STAMP };
+module.exports = { buildTTF, buildVF, outlineGlyph, glyphField, pressGlyph, traceField,
+  FAMILY, PRESSES, press, AXES, INSTANCES, weightClass,
+  UPM, CAP, ASC, DESC, STAMP, PLATE_CAP };
 
 return module.exports;
 })();
@@ -1996,6 +2291,16 @@ const SHEETS = [
   { id: "libre", label: "custom", w: 0, h: 0 },
 ];
 const INKS = ["black", "white", "fluo", "blu", "grey"];
+/* An ink is a name in the table. It can also be a colour a hand chose in the
+   atelier's well, written as a hex — and then it travels exactly as far as a
+   named one does and no further: everything that puts ink on a plate asks
+   here, and the emitted code says `INK.blu` for a name and the hex for the
+   rest, so a plate reproduces either way. */
+const HEXINK = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+const isInk = (v) => typeof v === "string" && HEXINK.test(v);
+const inkOf = (v) => INK[v] || (isInk(v) ? v.toLowerCase() : INK.black);
+/* the word takes the ink of the pass unless it has been given one of its own */
+const wordInk = (s) => (s.tink === "same" ? s.ink : s.tink);
 const SUNNY = ["sun", "corona", "lace", "two", "field"];
 const CELLY = ["cell", "network", "two"];
 /* the bodies whose solid cut is warped too, not only their field */
@@ -2017,8 +2322,8 @@ const PARAMS = [
     { id: "format", type: "select", label: "format", def: "carre",
       help: "Sizes taken from plates that exist, plus the frame the film itself is cut at. Custom frees the two sliders below.",
       options: SHEETS.map((f) => ({ v: f.id, label: f.label })) },
-    { id: "w", type: "range", label: "width", min: 240, max: 1920, step: 10, def: 640, when: is("format", "libre") },
-    { id: "h", type: "range", label: "height", min: 200, max: 1920, step: 10, def: 640, when: is("format", "libre") },
+    { id: "w", type: "range", label: "width", unit: "px", min: 240, max: 1920, step: 1, def: 640, when: is("format", "libre") },
+    { id: "h", type: "range", label: "height", unit: "px", min: 200, max: 1920, step: 1, def: 640, when: is("format", "libre") },
     { id: "bg", type: "ink", label: "ground", def: "white",
       help: "The paper. Black turns the plate into a knock-out — ink becomes the light. None leaves it transparent.",
       options: INKS.concat(["none"]) },
@@ -2067,15 +2372,18 @@ const PARAMS = [
       { v: "none", label: "none — no body at all" },
       { v: "image", label: "image — a body that is not ours" } ],
       help: "Every body is a distance field, not a shape: it answers how far outside you are. That is why anything can be cut into anything. None grows nothing: the sheet keeps its ground, its word and its furniture, which is what a title card is." },
-    { id: "size", type: "range", label: "size", min: 100, max: 1920, step: 10, def: 520,
+    { id: "size", type: "range", label: "size", unit: "px", min: 100, max: 1920, step: 1, def: 520,
       when: (s) => !noBody(s),
       help: "The body's box. Push it past the sheet to make it bleed off the edge — plates 78 and 101 do." },
     { id: "seed", type: "seed", label: "body seed", def: 7, when: (s) => notImage(s) && !noBody(s),
       help: "Which particular organism grows. Same seed, same body, every time." },
-    { id: "px", type: "range", label: "position x", min: -500, max: 1900, step: 5, def: 60,
-      when: (s) => !noBody(s) },
-    { id: "py", type: "range", label: "position y", min: -500, max: 1900, step: 5, def: 60,
-      when: (s) => !noBody(s) },
+    /* x and y are one control, not two sliders: the atelier draws them as a
+       pair of fields and a box on the sheet you can take hold of. */
+    { id: "px", type: "range", label: "position", unit: "px", axis: "x", pair: "py", box: "body",
+      min: -500, max: 1900, step: 1, def: 60, when: (s) => !noBody(s),
+      help: "The top-left corner of the body's box, measured from the top-left corner of the sheet. Drag the box on the sheet, type the numbers, or use the align buttons to sit it against an edge or in the middle." },
+    { id: "py", type: "range", label: "y", unit: "px", axis: "y", pair: "px",
+      min: -500, max: 1900, step: 1, def: 60, when: (s) => !noBody(s) },
     { id: "rays", type: "range", label: "rays", min: 6, max: 52, step: 1, def: 30, when: (s) => SUNNY.indexOf(s.sym) >= 0,
       help: "How many arms leave the disc. They alternate long and short." },
     { id: "disc", type: "range", label: "disc", min: 0.08, max: 0.36, step: 0.005, def: 0.22, when: (s) => SUNNY.indexOf(s.sym) >= 0,
@@ -2098,10 +2406,12 @@ const PARAMS = [
       help: "How fast it opens out. Low is a coiled watch spring, high is a wide sweep." },
     { id: "sband", type: "range", label: "band width", min: 2, max: 48, step: 1, def: 14, when: is("sym", "spiral", "shell"),
       help: "Thickness at the outer end — it tapers to nothing at the middle." },
-    { id: "ringN", type: "range", label: "how many rings", min: 2, max: 14, step: 1, def: 5, when: is("sym", "rings") },
-    { id: "ringW", type: "range", label: "ring width", min: 1, max: 40, step: 1, def: 8, when: is("sym", "rings") },
+    { id: "ringN", type: "range", label: "how many rings", min: 2, max: 14, step: 1, def: 5, when: is("sym", "rings"),
+      help: "Concentric circles, evenly spaced out to the edge of the box." },
+    { id: "ringW", type: "range", label: "ring width", unit: "px", min: 1, max: 40, step: 1, def: 8, when: is("sym", "rings"),
+      help: "How heavy each circle is drawn." },
   ] },
-  { id: "appetit", label: "APPETITE", note: "what the body does to itself before it is printed",
+  { id: "appetit", label: "APPETITE", note: "what is done to the form before it reaches the press",
     /* the appetite is something done to a distance field. A flat cut is the
        geometry itself, and only the twist is in the geometry (sunWhirl), so
        on a flat pass this group shows what a flat cut can actually take —
@@ -2114,77 +2424,105 @@ const PARAMS = [
     { id: "morph", type: "range", label: "toward the cell", min: 0, max: 1, step: 0.02, def: 0,
       when: (s) => s.sym === "sun" && notFlat(s),
       help: "Slides the sun into the cell. The middle is neither — plate 123 is this slider in five steps." },
-    { id: "grow", type: "range", label: "fatten / starve", min: -34, max: 44, step: 1, def: 0, when: notFlat,
+    { id: "grow", type: "range", label: "fatten / starve", unit: "px", min: -34, max: 44, step: 1, def: 0, when: notFlat,
       help: "Weight, in units of ink. A printer calls it spread and choke: right fattens the whole form, left eats it back until only the kernel is left." },
     { id: "twist", type: "range", label: "twist", min: -0.03, max: 0.03, step: 0.0005, def: 0,
       when: (s) => notFlat(s) || FIELDY.indexOf(s.sym) >= 0,
-      help: "Turns the field by an amount that grows with the radius, so straight rays bend into a vortex. This is the whole SPIRALE batch." },
-    { id: "wobAmp", type: "range", label: "tremble", min: 0, max: 22, step: 0.5, def: 0, when: notFlat,
-      help: "Pushes the edge around with noise, so nothing is machine-true." },
-    { id: "wobScale", type: "range", label: "tremble scale", min: 8, max: 130, step: 2, def: 46, when: (s) => s.wobAmp > 0 && notFlat(s),
+      help: "Turns the form about its own middle, more the further out you go, so straight rays bend into a vortex. Either sign turns; this is the whole SPIRALE batch." },
+    { id: "wobAmp", type: "range", label: "tremble", unit: "px", min: 0, max: 22, step: 0.5, def: 0, when: notFlat,
+      help: "Pushes the whole edge around with noise, by up to this many units, so nothing is machine-true." },
+    { id: "wobScale", type: "range", label: "tremble scale", unit: "px", min: 8, max: 130, step: 1, def: 46, when: (s) => s.wobAmp > 0 && notFlat(s),
       help: "Small is a jitter along the edge; large is a slow swell through the whole body." },
     { id: "bites", type: "range", label: "bites", min: 0, max: 16, step: 1, def: 0, when: notFlat,
       help: "Mouths taken out where the body actually ends — the edge is found first, then bitten." },
-    { id: "biteSize", type: "range", label: "bite size", min: 8, max: 160, step: 2, def: 54, when: (s) => s.bites > 0 && notFlat(s) },
+    { id: "biteSize", type: "range", label: "bite size", unit: "px", min: 8, max: 160, step: 1, def: 54, when: (s) => s.bites > 0 && notFlat(s),
+      help: "How wide each mouth is. Large enough and two bites meet and take the body in half." },
     { id: "occ", type: "bool", label: "eclipse", def: false, when: notFlat,
       help: "Another body passes in front. The dots stop dead where it starts." },
-    { id: "occX", type: "range", label: "eclipse x", min: -400, max: 400, step: 5, def: 90, when: (s) => s.occ && notFlat(s) },
-    { id: "occY", type: "range", label: "eclipse y", min: -400, max: 400, step: 5, def: -60, when: (s) => s.occ && notFlat(s) },
-    { id: "occR", type: "range", label: "eclipse radius", min: 20, max: 420, step: 5, def: 150, when: (s) => s.occ && notFlat(s) },
+    { id: "occX", type: "range", label: "eclipse at", unit: "px", axis: "x", pair: "occY",
+      min: -400, max: 400, step: 1, def: 90, when: (s) => s.occ && notFlat(s),
+      help: "Where the eclipsing body sits, measured from the middle of the body it covers." },
+    { id: "occY", type: "range", label: "eclipse y", unit: "px", axis: "y", pair: "occX",
+      min: -400, max: 400, step: 1, def: -60, when: (s) => s.occ && notFlat(s) },
+    { id: "occR", type: "range", label: "eclipse radius", unit: "px", min: 20, max: 420, step: 1, def: 150,
+      when: (s) => s.occ && notFlat(s) },
   ] },
-  { id: "presse", label: "THE PRESS", note: "toner at 15°, blu at 75° — anything else is a pass nobody paid for", fields: [
+  { id: "presse", label: "THE PRESS", note: "how the form is put on paper: as dots on a ruled screen, or cut solid", fields: [
     { id: "mode", type: "select", label: "pass", def: "ecran", when: notImage,
-      options: [{ v: "ecran", label: "screened — through the copier" }, { v: "plein", label: "flat — cut solid" }],
-      help: "Screened turns coverage into dots. Flat cuts the form in one colour, the way plates 77 and 80 were cut." },
-    { id: "ink", type: "ink", label: "ink", def: "black" },
-    { id: "pitch", type: "range", label: "screen pitch", min: 1.6, max: 13, step: 0.2, def: 4.4, when: screened,
-      help: "Distance between dot centres. Fine reads as a photograph; coarse reads as a bad photocopy, which is the house style." },
-    { id: "angle", type: "range", label: "screen angle", min: 0, max: 90, step: 1, def: 15, when: screened,
-      help: "15° is the toner plate, 75° the blu one. Keeping them apart is what stops the two passes moiring." },
+      options: [{ v: "ecran", label: "screened \u2014 through the copier, as dots" },
+                { v: "plein", label: "flat \u2014 cut solid, no dots" }],
+      help: "Screened sends the form through the copier: how much ink a spot would hold becomes a dot of that size, on a ruled grid. Flat skips the copier and cuts the form in one solid colour, the way plates 77 and 80 were cut. Everything below this line is the copier, so a flat pass hides most of it." },
+    { id: "ink", type: "ink", label: "ink", def: "black",
+      help: "The colour this pass prints in \u2014 the body, and any word printed with it. Custom mixes one that is not in the table." },
+    { id: "pitch", type: "range", label: "dot spacing", unit: "px", min: 1.6, max: 13, step: 0.1, def: 4.4, when: screened,
+      help: "How far apart the dot centres sit. Around 2 it reads as a photograph you have to lean into; at 10 the dots are bigger than the detail and the plate reads as a photocopy blown up \u2014 which is the house style. It is also the slowest control here: halving it quadruples the dots." },
+    { id: "angle", type: "range", label: "screen angle", unit: "\u00b0", min: 0, max: 90, step: 1, def: 15, when: screened,
+      help: "The tilt of the grid the dots are ruled on. The toner plate prints at 15\u00b0 and the blu one at 75\u00b0: holding two passes 60\u00b0 apart is what keeps them from clashing into a moir\u00e9 pattern." },
     { id: "dspread", type: "range", label: "dot size", min: 0.3, max: 0.82, step: 0.01, def: 0.54, when: screened,
-      help: "Dot radius against the pitch. Above 0.6 neighbouring dots touch and the form floods — that is plate 78." },
-    { id: "falloff", type: "range", label: "fringe", min: 2, max: 60, step: 0.5, def: 9,
+      help: "How large a dot may grow, measured against the spacing. Below 0.4 the form stays open and grey; above 0.6 neighbouring dots touch and it floods together into a solid \u2014 that flood is plate 78." },
+    { id: "falloff", type: "range", label: "fringe", unit: "px", min: 2, max: 60, step: 0.5, def: 9,
       when: (s) => s.mode === "ecran" && s.sym !== "image",
-      help: "How far outside the body dots keep appearing. A wide fringe is a soft halo; plate 128 is nothing but fringe." },
+      help: "How far outside the form the dots keep printing, shrinking as they go. Small is a hard edge; large is a halo that dissolves outward until the body is more atmosphere than shape \u2014 plate 128 is nothing but fringe." },
     { id: "grain", type: "range", label: "grain", min: 0, max: 0.5, step: 0.01, def: 0.18, when: screened,
-      help: "Random noise in the coverage — dirt on the glass. It also scatters loose dots across the empty sheet." },
+      help: "Random unevenness in the ink \u2014 dirt on the glass. It roughens the edges and throws loose dots across the empty parts of the sheet." },
     { id: "pseed", type: "seed", label: "screen seed", def: 5, when: screened,
-      help: "Which particular run through the copier." },
+      help: "Which particular run through the copier. Every speck of grain follows from this number, so the same number prints the same sheet, exactly." },
     { id: "plate2", type: "select", label: "second plate", def: "aucune", options: [
-      { v: "aucune", label: "none — one pass" },
-      { v: "registre", label: "out of register — shifted" },
-      { v: "grossi", label: "spread underneath — a rim" },
-      { v: "separation", label: "separation — the shadows on a plate of their own",
+      { v: "aucune", label: "none \u2014 one pass, one colour" },
+      { v: "registre", label: "out of register \u2014 the same form, shifted" },
+      { v: "grossi", label: "spread underneath \u2014 a rim around the form" },
+      { v: "separation", label: "separation \u2014 the shadows on a plate of their own",
         when: (s) => s.sym === "image" } ],
-      help: "A second colour under the first, on either pass. Shifted gives the misprint of plate 107; spread gives the choke-and-spread rim of plate 119. Separation is what a two-colour press does to a photograph: the ink underneath carries the whole picture, the ink on top only the shadows." },
-    { id: "p2ink", type: "ink", label: "second ink", def: "blu", when: (s) => s.plate2 !== "aucune" },
-    { id: "p2dx", type: "range", label: "shift x", min: -30, max: 30, step: 1, def: -8, when: is("plate2", "registre") },
-    { id: "p2dy", type: "range", label: "shift y", min: -30, max: 30, step: 1, def: 6, when: is("plate2", "registre") },
+      help: "A second colour, printed underneath the first. Out of register is the same form again, moved a few units \u2014 the misprint of plate 107. Spread lets the lower plate out past the upper one so a rim of colour shows all round \u2014 plate 119. Separation is what a two-colour press does to a photograph: the lower ink carries the whole picture, the upper one only the shadows, and where they lie on each other you get a black neither ink has alone." },
+    { id: "p2ink", type: "ink", label: "second ink", def: "blu", when: (s) => s.plate2 !== "aucune",
+      help: "The colour of the plate underneath." },
+    { id: "p2dx", type: "range", label: "shift", unit: "px", axis: "x", pair: "p2dy",
+      min: -30, max: 30, step: 1, def: -8, when: is("plate2", "registre"),
+      help: "How far the lower plate is out of register. Two or three units is a press slipping; twenty is a misprint made on purpose." },
+    { id: "p2dy", type: "range", label: "shift y", unit: "px", axis: "y", pair: "p2dx",
+      min: -30, max: 30, step: 1, def: 6, when: is("plate2", "registre") },
     { id: "p2from", type: "range", label: "shadows from", min: 0.15, max: 0.85, step: 0.05, def: 0.45,
       when: (s) => s.plate2 === "separation" && s.sym === "image",
-      help: "Where on the tone scale the top plate starts to take ink. Below it the ink underneath prints alone; above it the two lie on each other, which is where a duotone finds a black neither ink has by itself." },
-    { id: "p2grow", type: "range", label: "spread by", min: 2, max: 30, step: 1, def: 9, when: is("plate2", "grossi"),
-      help: "How far the plate underneath is let out past the one on top. On a flat cut it is a pen of that ink laid round the edge \u2014 which is what a press does to spread a plate." },
+      help: "Where on the scale from light to dark the upper plate starts taking ink. Below it the lower ink prints alone; above it the two lie on each other." },
+    { id: "p2grow", type: "range", label: "spread by", unit: "px", min: 2, max: 30, step: 1, def: 9, when: is("plate2", "grossi"),
+      help: "How far the plate underneath is let out past the one on top \u2014 the width of the rim. On a flat cut it is a pen of that ink run round the edge, which is exactly what a press does to spread a plate." },
   ] },
-  { id: "lettrage", label: "LETTERING", note: "words made of the same material as the bodies", fields: [
+  { id: "lettrage", label: "LETTERING", note: "a word, cut from the same material as the bodies", fields: [
     { id: "tmode", type: "select", label: "lettering", def: "none", options: [
-      { v: "none", label: "none" },
-      { v: "printed", label: "printed \u2014 through the press with everything else" },
-      { v: "cut", label: "cut \u2014 drawn on top, untouched" } ],
-      help: "Printed puts the word into the field before anything is done to it, so the screen, the twist and the bites all take it too. Cut lays it over the finished plate like a marker." },
+      { v: "none", label: "none \u2014 no word on this plate" },
+      { v: "printed", label: "printed \u2014 the press takes the word too" },
+      { v: "cut", label: "cut \u2014 laid on top, sharp and untouched" } ],
+      help: "Printed drops the word into the field before anything else happens, so the screen, the twist, the growth and the bites all take it: it is printed, not placed on top. Cut lays the finished letters over the plate with clean edges, the way a marker would." },
     { id: "text", type: "text", label: "the word", def: "AUTOPHAGIE", when: (s) => s.tmode !== "none",
       help: "Caps, figures, French accents, & and ?. Lowercase types the caps." },
-    { id: "tcap", type: "range", label: "cap height", min: 12, max: 400, step: 2, def: 96, when: (s) => s.tmode !== "none" },
-    { id: "tx", type: "range", label: "x", min: -300, max: 1300, step: 5, def: 60, when: (s) => s.tmode !== "none" },
-    { id: "ty", type: "range", label: "y (cap line)", min: -200, max: 1300, step: 5, def: 400, when: (s) => s.tmode !== "none" },
-    { id: "tweight", type: "range", label: "pen", min: 0.04, max: 0.34, step: 0.005, def: 0.12, when: (s) => s.tmode !== "none",
-      help: "Stroke width as a fraction of the cap height \u2014 the same number the font weights use." },
-    { id: "ttrack", type: "range", label: "tracking", min: -0.02, max: 0.4, step: 0.01, def: 0.1, when: (s) => s.tmode !== "none" },
-    { id: "thand", type: "range", label: "hand", min: 0, max: 0.09, step: 0.002, def: 0.02, when: (s) => s.tmode !== "none",
-      help: "The shake. Zero is ruled and machine-made; past 0.05 it starts to fall apart." },
-    { id: "tslant", type: "range", label: "slant", min: -28, max: 12, step: 1, def: 0, when: (s) => s.tmode !== "none" },
-    { id: "twidth", type: "range", label: "width", min: 0.6, max: 1.5, step: 0.02, def: 1, when: (s) => s.tmode !== "none" },
-    { id: "tseed", type: "seed", label: "hand seed", def: 7, when: (s) => s.tmode !== "none" },
+    { id: "tcap", type: "range", label: "font size", unit: "px", min: 8, max: 400, step: 1, def: 96,
+      when: (s) => s.tmode !== "none",
+      help: "Cap height \u2014 the height of an A in sheet units, which is what a size is here. Type it, drag the slider, or take the corner handle of the word on the sheet." },
+    { id: "tx", type: "range", label: "position", unit: "px", axis: "x", pair: "ty", box: "word",
+      min: -400, max: 1900, step: 1, def: 60, when: (s) => s.tmode !== "none",
+      help: "Where the word sits: the left end of the cap line, measured from the top-left corner of the sheet. Drag the word on the sheet, type the numbers, or use the align buttons to sit it against an edge or in the middle." },
+    { id: "ty", type: "range", label: "y", unit: "px", axis: "y", pair: "tx",
+      min: -400, max: 1900, step: 1, def: 400, when: (s) => s.tmode !== "none" },
+    { id: "tink", type: "ink", label: "word colour", def: "same", options: ["same"].concat(INKS),
+      when: (s) => s.tmode !== "none",
+      help: "Same means the word takes the ink of the pass it goes through. Give it a colour of its own and it becomes a plate of its own: it is pulled on a separate pass, so the twist, the growth and the bites that take the body no longer take the word." },
+    { id: "tweight", type: "range", label: "stroke weight", min: 0.04, max: 0.34, step: 0.005, def: 0.12,
+      when: (s) => s.tmode !== "none",
+      help: "How thick the pen is, as a fraction of the cap height: 0.04 is a hairline, 0.34 a slab. It is the same number the three cut weights of the typeface are made at, so this slider is also which weight the TTF button saves." },
+    { id: "ttrack", type: "range", label: "letter spacing", min: -0.02, max: 0.4, step: 0.01, def: 0.1,
+      when: (s) => s.tmode !== "none",
+      help: "The gap between letters, as a fraction of the cap height. Negative closes them until the strokes touch and grow together." },
+    { id: "twidth", type: "range", label: "letter width", min: 0.6, max: 1.5, step: 0.02, def: 1,
+      when: (s) => s.tmode !== "none",
+      help: "Stretches every letter sideways: 0.6 is condensed, 1.5 extended. The stroke keeps its weight, so wide letters do not get heavier." },
+    { id: "tslant", type: "range", label: "slant", unit: "\u00b0", min: -28, max: 12, step: 1, def: 0,
+      when: (s) => s.tmode !== "none",
+      help: "Leans the letters about the baseline. Positive tips them forward, the way an italic does; negative tips them back, which is the way the plates that use it lean." },
+    { id: "thand", type: "range", label: "shake", min: 0, max: 0.09, step: 0.002, def: 0.02,
+      when: (s) => s.tmode !== "none",
+      help: "How far the pen wanders off the ruled line. Zero is machine-made; 0.02 is a steady hand; past 0.05 the letters start to come apart." },
+    { id: "tseed", type: "seed", label: "hand seed", def: 7, when: (s) => s.tmode !== "none",
+      help: "Which particular hand drew it. The shake follows from this number, so the same number draws the same word." },
   ] },
   { id: "mobilier", label: "FURNITURE", note: "what a press leaves behind that is not the image", fields: [
     { id: "fInk", type: "ink", label: "furniture ink", def: "black",
@@ -2268,7 +2606,7 @@ const bPts = (pts, extra) => {
 
 function stBody(s) {
   const size = s.size, cx = q4(s.px + size / 2), cy = q4(s.py + size / 2);
-  const ink = INK[s.ink], sym = s.sym;
+  const ink = inkOf(s.ink), sym = s.sym;
   const T = (b) => `<g transform="translate(${n(s.px)} ${n(s.py)})">${b}</g>`;
   let f = null, solid = null, geom = null, bound = null;
 
@@ -2286,7 +2624,7 @@ function stBody(s) {
         r0: q4(s.gspace * 0.36), r1: q4(s.gspace * 0.82) });
       f = sSub(sGrow(f, q4(size * 0.028)), sPts(holes, 1.5));
       bound = bPad(bound, size * 0.028);
-      solid = T(sunSolid(geom, ink)) + stDiscs(holes, s.bg === "none" ? INK.white : INK[s.bg]);
+      solid = T(sunSolid(geom, ink)) + stDiscs(holes, s.bg === "none" ? INK.white : inkOf(s.bg));
     }
   }
   if (sym === "cell" || sym === "two") {
@@ -2417,7 +2755,7 @@ function stMetrics(W, H) {
   return k;
 }
 function stFurniture(s, W, H, rand) {
-  const ink = INK[s.fInk], out = [], k = stMetrics(W, H);
+  const ink = inkOf(s.fInk), out = [], k = stMetrics(W, H);
   const line = [];
   if (s.fBrackets) line.push(brackets(k.brX, k.brY, k.brW, k.brH, k.brC));
   if (s.fAxes) line.push(axes(k.cx, k.cy, k.axR, 4, 0, rand));
@@ -2425,7 +2763,7 @@ function stFurniture(s, W, H, rand) {
   if (s.fRing) line.push(`<circle cx="${n(k.cx)}" cy="${n(k.cy)}" r="${n(k.R)}" fill="none"/>`);
   if (line.length) out.push(G(ink, 1.2, line.join("")));
   if (s.fTicks) out.push(stTicks(k.cx, k.cy, k.tkR, 24, k.tkS, ink));
-  if (s.fBand) out.push(stBand(k.bdX, k.bdY, k.bdW, k.bdH, INK[s.fBandInk]));
+  if (s.fBand) out.push(stBand(k.bdX, k.bdY, k.bdW, k.bdH, inkOf(s.fBandInk)));
   if (s.fReg) out.push(stReg(k.rgA[0], k.rgA[1], 10, ink) + stReg(k.rgB[0], k.rgB[1], 10, ink));
   return out.join("");
 }
@@ -2460,10 +2798,15 @@ function buildPlate(state, hooks) {
      draws on the same hand the furniture does, so building one nobody looks
      at would move every mark that comes after it. */
   const flat = !img && s.mode === "plein";
+  /* the word's own ink, and whether it is one the pass already carries. A
+     second colour is a second plate: a word set apart is pulled on a pass of
+     its own, so the twist and the bites that take the body do not take it. */
+  const wink = inkOf(wordInk(s));
+  const apart = wink !== inkOf(s.ink);
   /* printed lettering joins the plate before anything is done to it — and
      where nothing was grown it is the whole of the field, so the word alone
      goes through the copier, and can be twisted and bitten like a body. */
-  const printed = s.tmode === "printed" && !img && !flat;
+  const printed = s.tmode === "printed" && !img && !flat && !apart;
   const word = () => LT.textField(s.text, s.tx, s.ty, s.tcap, tOpt);
   const base = f ? (printed ? sUnion(f, word()) : f) : (printed ? word() : null);
   const field = img || flat || !base ? null : stAppetite(base, s, cx, cy, rand);
@@ -2488,32 +2831,32 @@ function buildPlate(state, hooks) {
     }
   }
 
-  const ink = INK[s.ink], k = stMetrics(W, H);
+  const ink = inkOf(s.ink), k = stMetrics(W, H);
   const pr = (sdf, color, o) => screen(Object.assign({ x: 0, y: 0, w: W, h: H, sdf,
     cell: s.pitch, angle: s.angle, spread: s.dspread, falloff: s.falloff,
     grain: s.grain, seed: s.pseed | 0, color, bound }, o));
   const layers = [];
   /* the one pass worth watching arrive: it is the plate, the rest is furniture */
   let watched = -1;
-  const bg = s.bg === "none" ? null : INK[s.bg];
+  const bg = s.bg === "none" ? null : inkOf(s.bg);
   const openAt = (color) => {
     watched = layers.length;
     if (hooks) hooks.open(svgOpen(W, H, bg) + layers.join("") + `<g fill="${color}">`, W, H);
     return hooks ? { onBand: hooks.band } : null;
   };
-  if (s.fSwipe) layers.push(swipe(k.swX, k.swY, k.swW, k.swH, -4, rand, INK[s.fSwipeInk]));
+  if (s.fSwipe) layers.push(swipe(k.swX, k.swY, k.swW, k.swH, -4, rand, inkOf(s.fSwipeInk)));
   if (img) {
     const box = stImage(s, img);
     const pi = (o) => screenImage(Object.assign({}, box, o));
     if (s.plate2 !== "aucune") {
-      layers.push(pi(Object.assign({ angle: 75, seed: (s.pseed | 0) + 4, color: INK[s.p2ink] },
+      layers.push(pi(Object.assign({ angle: 75, seed: (s.pseed | 0) + 4, color: inkOf(s.p2ink) },
         stImage2(s))));
     }
     layers.push(pi(Object.assign({ color: ink }, stSep(s), openAt(ink))));
     /* the word cannot be fused into a photograph, but it can go through the
        same screen on the same pull */
     if (s.tmode === "printed") {
-      layers.push(pr(LT.textField(s.text, s.tx, s.ty, s.tcap, tOpt), ink,
+      layers.push(pr(LT.textField(s.text, s.tx, s.ty, s.tcap, tOpt), wink,
         { seed: (s.pseed | 0) + 1, bound: stTextBound(s, tOpt) }));
     }
   } else if (flat) {
@@ -2523,30 +2866,34 @@ function buildPlate(state, hooks) {
        with the body instead — one pass, so the second plate takes it too. */
     const cut = (solid || "")
       + (s.tmode === "printed"
-         ? LT.textSolid(s.text, s.tx, s.ty, s.tcap, Object.assign({ color: ink }, tOpt)) : "");
+         ? LT.textSolid(s.text, s.tx, s.ty, s.tcap, Object.assign({ color: wink }, tOpt)) : "");
     if (cut) {
       if (s.plate2 === "registre") {
         layers.push(`<g transform="translate(${n(s.p2dx)} ${n(s.p2dy)})">`
-          + under(cut, INK[s.p2ink]) + "</g>");
+          + under(cut, inkOf(s.p2ink)) + "</g>");
       } else if (s.plate2 === "grossi") {
-        layers.push(under(cut, INK[s.p2ink], s.p2grow));
+        layers.push(under(cut, inkOf(s.p2ink), s.p2grow));
       }
       layers.push(cut);
     }
   } else if (field) {
     if (s.plate2 === "registre") {
-      layers.push(pr(sShift(field, s.p2dx, s.p2dy), INK[s.p2ink], { angle: 75, seed: (s.pseed | 0) + 4,
+      layers.push(pr(sShift(field, s.p2dx, s.p2dy), inkOf(s.p2ink), { angle: 75, seed: (s.pseed | 0) + 4,
         bound: bound && { cx: bound.cx + s.p2dx, cy: bound.cy + s.p2dy, r: bound.r } }));
     } else if (s.plate2 === "grossi") {
-      layers.push(pr(sGrow(field, s.p2grow), INK[s.p2ink], { angle: 75, seed: (s.pseed | 0) + 4,
+      layers.push(pr(sGrow(field, s.p2grow), inkOf(s.p2ink), { angle: 75, seed: (s.pseed | 0) + 4,
         bound: bPad(bound, Math.max(0, s.p2grow)) }));
     }
     layers.push(pr(field, ink, openAt(ink)));
   }
+  /* the word that was set apart, on its own pass, in its own ink */
+  if (s.tmode === "printed" && apart && !img && !flat) {
+    layers.push(pr(word(), wink, { seed: (s.pseed | 0) + 1, bound: stTextBound(s, tOpt) }));
+  }
   if (s.tmode === "cut") layers.push(LT.textSolid(s.text, s.tx, s.ty, s.tcap,
-    Object.assign({ color: ink }, tOpt)));
+    Object.assign({ color: wink }, tOpt)));
   layers.push(stFurniture(s, W, H, rand));
-  const marks = s.trimMarks ? G(INK[s.fInk], 1.1, trim(W, H, 16, 8)) : "";
+  const marks = s.trimMarks ? G(inkOf(s.fInk), 1.1, trim(W, H, 16, 8)) : "";
   if (hooks && watched >= 0) {
     hooks.close("</g>" + layers.slice(watched + 1).join("") + marks + SVG_CLOSE);
   }
@@ -2560,14 +2907,18 @@ function buildPlate(state, hooks) {
 function emitPlate(state) {
   const s = Object.assign({}, DEFAULTS, state);
   const { w: W, h: H } = sheetOf(s);
-  const K = (v) => `INK.${v}`;
+  const K = (v) => (INK[v] ? `INK.${v}` : JSON.stringify(inkOf(v)));
   const L = [], size = s.size, cx = q4(s.px + size / 2), cy = q4(s.py + size / 2);
   const sym = s.sym, k = stMetrics(W, H);
   /* a flat pass never reads the field. Emitting `let f = ...` and an appetite
      that nothing looks at would say the plate was twisted when it was not. */
   const field = s.mode !== "plein";
+  /* the word's ink, and whether it is the pass's own — the same two lines
+     buildPlate reads, so the code says what the plate did */
+  const wink = wordInk(s);
+  const apart = inkOf(wink) !== inkOf(s.ink);
   /* and a plate with no body has no field either, unless a word makes one */
-  const hasF = field && (sym !== "none" || s.tmode === "printed");
+  const hasF = field && (sym !== "none" || (s.tmode === "printed" && !apart));
   const F = (line) => { if (hasF) L.push(line); };
   if (sym === "image") {
     L.push(`/* the image itself is not in this file — put ${s.imgName} beside the script */`);
@@ -2626,7 +2977,7 @@ function emitPlate(state) {
   const tOpts = `{ weight: ${s.tweight}, hand: ${s.thand}, track: ${s.ttrack}, `
     + `slant: ${s.tslant}, width: ${s.twidth}, seed: ${s.tseed | 0} }`;
   const isImg = sym === "image";
-  if (s.tmode === "printed" && !isImg)
+  if (s.tmode === "printed" && !isImg && !apart)
     F(sym === "none"
       ? `  let f = textField(${JSON.stringify(s.text)}, ${s.tx}, ${s.ty}, ${s.tcap}, ${tOpts});`
       : `  f = sUnion(f, textField(${JSON.stringify(s.text)}, ${s.tx}, ${s.ty}, ${s.tcap}, ${tOpts}));`);
@@ -2665,7 +3016,7 @@ function emitPlate(state) {
     }
     body.push(im(stSep(s) || {}));
     if (s.tmode === "printed") body.push(scr(`textField(${JSON.stringify(s.text)}, `
-      + `${s.tx}, ${s.ty}, ${s.tcap}, ${tOpts})`, s.ink, s.angle, (s.pseed | 0) + 1));
+      + `${s.tx}, ${s.ty}, ${s.tcap}, ${tOpts})`, wink, s.angle, (s.pseed | 0) + 1));
   } else if (!field) {
     const rr = [];
     for (let i = 0; i < s.ringN; i++) rr.push(q4((size * 0.5 * (i + 1)) / s.ringN));
@@ -2684,13 +3035,13 @@ function emitPlate(state) {
       two: `place(${s.px}, ${s.py}, sunSolid(g, ${K(s.ink)}))\n    + place(${q4(s.px + q4(size * 0.34))}, ${q4(s.py + q4(size * 0.34))}, cell({ size: ${q4(size * 0.85)}, seed: ${s.seed}, sat: ${s.sat}, color: ${K(s.ink)} }))`,
       spiral: `G(${K(s.ink)}, ${q4(s.sband * 0.35)}, spiralPath(${cx}, ${cy}, { a: ${stSpiralA(s)}, b: ${s.tight}, turns: ${s.turns}, step: 7 }))`,
       shell: `G(${K(s.ink)}, 0.9, spiralWalls(${cx}, ${cy}, { a: ${stSpiralA(s)}, b: ${s.tight}, turns: ${s.turns} }))\n    + G(${K(s.ink)}, ${q4(s.sband * 0.35)}, spiralPath(${cx}, ${cy}, { a: ${stSpiralA(s)}, b: ${s.tight}, turns: ${s.turns}, step: 7 }))`,
-      disc: JSON.stringify(`<circle cx="${cx}" cy="${cy}" r="${q4(size * 0.32)}" fill="${INK[s.ink]}"/>`),
+      disc: JSON.stringify(`<circle cx="${cx}" cy="${cy}" r="${q4(size * 0.32)}" fill="${inkOf(s.ink)}"/>`),
     };
     const form = sym === "none" ? ""
       : (solids[sym] || `/* ${sym}: cut it solid in the atelier, or screen it here */`);
     const say = s.tmode === "printed"
       ? `textSolid(${JSON.stringify(s.text)}, ${s.tx}, ${s.ty}, ${s.tcap}, `
-        + `Object.assign({ color: ${K(s.ink)} }, ${tOpts}))` : "";
+        + `Object.assign({ color: ${K(wink)} }, ${tOpts}))` : "";
     const cut = form && say ? form + `\n    + ` + say : form + say;
     if (cut) {
       if (s.plate2 === "registre") body.push(`place(${s.p2dx}, ${s.p2dy}, under(${cut}, ${K(s.p2ink)}))`);
@@ -2703,9 +3054,12 @@ function emitPlate(state) {
     if (s.plate2 === "grossi") body.push(scr(`sGrow(f, ${s.p2grow})`, s.p2ink, 75, p2seed));
     body.push(scr("f", s.ink, s.angle, s.pseed | 0));
   }
+  if (s.tmode === "printed" && apart && !isImg && field)
+    body.push(scr(`textField(${JSON.stringify(s.text)}, ${s.tx}, ${s.ty}, ${s.tcap}, ${tOpts})`,
+      wink, s.angle, (s.pseed | 0) + 1));
   if (s.tmode === "cut")
     body.push(`textSolid(${JSON.stringify(s.text)}, ${s.tx}, ${s.ty}, ${s.tcap}, `
-      + `Object.assign({ color: ${K(s.ink)} }, ${tOpts}))`);
+      + `Object.assign({ color: ${K(wink)} }, ${tOpts}))`);
   const furn = [];
   if (s.fBrackets) furn.push(`brackets(${k.brX}, ${k.brY}, ${k.brW}, ${k.brH}, ${k.brC})`);
   if (s.fAxes) furn.push(`axes(${k.cx}, ${k.cy}, ${k.axR}, 4, 0, q)`);
@@ -2792,8 +3146,8 @@ function rollState(seed) {
   });
 }
 
-module.exports = { PARAMS, FIELDS, DEFAULTS, SHEETS, INKS, INK, stMetrics, compactDots,
-  buildPlate, emitPlate, rollState, sheetOf, visible, useImage, theImage };
+module.exports = { PARAMS, FIELDS, DEFAULTS, SHEETS, INKS, INK, inkOf, isInk, stMetrics,
+  compactDots, buildPlate, emitPlate, rollState, sheetOf, visible, useImage, theImage };
 
 return module.exports;
 })();
@@ -2856,6 +3210,8 @@ global.MINOR = {
   DEFAULTS: __MI__["_studio.js"].DEFAULTS,
   SHEETS: __MI__["_studio.js"].SHEETS,
   INKS: __MI__["_studio.js"].INKS,
+  inkOf: __MI__["_studio.js"].inkOf,
+  isInk: __MI__["_studio.js"].isInk,
   buildPlate: __MI__["_studio.js"].buildPlate,
   emitPlate: __MI__["_studio.js"].emitPlate,
   rollState: __MI__["_studio.js"].rollState,

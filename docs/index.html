@@ -1,4 +1,5 @@
 <!doctype html>
+<html lang="en">
 <meta charset="utf-8">
 <title>MINOR INDEX Atelier</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -74,7 +75,28 @@
                white-space:nowrap; }
   .viewport { position:absolute; inset:0; overflow:hidden; display:grid; place-items:center; cursor:grab; }
   .viewport.dragging { cursor:grabbing; }
+  .viewport > * { grid-area:1/1; }
   .sheet { transform-origin:center center; will-change:transform; }
+
+  /* the handles: a box round the body and a box round the word, laid over the
+     sheet and moved with it. Their chrome is divided by the zoom so a hairline
+     stays a hairline at 400%. */
+  .marks { position:relative; transform-origin:center center; pointer-events:none; }
+  body.nomarks .marks { display:none; }
+  .marker { position:absolute; pointer-events:auto; cursor:move;
+            outline:calc(1px * var(--iz,1)) solid var(--blu); }
+  .marker.body { outline-style:dashed; outline-color:var(--rule); opacity:.75; }
+  .marker.body:hover, .marker.body.live { opacity:1; outline-color:var(--blu); }
+  .marker .tag { position:absolute; left:0; top:calc(-18px * var(--iz,1));
+                 background:var(--blu); color:var(--white); white-space:nowrap;
+                 font-size:calc(9.5px * var(--iz,1)); line-height:1.5;
+                 padding:0 calc(4px * var(--iz,1)); font-stretch:112%; letter-spacing:.08em;
+                 text-transform:uppercase; pointer-events:none; }
+  .marker.body .tag { background:var(--rule); }
+  .marker .h { position:absolute; right:calc(-5px * var(--iz,1)); bottom:calc(-5px * var(--iz,1));
+               width:calc(9px * var(--iz,1)); height:calc(9px * var(--iz,1));
+               background:var(--white); outline:calc(1px * var(--iz,1)) solid var(--blu);
+               cursor:nwse-resize; }
   .zoom { position:absolute; right:22px; bottom:11px; display:flex; align-items:center; gap:4px; }
   .zoom .b { padding:3px 8px; background:var(--white); }
   .zval { font-size:11px; font-weight:600; min-width:46px; text-align:center; color:#2c2c28;
@@ -146,6 +168,34 @@
   body.nohelp .help { display:none; }
 
   input[type=text] { width:100%; background:var(--grey); border:1px solid var(--rule); padding:5px 7px; font-size:13px; font-weight:600; letter-spacing:.04em; }
+
+  /* a number is typed as often as it is dragged, so every slider has a field
+     beside it, and the label above it is a dial you can pull sideways */
+  .numf { display:flex; align-items:center; gap:3px; background:var(--white);
+          border:1px solid var(--rule); padding:2px 5px; min-width:0; }
+  .numf:focus-within { outline:1px solid var(--blu); }
+  /* a number that has been moved off its default says so, quietly */
+  .numf.touched { box-shadow:inset 2px 0 0 var(--blu); }
+  .numf input { width:100%; min-width:34px; border:0; background:transparent; padding:0;
+                text-align:right; font-size:11.5px; font-weight:700; }
+  .numf input:focus { outline:none; }
+  .numf input::-webkit-outer-spin-button, .numf input::-webkit-inner-spin-button {
+    -webkit-appearance:none; margin:0; }
+  .numf .u { color:var(--dim); font-size:10px; flex:none; }
+  .numf .ax { color:var(--dim); font-size:10.5px; font-weight:700; flex:none; width:9px;
+              cursor:ew-resize; user-select:none; }
+  .f > .numf { width:82px; justify-self:end; }
+  .scrub { cursor:ew-resize; }
+  .scrub:hover { color:var(--blu); }
+  .xy { grid-column:1/-1; display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+  .align { grid-column:1/-1; display:flex; align-items:center; gap:2px; flex-wrap:wrap; }
+  .align .lab { font-size:10px; color:var(--dim); font-stretch:118%; letter-spacing:.12em;
+                text-transform:uppercase; margin-right:4px; }
+  .align .gap { width:7px; }
+  .align button { width:25px; height:21px; padding:0; border:1px solid var(--rule);
+                  background:var(--white); cursor:pointer; display:grid; place-items:center; }
+  .align button:hover { background:var(--fluo); }
+  .align button svg { width:12px; height:12px; fill:currentColor; display:block; }
   input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:15px; background:transparent; cursor:ew-resize; }
   input[type=range]::-webkit-slider-runnable-track { height:2px; background:var(--black); }
   input[type=range]::-moz-range-track { height:2px; background:var(--black); }
@@ -155,12 +205,26 @@
   input[type=range]:focus-visible::-moz-range-thumb { background:var(--blu); }
   select, input[type=number] { width:100%; background:var(--grey); border:1px solid var(--rule); padding:4px 6px; font-size:11.5px; }
   select:focus, input:focus { outline:1px solid var(--blu); }
-  .swatches { display:flex; gap:4px; grid-column:1/-1; }
-  .swatches button { width:100%; height:19px; border:1px solid var(--rule); cursor:pointer; padding:0; position:relative; }
-  .swatches button[aria-pressed=true]::after { content:""; position:absolute; inset:2px; border:1px solid var(--blu); }
+  .swatches { display:flex; gap:4px; grid-column:1/-1; align-items:stretch; }
+  .swatches button, .swatches .well { width:100%; height:21px; border:1px solid var(--rule);
+    cursor:pointer; padding:0; position:relative; display:block; }
+  .swatches [aria-pressed=true]::after, .swatches .well[data-on=true]::after {
+    content:""; position:absolute; inset:2px; border:1px solid var(--blu); }
+  .swatches .well { overflow:hidden;
+    background:conic-gradient(red, yellow, lime, aqua, blue, magenta, red); }
+  .swatches .well input { position:absolute; inset:0; width:100%; height:100%;
+                          opacity:0; cursor:pointer; border:0; padding:0; }
+  .swatches .well .paint { position:absolute; inset:0; }
+  .hexrow { grid-column:1/-1; display:flex; align-items:center; gap:6px; }
+  .hexrow .chip { width:21px; height:21px; border:1px solid var(--rule); flex:none; }
+  .hexrow input { width:98px; background:var(--white); border:1px solid var(--rule);
+                  padding:3px 6px; font-size:11.5px; font-weight:700; letter-spacing:.06em; }
+  .hexrow .note { font-size:10.5px; color:var(--dim); }
   .sw-black{background:var(--black)}.sw-white{background:var(--white)}
   .sw-fluo{background:var(--fluo)}.sw-blu{background:var(--blu)}.sw-grey{background:var(--grey)}
   .sw-none{background:repeating-linear-gradient(45deg,#fff,#fff 3px,#cfcfcb 3px,#cfcfcb 6px)}
+  .sw-same{background:var(--grey);font-size:9.5px;font-weight:700;color:var(--dim);
+           font-stretch:112%;letter-spacing:.08em;text-transform:uppercase}
   /* a switch is a small thing; it should not be the widest mark on the page */
   .chk { display:flex; align-items:center; gap:7px; grid-column:1/-1; width:max-content; min-width:96px;
          cursor:pointer; background:transparent; border:1px solid var(--rule); padding:3px 9px 3px 7px;
@@ -259,9 +323,15 @@
 
 <main>
   <div class="stage">
-    <div class="viewport" id="viewport"><div class="sheet" id="sheet"></div></div>
+    <div class="viewport" id="viewport">
+      <div class="sheet" id="sheet"></div>
+      <div class="marks" id="marks"></div>
+    </div>
     <div class="stagenote" id="stagenote">one plate — a body, an appetite, a press, and its furniture</div>
     <div class="zoom">
+      <button class="b ghost" id="handles" aria-pressed="true"
+              title="show the boxes round the body and the word — drag them to place them">Handles</button>
+      <span style="width:7px"></span>
       <button class="b ghost" id="zout" title="zoom out">−</button>
       <button class="b ghost" id="zfit" title="fit the sheet (0)">Fit</button>
       <span class="zval" id="zval">100%</span>
@@ -357,6 +427,122 @@
   var panel = document.getElementById("panel"), rows = {}, groups = [], picker = null;
   function el(t, cls, txt) { var e = document.createElement(t); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
 
+  /* ---- the controls ----------------------------------------------------
+   * A control is read as often as it is pulled, so every number has a field
+   * you can type into beside the slider, and its label is a dial: drag it
+   * sideways. A position is one control and not two — X and Y together, the
+   * buttons that sit a thing against an edge or in the middle, and a box on
+   * the sheet you can take hold of. And every ink has the house table with a
+   * well beside it, for a colour the table does not hold.
+   */
+  function decimals(step) { var t = String(step); return t.indexOf(".") > 0 ? t.split(".")[1].length : 0; }
+  function fix(f, v) { return Number(Math.max(f.min, Math.min(f.max, v)).toFixed(decimals(f.step))); }
+  /* the field is text and not <input type=number> on purpose: a browser set
+     to a comma locale writes 0,12 into a field that means 0.12, and then
+     refuses the dot when you type it back. This reads either, prints the dot,
+     and steps on the arrow keys the way a number field would. */
+  function readNum(t) { return parseFloat(String(t).replace(",", ".")); }
+  function setNum(inp, v, f) {
+    if (readNum(inp.value) !== +v) inp.value = v;
+    inp.parentNode.classList.toggle("touched", +v !== +f.def);
+  }
+  function numField(f, id, axis) {
+    var wrap = el("div", "numf");
+    if (axis) { var ax = el("span", "ax", axis); wrap.appendChild(ax); scrub(ax, f, id); }
+    var inp = el("input"); inp.type = "text"; inp.id = "c_" + id;
+    inp.inputMode = "decimal"; inp.autocomplete = "off"; inp.spellcheck = false;
+    inp.setAttribute("role", "spinbutton");
+    inp.setAttribute("aria-valuemin", f.min); inp.setAttribute("aria-valuemax", f.max);
+    inp.setAttribute("aria-label", f.label + (axis ? " " + axis : ""));
+    inp.oninput = function () {
+      var v = readNum(inp.value);
+      if (isFinite(v) && v >= f.min && v <= f.max) set(id, Number(v.toFixed(decimals(f.step))), true);
+    };
+    inp.onchange = function () {
+      var v = readNum(inp.value);
+      if (!isFinite(v)) return sync();
+      set(id, fix(f, v), false);
+      inp.value = state[id];             /* however it was typed, it reads back as one */
+    };
+    inp.onkeydown = function (e) {
+      var up = e.key === "ArrowUp", down = e.key === "ArrowDown";
+      if (!up && !down) return;
+      e.preventDefault();
+      var by = f.step * (e.shiftKey ? 10 : 1);
+      set(id, fix(f, (+state[id]) + (up ? by : -by)), false);
+    };
+    wrap.appendChild(inp);
+    if (f.unit) wrap.appendChild(el("span", "u", f.unit));
+    return { wrap: wrap, input: inp };
+  }
+  /* the label as a dial — two pixels to the step, ten times that with shift */
+  function scrub(handle, f, id) {
+    handle.classList.add("scrub");
+    handle.addEventListener("pointerdown", function (e) {
+      if (e.button) return;
+      e.preventDefault();
+      var x0 = e.clientX, v0 = +state[id], moved = false;
+      handle.setPointerCapture(e.pointerId);
+      function move(ev) {
+        var dx = ev.clientX - x0;
+        if (!moved) { if (Math.abs(dx) < 2) return; moved = true; remember(null); }
+        set(id, fix(f, v0 + Math.round(dx / 2) * f.step * (ev.shiftKey ? 10 : 1)), true);
+      }
+      function up() {
+        handle.removeEventListener("pointermove", move);
+        handle.removeEventListener("pointerup", up);
+        handle.removeEventListener("pointercancel", up);
+        if (moved) { sync(); render(false); }
+      }
+      handle.addEventListener("pointermove", move);
+      handle.addEventListener("pointerup", up);
+      handle.addEventListener("pointercancel", up);
+    });
+  }
+  var ICON = {
+    l: '<svg viewBox="0 0 12 12"><rect x="0" y="0" width="1.3" height="12"/><rect x="3" y="2" width="8" height="3"/><rect x="3" y="7" width="5" height="3"/></svg>',
+    cx: '<svg viewBox="0 0 12 12"><rect x="5.35" y="0" width="1.3" height="12"/><rect x="2" y="2" width="8" height="3"/><rect x="3.5" y="7" width="5" height="3"/></svg>',
+    r: '<svg viewBox="0 0 12 12"><rect x="10.7" y="0" width="1.3" height="12"/><rect x="1" y="2" width="8" height="3"/><rect x="4" y="7" width="5" height="3"/></svg>',
+    t: '<svg viewBox="0 0 12 12"><rect x="0" y="0" width="12" height="1.3"/><rect x="2" y="3" width="3" height="8"/><rect x="7" y="3" width="3" height="5"/></svg>',
+    cy: '<svg viewBox="0 0 12 12"><rect x="0" y="5.35" width="12" height="1.3"/><rect x="2" y="2" width="3" height="8"/><rect x="7" y="3.5" width="3" height="5"/></svg>',
+    b: '<svg viewBox="0 0 12 12"><rect x="0" y="10.7" width="12" height="1.3"/><rect x="2" y="1" width="3" height="8"/><rect x="7" y="4" width="3" height="5"/></svg>'
+  };
+  var ALIGN = [["l", "to the left edge"], ["cx", "across the middle"], ["r", "to the right edge"],
+               ["|", ""], ["t", "to the top edge"], ["cy", "down the middle"], ["b", "to the foot"]];
+  function alignRow(kind) {
+    var wrap = el("div", "align");
+    wrap.appendChild(el("span", "lab", "align"));
+    ALIGN.forEach(function (a) {
+      if (a[0] === "|") return wrap.appendChild(el("span", "gap"));
+      var b = el("button"); b.type = "button";
+      b.title = "sit the " + kind + " " + a[1] + " of the sheet";
+      b.setAttribute("aria-label", b.title);
+      b.innerHTML = ICON[a[0]];
+      b.onclick = function () { align(kind, a[0]); };
+      wrap.appendChild(b);
+    });
+    return wrap;
+  }
+  /* x and y, side by side, with the sheet to align against */
+  function pairRow(box, fx, fy) {
+    var row = el("div", "f");
+    var lab = el("span", null, fx.label); lab.id = "l_" + fx.id;
+    row.appendChild(lab);
+    var grid = el("div", "xy");
+    var X = numField(fx, fx.id, "X"), Y = numField(fy, fy.id, "Y");
+    grid.appendChild(X.wrap); grid.appendChild(Y.wrap);
+    row.appendChild(grid);
+    if (fx.box) row.appendChild(alignRow(fx.box));
+    if (fx.help) row.appendChild(el("span", "help", fx.help));
+    box.appendChild(row);
+    rows[fx.id] = { row: row, input: X.input, val: null, f: fx, paint: function (v) {
+      setNum(X.input, v, fx);
+    } };
+    rows[fy.id] = { row: row, input: Y.input, val: null, f: fy, paint: function (v) {
+      setNum(Y.input, v, fy);
+    } };
+  }
+
   M.PARAMS.forEach(function (grp) {
     var sec = el("section", "grp");
     var h = el("h2");
@@ -368,7 +554,15 @@
     var gn = h.lastChild;
     groups.push({ sec: sec, grp: grp, label: gl, note: gn });
 
+    var byId = {}, drawn = {};
+    grp.fields.forEach(function (f) { byId[f.id] = f; });
+
     grp.fields.forEach(function (f) {
+      if (drawn[f.id]) return;
+      if (f.axis === "x" && f.pair && byId[f.pair]) {
+        drawn[f.pair] = true;
+        return pairRow(box, f, byId[f.pair]);
+      }
       var row = el("div", "f");
       /* a label points at a control or at nothing. Swatches, switches and the
          image card are built out of buttons and have no id to point at, so
@@ -378,44 +572,119 @@
       var lab = el(linked ? "label" : "span", null, f.label);
       if (linked) { lab.htmlFor = "c_" + f.id; } else { lab.id = "l_" + f.id; }
       var val = el("span", "val");
-      row.appendChild(lab); row.appendChild(val);
-      var input;
+      row.appendChild(lab);
+      var input, paint;
 
       if (f.type === "range") {
-        input = el("input"); input.type = "range"; input.min = f.min; input.max = f.max; input.step = f.step;
-        input.className = "wide"; input.id = "c_" + f.id;
-        input.oninput = function () { set(f.id, parseFloat(input.value), true); };
-        input.onchange = function () { set(f.id, parseFloat(input.value), false); };
-        row.appendChild(input);
+        var nf = numField(f, f.id);
+        row.appendChild(nf.wrap);
+        scrub(lab, f, f.id);
+        var sl = el("input"); sl.type = "range";
+        sl.min = f.min; sl.max = f.max; sl.step = f.step;
+        sl.className = "wide"; sl.tabIndex = -1; sl.setAttribute("aria-hidden", "true");
+        sl.oninput = function () { set(f.id, parseFloat(sl.value), true); };
+        sl.onchange = function () { set(f.id, parseFloat(sl.value), false); };
+        row.appendChild(sl);
+        input = nf.input;
+        paint = function (v) { sl.value = v; setNum(nf.input, v, f); };
       } else if (f.type === "select") {
+        row.appendChild(val);
         input = el("select"); input.id = "c_" + f.id; input.className = "wide";
         f.options.forEach(function (o) { var op = el("option", null, o.label); op.value = o.v; input.appendChild(op); });
         input.onchange = function () { set(f.id, input.value, false); };
         row.appendChild(input);
+        paint = function (v) {
+          /* an option can carry the same `when` a whole row does — a separation
+             is a thing to do to a photograph and to nothing else. If the one
+             that is chosen has just gone away, fall back to the default. */
+          var held = true;
+          f.options.forEach(function (o, i) {
+            var on = M.visible(o, state);
+            input.options[i].hidden = !on;
+            input.options[i].disabled = !on;
+            if (o.v === v && !on) held = false;
+          });
+          if (!held) v = state[f.id] = f.def;
+          input.value = v; val.textContent = "";
+        };
       } else if (f.type === "ink") {
+        row.appendChild(val);
         input = el("div", "swatches");
-        input.setAttribute("role", "radiogroup");
+        input.setAttribute("role", "group");
         input.setAttribute("aria-labelledby", "l_" + f.id);
         f.options.forEach(function (o) {
-          var b = el("button", "sw-" + o); b.title = o; b.type = "button";
+          var b = el("button", "sw-" + o, o === "same" ? "same" : null); b.type = "button";
+          b.title = o === "same" ? "the ink of the pass it goes through" : o;
           b.setAttribute("aria-label", f.label + ": " + o);
           b.onclick = function () { set(f.id, o, false); };
           input.appendChild(b);
         });
+        /* the well: a colour the table does not hold */
+        var well = el("label", "well");
+        well.title = "mix a colour of your own";
+        var chip = el("span", "paint"), pick = el("input");
+        pick.type = "color";
+        pick.setAttribute("aria-label", f.label + ": a colour of your own");
+        pick.oninput = function () { set(f.id, pick.value, true); };
+        pick.onchange = function () { set(f.id, pick.value, false); };
+        well.appendChild(chip); well.appendChild(pick);
+        input.appendChild(well);
         row.appendChild(input);
+        /* and the same colour spelled out, so it can be typed or read off */
+        var hexrow = el("div", "hexrow");
+        var swatch = el("span", "chip"), hin = el("input");
+        hin.type = "text"; hin.spellcheck = false;
+        hin.setAttribute("aria-label", f.label + " as a hex colour");
+        hin.onchange = function () {
+          var v = hin.value.trim();
+          if (v && v.charAt(0) !== "#") v = "#" + v;
+          if (M.isInk(v)) return set(f.id, v.toLowerCase(), false);
+          toast("that is not a colour \u2014 write it as #1a2b3c"); sync();
+        };
+        hexrow.appendChild(swatch); hexrow.appendChild(hin);
+        hexrow.appendChild(el("span", "note", "a fourth ink is a pass nobody paid for"));
+        row.appendChild(hexrow);
+        paint = function (v) {
+          var named = f.options.indexOf(v) >= 0;
+          f.options.forEach(function (o, i) {
+            input.children[i].setAttribute("aria-pressed", o === v ? "true" : "false");
+          });
+          well.setAttribute("data-on", named ? "false" : "true");
+          chip.style.display = named ? "none" : "block";
+          if (!named) {
+            chip.style.background = v; swatch.style.background = v;
+            var six = v.length === 4 ? "#" + v[1] + v[1] + v[2] + v[2] + v[3] + v[3] : v;
+            if (pick.value !== six) pick.value = six;
+            if (hin.value.toLowerCase() !== String(v).toLowerCase()) hin.value = v;
+          }
+          hexrow.style.display = named ? "none" : "flex";
+          val.textContent = named ? v : v;
+        };
       } else if (f.type === "bool") {
+        row.appendChild(val);
         input = el("button", "chk"); input.type = "button";
         input.setAttribute("aria-labelledby", "l_" + f.id);
         input.appendChild(el("span", "box"));
         input.appendChild(el("span", "state", state[f.id] ? "on" : "off"));
         input.onclick = function () { set(f.id, !state[f.id], false); };
         row.appendChild(input);
+        paint = function (v) {
+          input.setAttribute("aria-pressed", v ? "true" : "false");
+          input.children[1].textContent = v ? "on" : "off"; val.textContent = "";
+        };
       } else if (f.type === "text") {
+        row.appendChild(val);
         input = el("input"); input.type = "text"; input.id = "c_" + f.id; input.className = "wide";
         input.oninput = function () { set(f.id, input.value, true); };
         input.onchange = function () { set(f.id, input.value, false); };
         row.appendChild(input);
+        paint = function (v) {            /* leave the caret alone while typing */
+          if (input.value !== v) input.value = v;
+          var n = String(v).length;
+          val.textContent = n + (n === 1 ? " letter" : " letters");
+        };
       } else if (f.type === "image") {
+        row.appendChild(val);
         input = el("div", "imgpick none");
         input.setAttribute("role", "group");
         input.setAttribute("aria-labelledby", "l_" + f.id);
@@ -439,19 +708,22 @@
         input.onclick = function () { if (!HELD.url) openPicker(); };
         row.appendChild(input);
         picker = { card: input, th: th, img: thumb, name: nm, dim: dm, fit: bFit, clear: bClear };
+        paint = function () { val.textContent = ""; };
       } else if (f.type === "seed") {
+        row.appendChild(val);
         input = el("div", "seedrow");
         var num = el("input"); num.type = "number"; num.id = "c_" + f.id;
         num.onchange = function () { set(f.id, parseInt(num.value, 10) || 1, false); };
-        var re = el("button", "b ghost", "↻"); re.type = "button"; re.title = "grow another one";
+        var re = el("button", "b ghost", "\u21bb"); re.type = "button"; re.title = "grow another one";
         re.setAttribute("aria-label", "roll another " + f.label);
         re.onclick = function () { set(f.id, Math.floor(Math.random() * 900) + 3, false); };
         input.appendChild(num); input.appendChild(re); row.appendChild(input);
         input = num;
+        paint = function (v) { num.value = v; val.textContent = ""; };
       }
       if (f.help) { var hp = el("span", "help", f.help); row.appendChild(hp); }
       box.appendChild(row);
-      rows[f.id] = { row: row, input: input, val: val, f: f };
+      rows[f.id] = { row: row, input: input, val: val, f: f, paint: paint };
     });
   });
 
@@ -489,43 +761,17 @@
     b.onclick = function () { setMode(b.getAttribute("data-mode")); };
   });
 
-  function decimals(step) { var s = String(step); return s.indexOf(".") > 0 ? s.split(".")[1].length : 0; }
   function sync() {
     Object.keys(rows).forEach(function (id) {
       var r = rows[id], v = state[id], f = r.f;
       r.row.classList.toggle("hide", !M.visible(f, state));
-      var changed = v !== f.def && f.type !== "select" && f.type !== "image";
-      r.val.className = "val" + (changed ? " touched" : "");
-      if (f.type === "range") { r.input.value = v; r.val.textContent = (+v).toFixed(decimals(f.step)); }
-      else if (f.type === "select") {
-        /* an option can carry the same `when` a whole row does — a separation
-           is a thing to do to a photograph and to nothing else. If the one
-           that is chosen has just gone away, fall back to the default. */
-        var held = true;
-        f.options.forEach(function (o, i) {
-          var on = M.visible(o, state);
-          r.input.options[i].hidden = !on;
-          r.input.options[i].disabled = !on;
-          if (o.v === v && !on) held = false;
-        });
-        if (!held) v = state[id] = f.def;
-        r.input.value = v; r.val.textContent = "";
+      if (r.val) {
+        var changed = v !== f.def && f.type !== "select" && f.type !== "image";
+        r.val.className = "val" + (changed ? " touched" : "");
       }
-      else if (f.type === "ink") {
-        r.val.textContent = v;
-        Array.prototype.forEach.call(r.input.children, function (b, i) {
-          b.setAttribute("aria-pressed", f.options[i] === v ? "true" : "false");
-        });
-      } else if (f.type === "bool") {
-        r.input.setAttribute("aria-pressed", v ? "true" : "false");
-        r.input.children[1].textContent = v ? "on" : "off"; r.val.textContent = "";
-      } else if (f.type === "seed") { r.input.value = v; r.val.textContent = ""; }
-      else if (f.type === "image") { r.val.textContent = ""; }
-      else if (f.type === "text") {          /* leave the caret alone while typing */
-        if (r.input.value !== v) r.input.value = v;
-        r.val.textContent = String(v).length;
-      }
+      if (r.paint) r.paint(v);
     });
+    paintMarks();
     var onImage = state.sym === "image";
     groups.forEach(function (g) {
       g.sec.hidden = !M.visible(g.grp, state);
@@ -692,6 +938,7 @@
   }
 
   var sheetEl = document.getElementById("sheet"), busy = document.getElementById("busy");
+  var marksEl = document.getElementById("marks");
   var viewport = document.getElementById("viewport");
   var codeEl = document.getElementById("code"), timer = null, last = "", lastSize = [640, 640];
   var KW = /\b(sunGeom|sunSolid|sunSDF|sunWhirl|cellGeom|cellSDF|cell|phylloPts|sPts|sScatter|sSpiral|spiralPath|spiralWalls|screen|sDisc|sRing|sUnion|sSub|sShift|sTwist|sGrow|sSmooth|sMorph|sWobble|sBite|mouths|discs|swipe|brackets|axes|polar|ticks|band|reg|place|G|plate|rng)\b/g;
@@ -699,7 +946,14 @@
   /* ---- zoom and pan ---------------------------------------------------- */
   var view = { z: 1, x: 0, y: 0, fitted: true };
   function applyView() {
-    sheetEl.style.transform = "translate(" + view.x + "px," + view.y + "px) scale(" + view.z + ")";
+    var t = "translate(" + view.x + "px," + view.y + "px) scale(" + view.z + ")";
+    sheetEl.style.transform = t;
+    /* the handles ride on the sheet, and their chrome is divided by the zoom
+       so a hairline is a hairline at 25% and at 400% */
+    marksEl.style.transform = t;
+    marksEl.style.width = lastSize[0] + "px";
+    marksEl.style.height = lastSize[1] + "px";
+    marksEl.style.setProperty("--iz", 1 / view.z);
     document.getElementById("zval").textContent = Math.round(view.z * 100) + "%";
   }
   function fit() {
@@ -733,6 +987,111 @@
     viewport.addEventListener("pointercancel", function () { down = null; viewport.classList.remove("dragging"); });
   })();
   window.addEventListener("resize", function () { if (view.fitted) fit(); });
+
+  /* ---- the boxes on the sheet ------------------------------------------
+   * X and Y are numbers, but placing is not a numeric act. The body and the
+   * word each get a box laid over the sheet: drag it to move it, take the
+   * corner to resize it. It is the same two settings either way — the fields
+   * in the panel and the box on the sheet are one control with two faces.
+   */
+  function textOpts() {
+    return { weight: state.tweight, hand: state.thand, track: state.ttrack,
+             slant: state.tslant, width: state.twidth, seed: state.tseed | 0 };
+  }
+  /* what a thing occupies on the sheet, and the two settings that place it */
+  function boxOf(kind) {
+    if (kind === "word") {
+      var m = null;
+      try { m = M.text.textBox(state.text, state.tx, state.ty, state.tcap, textOpts()); }
+      catch (e) { return null; }
+      if (!m || !(m.w > 0)) return null;
+      return { x: state.tx, y: state.ty, w: m.w, h: m.h, ids: ["tx", "ty"], size: "tcap" };
+    }
+    if (state.sym === "none") return null;
+    return { x: state.px, y: state.py, w: state.size, h: state.size,
+             ids: ["px", "py"], size: "size" };
+  }
+  function align(kind, how) {
+    var b = boxOf(kind);
+    if (!b) return;
+    var sh = M.sheetOf(state), fx = M.FIELDS[b.ids[0]], fy = M.FIELDS[b.ids[1]];
+    var to = { l: [fx, b.ids[0], 0], cx: [fx, b.ids[0], (sh.w - b.w) / 2], r: [fx, b.ids[0], sh.w - b.w],
+               t: [fy, b.ids[1], 0], cy: [fy, b.ids[1], (sh.h - b.h) / 2], b: [fy, b.ids[1], sh.h - b.h] }[how];
+    if (to) set(to[1], fix(to[0], Math.round(to[2])), false);
+  }
+  var MARKS = {};
+  function makeMarker(kind, label) {
+    var m = el("div", "marker " + kind);
+    var tag = el("span", "tag", label), grip = el("span", "h");
+    m.appendChild(tag); m.appendChild(grip);
+    hold(m, kind, false); hold(grip, kind, true);
+    marksEl.appendChild(m);
+    return { box: m, tag: tag };
+  }
+  function hold(handle, kind, resize) {
+    handle.addEventListener("pointerdown", function (e) {
+      if (e.button) return;
+      var b = boxOf(kind);
+      if (!b) return;
+      e.preventDefault(); e.stopPropagation();
+      handle.setPointerCapture(e.pointerId);
+      var x0 = e.clientX, y0 = e.clientY, moved = false;
+      var sx = +state[b.ids[0]], sy = +state[b.ids[1]], sz = +state[b.size];
+      var fx = M.FIELDS[b.ids[0]], fy = M.FIELDS[b.ids[1]], fz = M.FIELDS[b.size];
+      MARKS[kind].box.classList.add("live");
+      function move(ev) {
+        var dx = (ev.clientX - x0) / view.z, dy = (ev.clientY - y0) / view.z;
+        if (!moved) {
+          if (Math.abs(dx) + Math.abs(dy) < 1.5) return;
+          moved = true; remember(null);
+        }
+        if (resize) {
+          /* the word takes its size from the drop, the body from either hand */
+          state[b.size] = fix(fz, Math.round(sz + (kind === "word" ? dy
+            : (Math.abs(dx) > Math.abs(dy) ? dx : dy))));
+        } else {
+          state[b.ids[0]] = fix(fx, Math.round(sx + dx));
+          state[b.ids[1]] = fix(fy, Math.round(sy + dy));
+        }
+        sync(); render(true);
+      }
+      function up() {
+        handle.removeEventListener("pointermove", move);
+        handle.removeEventListener("pointerup", up);
+        handle.removeEventListener("pointercancel", up);
+        MARKS[kind].box.classList.remove("live");
+        if (moved) { sync(); render(false); }
+      }
+      handle.addEventListener("pointermove", move);
+      handle.addEventListener("pointerup", up);
+      handle.addEventListener("pointercancel", up);
+    });
+  }
+  MARKS.body = makeMarker("body", "body");
+  MARKS.word = makeMarker("word", "word");
+  function place(kind, b, label) {
+    var m = MARKS[kind];
+    m.box.hidden = !b;
+    if (!b) return;
+    m.box.style.left = b.x + "px"; m.box.style.top = b.y + "px";
+    m.box.style.width = Math.max(1, b.w) + "px"; m.box.style.height = Math.max(1, b.h) + "px";
+    m.tag.textContent = label;
+  }
+  function paintMarks() {
+    var wb = state.tmode === "none" ? null : boxOf("word");
+    place("word", wb, wb ? "word \u00b7 " + Math.round(wb.w) + "\u00d7" + Math.round(wb.h) : "");
+    var bb = boxOf("body");
+    place("body", bb, bb ? (state.sym === "image" ? "image" : state.sym)
+      + " \u00b7 " + Math.round(state.size) : "");
+  }
+  (function () {
+    var t = document.getElementById("handles");
+    t.onclick = function () {
+      var on = t.getAttribute("aria-pressed") !== "true";
+      t.setAttribute("aria-pressed", on ? "true" : "false");
+      document.body.classList.toggle("nomarks", !on);
+    };
+  })();
 
   /* ---- the press ------------------------------------------------------- *
    * The plate is built in a worker, and it arrives the way a plate arrives
@@ -815,7 +1174,7 @@
     busyPull = ++pull;
     busy.classList.add("on");
     press.postMessage({ type: "pull", id: busyPull, state: st, draft: !!draft,
-      code: !draft, ink: M.INK[st.ink] });
+      code: !draft, ink: M.inkOf(st.ink) });
   }
   function sendImage() {
     if (!press || !pressReady) return;

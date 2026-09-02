@@ -15,6 +15,7 @@
  * decodes its own PNGs should not import a library to write a font.
  */
 const T = require("./_letters.js");
+const P = require("./_press.js");   /* the copier, so a screened cut is the one on the sheet */
 
 const UPM = 1000, CAP = 700;          /* the em, and the cap height inside it */
 const ASC = 950, DESC = -180;
@@ -38,6 +39,7 @@ const weightClass = (pen) => {
 
 /* ---- pen into outlines -------------------------------------------------- */
 const ARCPTS = 12;                    /* points round a cap or a joint */
+const DOTPTS = 12;                   /* and round a halftone dot, which is set large */
 function capsule(x1, y1, x2, y2, r) {
   const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
   if (L < 1e-6) return disc(x1, y1, r);
@@ -55,10 +57,11 @@ function capsule(x1, y1, x2, y2, r) {
   }
   return pts;
 }
-function disc(cx, cy, r) {
+function disc(cx, cy, r, k) {
+  const N = k || ARCPTS * 2;
   const pts = [];
-  for (let i = 0; i < ARCPTS * 2; i++) {
-    const a = (i / (ARCPTS * 2)) * Math.PI * 2;
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2;
     pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
   }
   return pts;
@@ -128,6 +131,273 @@ function outlineGlyph(ch, opt) {
   const adv = Math.round((g.w + T.TRACK) * CAP * o.width);
   return { contours: rings.map((ring) => ring.map((p) => [Math.round(p[0]), Math.round(p[1])])),
            adv, flips };
+}
+
+/* ---- the same letter, through the press ---------------------------------
+ *
+ * A plate does not stop at the cut. The letters are a distance field like
+ * every body the atelier prints, so a word takes the screen, the flood and
+ * the knock-out exactly as a sun does — and each of those is a font too, as
+ * long as the ink it leaves can be written as filled outlines.
+ *
+ *   screened     the copier, once, on the letter's own field: every dot its
+ *                own contour. Built at the size a plate is printed at and
+ *                enlarged to the em, so the screen is the one that is on the
+ *                sheet and not a finer one invented for type.
+ *   over-inked   the same press run hot: the field grown, the cell coarser,
+ *                the dots spread until they touch. Overlaps cost nothing —
+ *                non-zero winding is a union.
+ *   knocked out  the letter as a hole in the slab. This one cannot be a pile
+ *                of capsules: two of them over each other wind to −2 inside
+ *                the slab's +1 and the ink comes back. So the field is traced
+ *                instead — marching squares along the contour — and what
+ *                comes back is the union's own edge, one loop per boundary,
+ *                which can be wound against the slab.
+ */
+const PLATE_CAP = 62;                 /* the cap height Fig. 05 prints at */
+const PRESSES = [
+  { cut: "screen", name: "Screened", label: "Screened",
+    weight: 0.13, hand: 0.02,
+    screen: { cell: 3.2, falloff: 5, spread: 0.54, grain: 0.1, angle: 15, seed: 5, grow: 0 } },
+  { cut: "hot", name: "Overinked", label: "Over-inked",
+    weight: 0.13, hand: 0.02,
+    screen: { cell: 4.8, falloff: 7, spread: 0.66, grain: 0.14, angle: 15, seed: 5, grow: 1.5 } },
+  { cut: "knock", name: "Knockout", label: "Knocked out",
+    weight: 0.155, hand: 0.02, slab: [-150, 840], step: 6, tol: 0.3 },
+];
+const press = (cut) => PRESSES.filter((p) => p.cut === cut)[0];
+
+const segD = (px, py, s) => {
+  const dx = s.x2 - s.x1, dy = s.y2 - s.y1;
+  const L2 = dx * dx + dy * dy || 1;
+  const t = Math.max(0, Math.min(1, ((px - s.x1) * dx + (py - s.y1) * dy) / L2));
+  return Math.hypot(px - (s.x1 + dx * t), py - (s.y1 + dy * t));
+};
+
+/**
+ * One character as a distance field, in font units: how far outside am I.
+ *
+ * The same walk `outlineGlyph` makes — the same skeleton, the same wobble,
+ * the same seed — read as distance rather than as capsules. `scale` is the
+ * cap height it is measured at: the em for a cut, and the plate for a screen,
+ * whose cell and grain are numbers in millimetres and not in em units.
+ */
+function glyphField(ch, opt) {
+  const o = Object.assign({ weight: 0.12, hand: 0.015, seed: 7, width: 1, slant: 0,
+                            scale: CAP }, opt);
+  const g = T.glyph(ch);
+  if (!g) return null;
+  const S = o.scale;
+  const tp = T.textPaths(ch, 0, 0, 1, { weight: o.weight, hand: o.hand, seed: o.seed,
+                                        width: o.width, slant: o.slant, track: 0 });
+  const r = (o.weight / 2) * S;
+  const F = (p) => [p[0] * S, (1 - p[1]) * S];
+  const segs = [];
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const gl of tp.glyphs) {
+    for (const run of gl.runs) {
+      for (let i = 0; i < run.length; i++) {
+        const p = F(run[i]), q = F(run[i > 0 ? i - 1 : 0]);
+        segs.push({ x1: q[0], y1: q[1], x2: p[0], y2: p[1] });   /* the ends are caps */
+        if (p[0] < x0) x0 = p[0];
+        if (p[0] > x1) x1 = p[0];
+        if (p[1] < y0) y0 = p[1];
+        if (p[1] > y1) y1 = p[1];
+      }
+    }
+  }
+  const adv = (g.w + T.TRACK) * S * o.width;
+  if (!segs.length) return { d: null, r, adv, scale: S, box: null, bound: null };
+  const d = (x, y) => {
+    let m = 1e9;
+    for (let i = 0; i < segs.length; i++) {
+      const v = segD(x, y, segs[i]);
+      if (v < m) m = v;
+    }
+    return m - r;
+  };
+  return { d, r, adv, scale: S,
+           box: { x0: x0 - r, y0: y0 - r, x1: x1 + r, y1: y1 + r },
+           bound: { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2,
+                    r: Math.hypot(x1 - x0, y1 - y0) / 2 + r } };
+}
+
+/**
+ * The press, on one letter: every dot a contour of its own.
+ *
+ * The lattice is pinned to the glyph's origin rather than to its bounding
+ * box, so the same letter is screened the same way wherever it is set and
+ * two letters side by side are two windows onto one screen.
+ */
+function screenGlyph(ch, o) {
+  const s = o.screen;
+  const S = o.plateCap || PLATE_CAP;
+  const f = glyphField(ch, Object.assign({}, o, { scale: S }));
+  if (!f) return null;
+  const k = CAP / S;                                   /* the plate, enlarged to the em */
+  if (!f.d) return { contours: [], adv: Math.round(f.adv * k) };
+  const grow = s.grow || 0;
+  const pad = s.falloff + s.cell;
+  /* the lattice is laid out from the middle of the window, so the window is
+     centred on the lattice point nearest the letter: tight around the ink —
+     a window twice as wide as the letter prints the empty half of it, and
+     that grain lands on the next letter along — and still in step with the
+     origin, so a letter is screened the same way wherever it is set */
+  const a = (s.angle * Math.PI) / 180, ca = Math.cos(a), sa = Math.sin(a);
+  const dx = (f.box.x0 + f.box.x1) / 2, dy = (f.box.y0 + f.box.y1) / 2 - S * 0.5;
+  const li = Math.round((dx * ca + dy * sa) / s.cell) * s.cell;
+  const lj = Math.round((-dx * sa + dy * ca) / s.cell) * s.cell;
+  const ax = li * ca - lj * sa, ay = S * 0.5 + li * sa + lj * ca;
+  const W = Math.max(Math.abs(f.box.x0 - ax), Math.abs(f.box.x1 - ax)) * 2 + pad * 2;
+  const H = Math.max(Math.abs(f.box.y0 - ay), Math.abs(f.box.y1 - ay)) * 2 + pad * 2;
+  const contours = [];
+  P.halftone({ x: ax - W / 2, y: ay - H / 2, w: W, h: H,
+    cell: s.cell, angle: s.angle, grain: s.grain, spread: s.spread, seed: s.seed,
+    cover: P.fieldCover((x, y) => f.d(x, y) - grow, s.falloff,
+                        { cx: f.bound.cx, cy: f.bound.cy, r: f.bound.r + grow }),
+    onDot: (x, y, r) => {
+      if (r * k < 3) return;                           /* under a third of a percent of the em */
+      contours.push(orient(disc(x * k, y * k, r * k, DOTPTS)));
+    } });
+  return { contours, adv: Math.round(f.adv * k) };
+}
+
+/**
+ * The edge of a field, as closed loops — marching squares, interpolated.
+ *
+ * A crossing is named by the grid edge it sits on rather than by where it
+ * landed, so the two cells that share it agree about it exactly and the
+ * loops close. Segments are laid down with the inside on the left, which
+ * winds an outer loop one way and a counter the other without either of
+ * them having to be measured.
+ */
+function traceField(f, box, step) {
+  const nx = Math.ceil((box[2] - box[0]) / step) + 1;
+  const ny = Math.ceil((box[3] - box[1]) / step) + 1;
+  const X = (i) => box[0] + i * step, Y = (j) => box[1] + j * step;
+  const V = new Float64Array(nx * ny);
+  for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) V[i * ny + j] = f(X(i), Y(j));
+  const at = (i, j) => V[i * ny + j];
+  const cut = (a, b) => (a === b ? 0.5 : a / (a - b));
+  /* an edge is (cell, horizontal or vertical); the point on it is found once */
+  const pt = (key) => {
+    const e = key & 1, c = (key - e) / 2, j = c % ny, i = (c - j) / ny;
+    return e ? [X(i), Y(j) + cut(at(i, j), at(i, j + 1)) * step]
+             : [X(i) + cut(at(i, j), at(i + 1, j)) * step, Y(j)];
+  };
+  const next = new Map();
+  const link = (a, b) => next.set(a, b);
+  for (let i = 0; i < nx - 1; i++) {
+    for (let j = 0; j < ny - 1; j++) {
+      const va = at(i, j), vb = at(i + 1, j), vc = at(i + 1, j + 1), vd = at(i, j + 1);
+      const m = (va < 0 ? 1 : 0) | (vb < 0 ? 2 : 0) | (vc < 0 ? 4 : 0) | (vd < 0 ? 8 : 0);
+      if (m === 0 || m === 15) continue;
+      const B = (i * ny + j) * 2, L = (i * ny + j) * 2 + 1;
+      const R = ((i + 1) * ny + j) * 2 + 1, A = (i * ny + j + 1) * 2;
+      const mid = (va + vb + vc + vd) / 4 < 0;
+      if (m === 1) link(B, L);
+      else if (m === 2) link(R, B);
+      else if (m === 4) link(A, R);
+      else if (m === 8) link(L, A);
+      else if (m === 3) link(R, L);
+      else if (m === 6) link(A, B);
+      else if (m === 12) link(L, R);
+      else if (m === 9) link(B, A);
+      else if (m === 7) link(A, L);
+      else if (m === 14) link(L, B);
+      else if (m === 13) link(B, R);
+      else if (m === 11) link(R, A);
+      else if (m === 5) { if (mid) { link(B, R); link(A, L); } else { link(B, L); link(A, R); } }
+      else if (m === 10) { if (mid) { link(L, B); link(R, A); } else { link(R, B); link(L, A); } }
+    }
+  }
+  const loops = [];
+  while (next.size) {
+    let key = next.keys().next().value;
+    const loop = [];
+    while (next.has(key)) {
+      const to = next.get(key);
+      next.delete(key);
+      loop.push(pt(key));
+      key = to;
+    }
+    if (loop.length >= 3) loops.push(loop);
+  }
+  return loops;
+}
+
+/* a traced loop is mostly points in a straight line: what the grid stepped
+   over, not what the letter turns through */
+function thin(loop, tol) {
+  const keep = [];
+  for (let i = 0; i < loop.length; i++) {
+    const p = loop[i];
+    const a = keep.length ? keep[keep.length - 1] : loop[loop.length - 1];
+    const b = loop[(i + 1) % loop.length];
+    const ux = b[0] - a[0], uy = b[1] - a[1];
+    const L = Math.hypot(ux, uy) || 1;
+    if (Math.abs((p[0] - a[0]) * uy - (p[1] - a[1]) * ux) / L > tol) keep.push(p);
+  }
+  return keep.length >= 3 ? keep : loop;
+}
+/* to the grid the font is written on, without a point twice */
+function toGrid(loop) {
+  const out = [];
+  for (const p of loop) {
+    const q = [Math.round(p[0]), Math.round(p[1])];
+    const last = out[out.length - 1];
+    if (!last || last[0] !== q[0] || last[1] !== q[1]) out.push(q);
+  }
+  while (out.length > 1 && out[0][0] === out[out.length - 1][0]
+                        && out[0][1] === out[out.length - 1][1]) out.pop();
+  return out;
+}
+
+/**
+ * The letter, knocked out of the slab.
+ *
+ * The slab is exactly one advance wide, so a word sets as one unbroken band —
+ * which is what a knock-out is, and why no two slabs may overlap: two of them
+ * over each other wind to ±2 and the hole between them closes.
+ *
+ * Which means the letter has to fit. A pen is half a stroke wider than the
+ * drawing on each side, and the tracking the cut letters are spaced on does
+ * not cover it, so a slab is let out to the ink where the ink is wider and
+ * the letter is centred in it. Anything still overhanging — an accent, a
+ * wobble — is trimmed by the trace itself: the field asked for is the letter
+ * *inside* the box, so no loop is ever left outside the ink for the winding
+ * to fill back in.
+ */
+function knockGlyph(ch, o) {
+  const f = glyphField(ch, o);
+  if (!f) return null;
+  const y0 = o.slab[0], y1 = o.slab[1];
+  const side = Math.round((o.side || 0.035) * CAP);
+  const inkW = f.box ? f.box.x1 - f.box.x0 : 0;
+  const adv = Math.max(Math.round(f.adv), Math.round(inkW + side * 2));
+  /* the slab runs a hair past its advance at both ends. Two slabs that only
+     touch leave a hairline where the rasteriser rounds them to pixels, and a
+     band with white threads through it is not a band. The overlap is a
+     fraction of the side bearing, so no letter is ever inside it. */
+  const b = o.bleed || 6;
+  const slab = orient([[-b, y0], [adv + b, y0], [adv + b, y1], [-b, y1]]);
+  if (!f.d || adv < 4) return { contours: [slab], adv };
+  const dx = (adv - inkW) / 2 - f.box.x0;              /* centred in its own slab */
+  const in0 = 0.5;                    /* a hair inside, so the two edges never coincide */
+  const boxD = (x, y) => Math.max(Math.max(in0 - b - x, x - (adv + b - in0)),
+                                  Math.max(y0 + in0 - y, y - (y1 - in0)));
+  const field = (x, y) => Math.max(f.d(x - dx, y), boxD(x, y));
+  const contours = [slab];
+  for (const loop of traceField(field, [-b - 2, y0 - 2, adv + b + 2, y1 + 2], o.step)) {
+    const ring = toGrid(thin(loop, o.tol));
+    if (ring.length >= 3) contours.push(ring);
+  }
+  return { contours, adv };
+}
+
+/** one letter, whichever press it went through */
+function pressGlyph(ch, o) {
+  return o.cut === "knock" ? knockGlyph(ch, o) : screenGlyph(ch, o);
 }
 
 /* ---- the binary ---------------------------------------------------------
@@ -232,10 +502,15 @@ function nameTable(records) {
  * A TrueType file from the drawn alphabet.
  *   weight  the pen, as a fraction of cap — the same number the plates use
  *   hand    how much shake is baked in (a font repeats it, so keep it small)
+ *   cut     which press it went through: nothing for the cut letter, or one
+ *           of "screen", "hot", "knock" — the rest of the file is the same
+ *           work either way, because a glyph is only ever contours and an
+ *           advance however the ink got there
  */
 function buildTTF(opt) {
   const o = Object.assign({ family: "Minor Index", style: "Regular", weight: 0.12,
                             hand: 0.015, seed: 7, width: 1, slant: 0, version: "1.000" }, opt);
+  if (o.cut) Object.assign(o, press(o.cut), opt);
   const bold = o.weight > 0.18;
   const wclass = o.usWeightClass || weightClass(o.weight);
   const extra = ["É", "È", "Ê", "Ë", "À", "Â", "Ç",
@@ -245,10 +520,16 @@ function buildTTF(opt) {
   const glyphs = [{ contours: [], adv: Math.round(0.32 * CAP) }];       /* 0 = .notdef */
   const map = {};
   const space = T.glyph(" ");
-  glyphs.push({ contours: [], adv: Math.round((space.w + T.TRACK) * CAP * o.width) });
+  const spaceAdv = Math.round((space.w + T.TRACK) * CAP * o.width);
+  /* a knocked-out space is a slab with nothing punched out of it, or the band
+     breaks between the words and the knock-out stops being one */
+  const sb = o.bleed || 6;
+  glyphs.push({ adv: spaceAdv, contours: o.cut === "knock"
+    ? [orient([[-sb, o.slab[0]], [spaceAdv + sb, o.slab[0]],
+               [spaceAdv + sb, o.slab[1]], [-sb, o.slab[1]]])] : [] });
   map[32] = 1;
   for (const ch of chars) {
-    const g = outlineGlyph(ch, o);
+    const g = o.cut ? pressGlyph(ch, o) : outlineGlyph(ch, o);
     if (!g) continue;
     map[ch.codePointAt(0)] = glyphs.length;
     /* lowercase types the caps — accented lowercase too, which French needs */
@@ -268,19 +549,25 @@ function tables(o, glyphs, map, k) {
   const bold = k.weight > 0.18;
   const wclass = k.usWeightClass;
   const extra = k.extra || [];
-  const allX = [0], allY = [0];
+  /* the extremes are walked rather than spread: a screened glyph is a few
+     hundred dots, and a whole alphabet of them is more arguments than a call
+     is allowed to have */
   let maxPts = 0, maxCts = 0;
+  let xMin = 0, xMax = 0, yMin = 0, yMax = 0;
   for (const g of glyphs) {
     maxCts = Math.max(maxCts, g.contours.length);
     let np = 0;
     for (const c of g.contours) {
       np += c.length;
-      for (const p of c) { allX.push(p[0]); allY.push(p[1]); }
+      for (const p of c) {
+        if (p[0] < xMin) xMin = p[0];
+        if (p[0] > xMax) xMax = p[0];
+        if (p[1] < yMin) yMin = p[1];
+        if (p[1] > yMax) yMax = p[1];
+      }
     }
     maxPts = Math.max(maxPts, np);
   }
-  const xMin = Math.min.apply(null, allX), xMax = Math.max.apply(null, allX);
-  const yMin = Math.min.apply(null, allY), yMax = Math.max.apply(null, allY);
 
   const glyfParts = [], loca = [];
   let off = 0;
@@ -579,4 +866,6 @@ function buildVF(opt) {
 }
 const pad2 = (b) => (b.length % 2 ? cat(b, buf(1)) : b);
 
-module.exports = { buildTTF, buildVF, outlineGlyph, FAMILY, AXES, INSTANCES, weightClass, UPM, CAP, ASC, DESC, STAMP };
+module.exports = { buildTTF, buildVF, outlineGlyph, glyphField, pressGlyph, traceField,
+  FAMILY, PRESSES, press, AXES, INSTANCES, weightClass,
+  UPM, CAP, ASC, DESC, STAMP, PLATE_CAP };

@@ -23,6 +23,14 @@
   @font-face { font-family:"Minor Index VF"; font-display:swap;
                font-weight:100 900; font-stretch:75% 125%; font-style:oblique 0deg 15deg;
                src:url("fonts/MinorIndex.ttf") format("truetype-variations"); }
+  /* and the presses. Each is its own family, not a weight of the cut letter:
+     what they carry is not a heavier pen, it is ink on a sheet */
+  @font-face { font-family:"Minor Index Screened"; font-display:swap;
+               src:url("fonts/MinorIndex-Screened.ttf") format("truetype"); }
+  @font-face { font-family:"Minor Index Overinked"; font-display:swap;
+               src:url("fonts/MinorIndex-Overinked.ttf") format("truetype"); }
+  @font-face { font-family:"Minor Index Knockout"; font-display:swap;
+               src:url("fonts/MinorIndex-Knockout.ttf") format("truetype"); }
 
   /* ---- Fig. 04, the dials ---- */
   .axes .vfline { font-family:'Minor Index VF','Minor Index',var(--sans); font-size:clamp(30px,7vw,86px);
@@ -135,6 +143,21 @@
   .press .t { font-size:10px; color:var(--dim); font-stretch:118%; letter-spacing:.13em;
               text-transform:uppercase; margin-bottom:10px; }
 
+  /* the same four passes, as files you can type in */
+  .cuts { border-top:1px solid #3a3a35; }
+  .cuts .row { display:grid; grid-template-columns:1fr 210px; gap:16px; align-items:center;
+               padding:14px 16px; border-bottom:1px solid var(--hair); }
+  .cuts .row:last-child { border-bottom:0; }
+  @media (max-width:720px) { .cuts .row { grid-template-columns:1fr; } }
+  .cuts .line { background:var(--white); color:var(--black); overflow:hidden; min-width:0;
+                font-size:clamp(26px,4.6vw,54px); line-height:1; white-space:nowrap; padding:12px 14px; }
+  .cuts .line.ko { padding:0; }        /* the slab is the ground: nothing under it */
+  .cuts .sc { font-family:"Minor Index Screened",var(--face); }
+  .cuts .ov { font-family:"Minor Index Overinked",var(--face); }
+  .cuts .ko { font-family:"Minor Index Knockout",var(--face); }
+  .cuts .meta { display:flex; flex-direction:column; align-items:flex-start; gap:8px; }
+  .cuts .meta i { font-style:normal; font-size:11px; color:#a3a39c; line-height:1.45; }
+
   table { width:100%; border-collapse:collapse; font-size:12.5px; }
   th, td { text-align:left; padding:9px 14px; border-bottom:1px solid var(--hair); }
   th { font-size:10px; font-stretch:118%; letter-spacing:.14em; text-transform:uppercase;
@@ -205,12 +228,15 @@
     <a class="b" href="fonts/MinorIndex-Regular.ttf" download>Regular</a>
     <a class="b" href="fonts/MinorIndex-Light.ttf" download>Light</a>
     <a class="b" href="fonts/MinorIndex-Bold.ttf" download>Bold</a>
+    <a class="b" href="fonts/MinorIndex-Screened.ttf" download>Screened</a>
+    <a class="b" href="fonts/MinorIndex-Overinked.ttf" download>Over-inked</a>
+    <a class="b" href="fonts/MinorIndex-Knockout.ttf" download>Knocked out</a>
   </div>
 </header>
 
 <div class="hero">
   <div class="kicker"><b>Minor Index</b><span>A generated typeface</span>
-    <span>64 glyphs · three axes</span><span>Specimen 2026</span></div>
+    <span>64 glyphs · three axes · four presses</span><span>Specimen 2026</span></div>
   <h2 class="word">AUTOPHAGIE</h2>
 </div>
 <div class="thesis">
@@ -222,6 +248,7 @@
     <div><b id="nBytes">—</b>bytes of TrueType, tables written by hand</div>
     <div><b id="nMs">—</b>ms to build all three weights, in this browser</div>
     <div><b>3</b>axes — wght 100–900, wdth 75–125, slnt −15–0</div>
+    <div><b>7</b>files — three weights, the continuum, three presses</div>
   </div>
 </div>
 
@@ -280,8 +307,29 @@
     <div class="fhead"><span class="fnum">Fig. 05</span>
       <span class="ftitle">The same letters, through the press</span>
       <span class="fcap">The letters are distance fields, like every body the atelier prints, so a
-        word takes the screen, the flood and the knock-out exactly as a sun does.</span></div>
+        word takes the screen, the flood and the knock-out exactly as a sun does. Drawn here from
+        the skeletons — and cut as three more fonts, one per press, underneath.</span></div>
     <div class="plate press" id="press"></div>
+    <div class="plate cuts">
+      <div class="row">
+        <div class="line sc">AUTOPHAGIE</div>
+        <div class="meta"><i>The copier at 15°, on the letter’s own field: every dot is a contour
+          of its own, at the size a plate is printed at.</i>
+          <a class="b" href="fonts/MinorIndex-Screened.ttf" download>Screened .ttf</a></div>
+      </div>
+      <div class="row">
+        <div class="line ov">AUTOPHAGIE</div>
+        <div class="meta"><i>The same press run hot: the field grown, the cell coarser, the dots
+          spread until they touch.</i>
+          <a class="b" href="fonts/MinorIndex-Overinked.ttf" download>Over-inked .ttf</a></div>
+      </div>
+      <div class="row">
+        <div class="line ko">AUTOPHAGIE</div>
+        <div class="meta"><i>One slab per advance, so the letters meet into a band, with the word
+          traced out of the ink rather than laid on it.</i>
+          <a class="b" href="fonts/MinorIndex-Knockout.ttf" download>Knocked out .ttf</a></div>
+      </div>
+    </div>
   </figure>
 
   <figure>
@@ -388,6 +436,12 @@
         filled outlines, so each stroke is turned into overlapping capsules and discs whose union is
         the letter, and the TrueType tables are written out by hand. No font editor and no font
         library: the file that draws a poster writes the <code>.ttf</code>.</p>
+
+        <p><b>Which is why the press is a font too.</b> A screen is not a filter over the type here,
+        it is the type: the same field, through the same copier the plates go through, with every
+        dot written out as its own contour. The knock-out is the one that cannot be a pile of
+        overlapping strokes — inside a slab, two of them over each other wind the ink straight back
+        in — so its letters are traced along the contour instead, and cut out of the ink.</p>
 
         <p><b>It is generated, and it is not generative in the way that word is used now.</b>
         Machine font generation — GlyphGAN, and the diffusion and autoregressive models after it —

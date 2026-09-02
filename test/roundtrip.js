@@ -70,6 +70,27 @@ trip("lettering · printed, slanted and narrowed", { tmode: "printed", tslant: -
   twidth: 0.82, tweight: 0.2, thand: 0.05 });
 trip("lettering · accents", { tmode: "cut", text: "ÉTÉ ŒIL & 137.5°" });
 
+/* a word in an ink of its own: a second colour is a second pass, so the code
+   has to say so — the word leaves the field and is pulled on its own. */
+trip("lettering · an ink of its own", { tmode: "printed", tink: "blu" });
+trip("lettering · an ink of its own, flat", { mode: "plein", tmode: "printed", tink: "blu" });
+trip("lettering · an ink of its own, cut", { tmode: "cut", tink: "fluo" });
+trip("lettering · an ink of its own, over an appetite",
+  { tmode: "printed", tink: "blu", twist: 0.004, bites: 4, grow: 6 });
+trip("lettering · an ink of its own, with a second plate",
+  { tmode: "printed", tink: "fluo", plate2: "registre" });
+trip("lettering · the ink it is already printed in is not a second pass",
+  { tmode: "printed", ink: "black", tink: "black" });
+
+/* a colour mixed in the atelier's well rather than taken from the table */
+trip("custom colour · the word", { tmode: "printed", tink: "#c8402a" });
+trip("custom colour · ink, ground and furniture",
+  { ink: "#2f5d3a", bg: "#efe6d2", fInk: "#2f5d3a", trimMarks: true });
+trip("custom colour · a second plate under a flat cut",
+  { mode: "plein", plate2: "grossi", p2ink: "#7a3fbe" });
+trip("custom colour · band and swipe", { fBand: true, fBandInk: "#ff3d7f", fSwipe: true,
+  fSwipeInk: "#00c2a8", fReg: true, fInk: "#333044" });
+
 trip("second plate · out of register", { plate2: "registre" });
 trip("second plate · spread underneath", { plate2: "grossi" });
 trip("second plate · out of register, flat", { mode: "plein", plate2: "registre" });
@@ -101,6 +122,8 @@ bare("nothing but furniture", { fBrackets: true, fAxes: true, fPolar: true, fRin
   fTicks: true, fBand: true, fSwipe: true, fReg: true });
 bare("no ground, no trim, nothing on it", { bg: "none", trimMarks: false });
 bare("the word alone, printed", { tmode: "printed" });
+bare("the word alone, in an ink of its own", { tmode: "printed", tink: "blu" });
+bare("the word alone, in an ink of its own, flat", { mode: "plein", tmode: "printed", tink: "blu" });
 bare("the word alone, cut", { tmode: "cut" });
 bare("the word alone, flat and cut", { mode: "plein", tmode: "cut" });
 bare("the word alone, flat and printed", { mode: "plein", tmode: "printed" });

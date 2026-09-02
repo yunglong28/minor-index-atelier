@@ -11,7 +11,8 @@ It is not a logo with variations. It is a small machine that prints plates.
     node mkautophagie.js 5150              reroll it
     node mkautophagie.js --only 122,129    just these two
     open plates/index.html                 the contact sheet, all 124
-    node mkfont.js                         the family: one variable file, three cut weights
+    node mkfont.js                         the family: one variable file, three cut weights,
+                                           three presses — screened, over-inked, knocked out
     node mkbundle.js                       rebuild docs/ — the whole site
     npm run build                          both of the last two
 
@@ -42,9 +43,17 @@ left.
   it reads as a machine. The drawn alphabet is made of the same material as the
   bodies: a distance field, so a word goes through the press with everything else
   rather than sitting on top of it. Plates 77–131 were printed without a word on
-  them and stay that way.
+  them and stay that way. And what the press does to a word is a font too: the
+  screen, the flood and the knock-out are three more files, not three filters.
+  A word may also be given an ink of its own, and then it is honestly a plate of
+  its own: it leaves the field and is pulled on a pass of its own, so the twist,
+  the growth and the bites that take the body no longer take it.
 * **Two plates, a marker and a stamp.** Toner at 15°, blu at 75°, fluo laid down
-  as a swipe. Anything else is a fourth pass nobody paid for.
+  as a swipe. Anything else is a fourth pass nobody paid for. The atelier now
+  keeps a well beside the table, and a colour mixed in it prints and reproduces
+  like any other — the emitted code names `INK.blu` where the table has it and
+  writes the hex where it does not. It is still a fourth pass. It is simply one
+  you can now decide to pay for.
 * **`cell` is left exactly as it is.** Every plate cut from it since 23 has to
   keep reproducing byte for byte, so the field version (`cellSDF`, plate 122) is
   a second growth of the same organism rather than a refactor of the first.
@@ -72,7 +81,7 @@ _press.js       the copier: one rotated lattice, three things to put through it
 _glyphs.js      the bodies, and everything that can be done to one
 _letters.js     the drawn alphabet: skeletons, and the two ways to read them
 _furniture.js   ticks, crosses, bands, mouths, the sheet — no disk, so both share it
-_font.js        the alphabet as TrueType, static and variable, tables written by hand
+_font.js        the alphabet as TrueType — cut, variable, and printed; tables by hand
 _raster.js      a PNG decoded here rather than by a library, and read as light
 _studio.js      the vocabulary declared once: PARAMS, buildPlate, emitPlate
 _sheet.js       the CLI, the writer, the gallery — the parts that touch a disk
@@ -106,6 +115,15 @@ A press console: the sheet on the left, the four moves on the right, the plate
 redrawn as you pull anything. Dragging pulls a proof — a coarser screen at the
 same everything else. Wheel to zoom, drag to pan, `0` to fit, ⌘Z to undo, `N` for
 nine rolls to choose from.
+
+**Every number is a number.** Each control has a field you can type into beside
+the slider, its label is a dial you can drag sideways (shift for ten steps at a
+time), and the arrow keys step it. A position is one control and not two: X and
+Y together, six buttons that sit the thing against an edge or in the middle of
+the sheet, and a box on the sheet itself — the body's and the word's — that can
+be dragged to move it and taken by the corner to resize it. `Handles` turns
+those boxes off. Every ink is the house table with a well beside it, and the
+colour it mixes is written into the plate and into the code as a hex.
 
 The panel opens on the choice that decides everything below it: **grow a body**,
 or **use an image**. Drop one on the sheet — or paste it, or choose a file — and

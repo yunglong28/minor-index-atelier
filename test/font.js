@@ -223,6 +223,99 @@ T.ok("and leaves the baseline where it was",
   Math.abs(leaning[0][1] - upright[0][1]) < 40,
   "y moved " + Math.abs(leaning[0][1] - upright[0][1]));
 
+/* ---- the presses ------------------------------------------------------- */
+T.head("the presses — the same letters printed, and each printing a font");
+
+const ring = (c) => {
+  let a = 0;
+  for (let i = 0; i < c.length; i++) {
+    const p = c[i], q = c[(i + 1) % c.length];
+    a += (q[0] - p[0]) * (q[1] + p[1]);
+  }
+  return a;
+};
+const cutAdv = (ch) => F.outlineGlyph(ch, { weight: 0.13, hand: 0.02, seed: 7 }).adv;
+
+for (const p of F.PRESSES) {
+  const built = F.buildTTF({ family: "Minor Index " + p.name, cut: p.cut });
+  const f = TTF.read(built.font);
+  const at = (s) => p.label + " — " + s;
+
+  T.ok(at("it is a TrueType file"), f.sfntVersion === 0x00010000, f.sfntVersion.toString(16));
+  for (const name of REQUIRED) T.ok(at("has " + name), !!f.dir[name]);
+  T.ok(at("OS/2 v" + f.os2.version + " is " + OS2LEN[f.os2.version] + " bytes"),
+    f.os2.len === OS2LEN[f.os2.version], "it is " + f.os2.len);
+  T.ok(at("the table directory is in tag order"),
+    f.order.slice().sort().join() === f.order.join(), f.order.join(" "));
+  let bad = [];
+  for (const name of f.order) {
+    if (name === "head") continue;
+    if (f.checksum(f.dir[name].off, f.dir[name].len) !== f.dir[name].checksum) bad.push(name);
+  }
+  T.ok(at("every table checksum matches"), bad.length === 0, bad.join(" "));
+  T.ok(at("it carries the whole alphabet"), f.numGlyphs === built.glyphs, f.numGlyphs);
+
+  /* a font menu has to show three presses and not one face with two ghosts */
+  const fam = f.names().filter((r) => r.platformID === 3 && r.nameID === 1)[0];
+  T.ok(at("it is a family of its own, not a weight of the cut letter"),
+    fam && fam.text === "Minor Index " + p.name, fam && fam.text);
+
+  let empty = 0, out = 0;
+  for (let g = 2; g < f.numGlyphs; g++) {
+    const gl = f.glyph(g);
+    if (gl.empty) { empty++; continue; }
+    if (gl.xMin < f.head.xMin || gl.xMax > f.head.xMax
+        || gl.yMin < f.head.yMin || gl.yMax > f.head.yMax) out++;
+  }
+  T.ok(at("every letter has ink"), empty === 0, empty + " are empty");
+  T.ok(at("no glyph escapes head's bounding box"), out === 0, out + " do");
+}
+
+/* the screen is the copier's, at the size a plate is printed at, so a screened
+   word has to set to the same measure as a cut one */
+for (const ch of ["A", "M", "I", "8"]) {
+  const g = F.pressGlyph(ch, Object.assign({}, F.press("screen")));
+  T.ok("a screened " + ch + " sets to the same measure as a cut one",
+    g.adv === cutAdv(ch), g.adv + " vs " + cutAdv(ch));
+  T.ok("and is dots, every one of them a contour of its own",
+    g.contours.length > 40 && g.contours.every((c) => c.length === g.contours[0].length),
+    g.contours.length + " contours");
+}
+/* run hot, the same press puts down more ink */
+const inkOf = (cut) => F.pressGlyph("O", Object.assign({}, F.press(cut)))
+  .contours.reduce((a, c) => a + Math.abs(ring(c)) / 2, 0);
+T.ok("over-inked lays down more ink than screened (" + Math.round(inkOf("hot") / inkOf("screen") * 100)
+  + "% of it)", inkOf("hot") > inkOf("screen") * 1.2,
+  Math.round(inkOf("screen")) + " vs " + Math.round(inkOf("hot")));
+
+/* the knock-out: a band with the word taken out of it */
+const kn = Object.assign({}, F.press("knock"));
+for (const ch of ["A", "O", "E", "É"]) {
+  const g = F.pressGlyph(ch, kn);
+  const slab = g.contours[0];
+  const xs = slab.map((q) => q[0]), ys = slab.map((q) => q[1]);
+  const bleed = kn.bleed || 6;
+  T.ok("the " + ch + " is knocked out of a slab one advance wide, plus the bleed",
+    slab.length === 4 && Math.min.apply(null, xs) === -bleed
+    && Math.max.apply(null, xs) === g.adv + bleed
+    && Math.min.apply(null, ys) === kn.slab[0] && Math.max.apply(null, ys) === kn.slab[1],
+    xs.join(",") + " / " + ys.join(","));
+  T.ok("and is wound against it, or the ink fills the letter back in",
+    g.contours.length > 1 && g.contours.slice(1).some((c) => ring(c) * ring(slab) < 0),
+    g.contours.map((c) => (ring(c) > 0 ? "+" : "-")).join(""));
+  T.ok("and nothing it traced lies outside the ink",
+    g.contours.slice(1).every((c) => c.every((q) => q[0] >= -bleed && q[0] <= g.adv + bleed
+      && q[1] >= kn.slab[0] && q[1] <= kn.slab[1])), "a loop outside the slab prints solid");
+  T.ok("and no letter reaches into where two slabs overlap",
+    g.contours.slice(1).every((c) => c.every((q) => q[0] > bleed && q[0] < g.adv - bleed)),
+    "a hole inside the overlap closes when the next slab lands on it");
+  T.ok("a knocked-out " + ch + " is set no tighter than a cut one",
+    g.adv >= cutAdv(ch), g.adv + " vs " + cutAdv(ch));
+}
+T.ok("the O keeps its counter — the trace is the union's edge, not a pile of capsules",
+  F.pressGlyph("O", kn).contours.length === 3,
+  F.pressGlyph("O", kn).contours.length + " contours");
+
 /* what is committed is what this code makes */
 const dir = path.join(ROOT, "docs", "fonts");
 const vFile = path.join(dir, "MinorIndex.ttf");
@@ -233,14 +326,19 @@ else {
     have.length === vfr.font.length && vfr.font.every((b, i) => b === have[i]),
     "run `node mkfont.js`");
 }
-for (const w of WEIGHTS) {
-  const file = path.join(dir, "MinorIndex-" + w.style + ".ttf");
-  if (!fs.existsSync(file)) { T.ok("docs/fonts/MinorIndex-" + w.style + ".ttf exists", false); continue; }
-  const built = make(w).font;
+const committed = (name, made) => {
+  const file = path.join(dir, "MinorIndex-" + name + ".ttf");
+  if (!fs.existsSync(file)) { T.ok("docs/fonts/MinorIndex-" + name + ".ttf exists", false); return; }
   const have = new Uint8Array(fs.readFileSync(file));
-  T.ok("docs/fonts/MinorIndex-" + w.style + ".ttf is what mkfont.js writes",
-    have.length === built.length && built.every((b, i) => b === have[i]),
+  T.ok("docs/fonts/MinorIndex-" + name + ".ttf is what mkfont.js writes",
+    have.length === made.length && made.every((b, i) => b === have[i]),
     "run `node mkfont.js`");
+};
+for (const w of WEIGHTS) committed(w.style, make(w).font);
+/* and the presses, which is also where a screen that stopped being the same
+   screen twice running would show up */
+for (const p of F.PRESSES) {
+  committed(p.name, F.buildTTF({ family: "Minor Index " + p.name, cut: p.cut }).font);
 }
 
 module.exports = T.counts;

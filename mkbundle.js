@@ -32,7 +32,8 @@ const EXPOSE = {
     "sSpiral", "sDisc", "sRing", "sBox", "sUnion", "sSub", "sShift", "sTwist", "sGrow",
     "sSmooth", "sMorph", "noise2", "sWobble", "contour", "sBite", "sunBound", "cellBound"],
   "_raster.js": ["screenImage", "bbox"],
-  "_studio.js": ["PARAMS", "FIELDS", "DEFAULTS", "SHEETS", "INKS", "buildPlate", "emitPlate",
+  "_studio.js": ["PARAMS", "FIELDS", "DEFAULTS", "SHEETS", "INKS", "inkOf", "isInk",
+    "buildPlate", "emitPlate",
     "rollState", "sheetOf", "visible", "stMetrics", "compactDots", "useImage", "theImage"],
 };
 /* and two namespaces, kept whole */
