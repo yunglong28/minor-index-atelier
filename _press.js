@@ -17,6 +17,13 @@ const { INK, n, rng } = require("./_mark.js");
  *
  *   cover(x, y)  how much ink this point holds, 0..1, before the grain
  *   min          the coverage a dot has to reach to be printed at all
+ *   stray        how much of the grain lands where there is no ink to
+ *                roughen — dirt on the glass falls on the empty sheet too,
+ *                and 0.35 of it is what every plate in this repository was
+ *                printed with. Set it to 0 and the ground comes out clean
+ *                while the form is untouched: the stream is drawn from
+ *                either way, so the same speck still falls in the same
+ *                place on the form.
  *   cap          clamp coverage at 1 before taking the root (an image can
  *                run over; a distance field was clamped on the way in)
  *   N            how far out the lattice goes, in cells; the default covers
@@ -31,7 +38,7 @@ const { INK, n, rng } = require("./_mark.js");
  */
 function halftone(o) {
   const opt = Object.assign({ x: 0, y: 0, w: 240, h: 240, cell: 4.4, angle: 15,
-    grain: 0.2, spread: 0.5, color: INK.black, seed: 3, min: 0.015, cap: false,
+    grain: 0.2, spread: 0.5, color: INK.black, seed: 3, min: 0.015, cap: false, stray: 0.35,
     N: 0, cover: () => 0, onBand: null, onDot: null }, o);
   const r = rng(opt.seed);
   const a = (opt.angle * Math.PI) / 180, ca = Math.cos(a), sa = Math.sin(a);
@@ -46,7 +53,7 @@ function halftone(o) {
       const x = cx + lx * ca - ly * sa, y = cy + lx * sa + ly * ca;
       if (x < opt.x - 4 || x > opt.x + opt.w + 4 || y < opt.y - 4 || y > opt.y + opt.h + 4) continue;
       let cov = opt.cover(x, y);
-      cov += (r() - 0.5) * opt.grain * (cov > 0.02 ? 1 : 0.35);
+      cov += (r() - 0.5) * opt.grain * (cov > 0.02 ? 1 : opt.stray);
       if (cov <= opt.min) continue;
       const rr = opt.cell * opt.spread * Math.sqrt(opt.cap ? Math.min(1, cov) : cov);
       if (rr < 0.16) continue;

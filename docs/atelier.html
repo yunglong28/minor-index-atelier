@@ -583,6 +583,13 @@ const { INK, n, rng } = require("./_mark.js");
  *
  *   cover(x, y)  how much ink this point holds, 0..1, before the grain
  *   min          the coverage a dot has to reach to be printed at all
+ *   stray        how much of the grain lands where there is no ink to
+ *                roughen — dirt on the glass falls on the empty sheet too,
+ *                and 0.35 of it is what every plate in this repository was
+ *                printed with. Set it to 0 and the ground comes out clean
+ *                while the form is untouched: the stream is drawn from
+ *                either way, so the same speck still falls in the same
+ *                place on the form.
  *   cap          clamp coverage at 1 before taking the root (an image can
  *                run over; a distance field was clamped on the way in)
  *   N            how far out the lattice goes, in cells; the default covers
@@ -597,7 +604,7 @@ const { INK, n, rng } = require("./_mark.js");
  */
 function halftone(o) {
   const opt = Object.assign({ x: 0, y: 0, w: 240, h: 240, cell: 4.4, angle: 15,
-    grain: 0.2, spread: 0.5, color: INK.black, seed: 3, min: 0.015, cap: false,
+    grain: 0.2, spread: 0.5, color: INK.black, seed: 3, min: 0.015, cap: false, stray: 0.35,
     N: 0, cover: () => 0, onBand: null, onDot: null }, o);
   const r = rng(opt.seed);
   const a = (opt.angle * Math.PI) / 180, ca = Math.cos(a), sa = Math.sin(a);
@@ -612,7 +619,7 @@ function halftone(o) {
       const x = cx + lx * ca - ly * sa, y = cy + lx * sa + ly * ca;
       if (x < opt.x - 4 || x > opt.x + opt.w + 4 || y < opt.y - 4 || y > opt.y + opt.h + 4) continue;
       let cov = opt.cover(x, y);
-      cov += (r() - 0.5) * opt.grain * (cov > 0.02 ? 1 : 0.35);
+      cov += (r() - 0.5) * opt.grain * (cov > 0.02 ? 1 : opt.stray);
       if (cov <= opt.min) continue;
       const rr = opt.cell * opt.spread * Math.sqrt(opt.cap ? Math.min(1, cov) : cov);
       if (rr < 0.16) continue;
@@ -783,10 +790,10 @@ const sShift = (f, dx, dy) => (x, y) => f(x - dx, y - dy);
    plate 09 (knocked out). */
 function screen(o) {
   const opt = Object.assign({ x: 0, y: 0, w: 240, h: 240, cell: 4.4, angle: 15,
-    falloff: 9, grain: 0.2, spread: 0.5, color: INK.black, seed: 3, sdf: () => 1e9,
+    falloff: 9, grain: 0.2, spread: 0.5, stray: 0.35, color: INK.black, seed: 3, sdf: () => 1e9,
     bound: null, onBand: null }, o);
   return halftone({ x: opt.x, y: opt.y, w: opt.w, h: opt.h, cell: opt.cell,
-    angle: opt.angle, grain: opt.grain, spread: opt.spread, color: opt.color,
+    angle: opt.angle, grain: opt.grain, spread: opt.spread, stray: opt.stray, color: opt.color,
     seed: opt.seed, onBand: opt.onBand,
     cover: fieldCover(opt.sdf, opt.falloff, opt.bound) });
 }
@@ -2644,7 +2651,7 @@ function meanAt(T, cx, cy, r, clip) {
  */
 function screenImage(o) {
   const opt = Object.assign({ img: null, x: 0, y: 0, w: 240, h: 240, cell: 6, angle: 15,
-    spread: 0.6, grain: 0.22, seed: 3, color: INK.black, lo: 0.05, hi: 0.7, gamma: 1,
+    spread: 0.6, grain: 0.22, stray: 0.35, seed: 3, color: INK.black, lo: 0.05, hi: 0.7, gamma: 1,
     soft: 1, invert: false, min: 0.016, src: null, from: 0, onBand: null }, o);
   const im = opt.img;
   const T = table(im);
@@ -2673,7 +2680,7 @@ function screenImage(o) {
   };
 
   return halftone({ x: opt.x, y: opt.y, w: opt.w, h: opt.h, cell: opt.cell,
-    angle: opt.angle, grain: opt.grain, spread: opt.spread, color: opt.color,
+    angle: opt.angle, grain: opt.grain, spread: opt.spread, stray: opt.stray, color: opt.color,
     seed: opt.seed, min: opt.min, cap: true, cover: ink, onBand: opt.onBand });
 }
 
@@ -2906,6 +2913,8 @@ const PARAMS = [
       help: "How far outside the form the dots keep printing, shrinking as they go. Small is a hard edge; large is a halo that dissolves outward until the body is more atmosphere than shape \u2014 plate 128 is nothing but fringe." },
     { id: "grain", type: "range", label: "grain", min: 0, max: 0.5, step: 0.01, def: 0.18, when: screened,
       help: "Random unevenness in the ink \u2014 dirt on the glass. It roughens the edges and throws loose dots across the empty parts of the sheet." },
+    { id: "gclean", type: "bool", label: "no grain on the ground", def: false, when: screened,
+      help: "The grain is dirt on the glass, and dirt falls on the whole sheet: as well as roughening the form it throws loose dots across the empty parts, which behind a photograph reads as a dirty background. Turn this on and the grain only lands where there is ink to roughen \u2014 the ground comes out empty and the form is untouched, speck for speck, because the same run of the copier is drawn from either way." },
     { id: "pseed", type: "seed", label: "screen seed", def: 5, when: screened,
       help: "Which particular run through the copier. Every speck of grain follows from this number, so the same number prints the same sheet, exactly." },
     { id: "plate2", type: "select", label: "second plate", def: "aucune", options: [
@@ -3153,7 +3162,7 @@ function stImage(s, img) {
     lo: s.imgLo, hi: s.imgHi, gamma: s.imgGamma, soft: s.imgSoft,
     invert: s.imgInvert, min: s.imgMin,
     cell: s.pitch, angle: s.angle, spread: s.dspread, grain: s.grain,
-    seed: s.pseed | 0 };
+    stray: s.gclean ? 0 : 0.35, seed: s.pseed | 0 };
 }
 /* the second plate, read for an image: shifted, let out under the first, or —
    in a separation — the whole picture, with the plate on top keeping only the
@@ -3275,7 +3284,7 @@ function buildPlate(state, hooks) {
   const ink = inkOf(s.ink), k = stMetrics(W, H);
   const pr = (sdf, color, o) => screen(Object.assign({ x: 0, y: 0, w: W, h: H, sdf,
     cell: s.pitch, angle: s.angle, spread: s.dspread, falloff: s.falloff,
-    grain: s.grain, seed: s.pseed | 0, color, bound }, o));
+    grain: s.grain, stray: s.gclean ? 0 : 0.35, seed: s.pseed | 0, color, bound }, o));
   const layers = [];
   /* the one pass worth watching arrive: it is the plate, the rest is furniture */
   let watched = -1;
@@ -3432,8 +3441,11 @@ function emitPlate(state) {
   if (s.bites > 0 && !isImg)
     F(`  f = sBite(f, mouths(f, ${cx}, ${cy}, ${q4(size * 0.62)}, ${s.bites}, ${s.biteSize}, q));`);
 
+  /* only said when it is not the default, so every plate already committed
+     emits the line it always emitted */
+  const clean = s.gclean ? " stray: 0," : "";
   const scr = (sdf, color, angle, seed) => `screen({ x: 0, y: 0, w: ${W}, h: ${H}, sdf: ${sdf}, `
-    + `cell: ${s.pitch}, falloff: ${s.falloff}, spread: ${s.dspread}, grain: ${s.grain}, `
+    + `cell: ${s.pitch}, falloff: ${s.falloff}, spread: ${s.dspread}, grain: ${s.grain},${clean} `
     + `angle: ${angle}, seed: ${seed}, color: ${K(color)} })`;
   const body = [];
   if (s.fSwipe) body.push(`swipe(${k.swX}, ${k.swY}, ${k.swW}, ${k.swH}, -4, q, ${K(s.fSwipeInk)})`);
@@ -3448,7 +3460,7 @@ function emitPlate(state) {
         + `lo: ${g.lo}, hi: ${s.imgHi}, gamma: ${s.imgGamma}, soft: ${s.imgSoft}, `
         + `min: ${s.imgMin},${s.imgInvert ? " invert: true," : ""}`
         + `${g.from ? ` from: ${g.from},` : ""}\n      `
-        + `cell: ${s.pitch}, angle: ${g.angle}, spread: ${g.spread}, grain: ${s.grain}, `
+        + `cell: ${s.pitch}, angle: ${g.angle}, spread: ${g.spread}, grain: ${s.grain},${clean} `
         + `seed: ${g.seed}, color: ${K(g.color)} })`;
     };
     if (s.plate2 !== "aucune") {
@@ -3885,6 +3897,13 @@ const { INK, n, rng } = require("./_mark.js");
  *
  *   cover(x, y)  how much ink this point holds, 0..1, before the grain
  *   min          the coverage a dot has to reach to be printed at all
+ *   stray        how much of the grain lands where there is no ink to
+ *                roughen — dirt on the glass falls on the empty sheet too,
+ *                and 0.35 of it is what every plate in this repository was
+ *                printed with. Set it to 0 and the ground comes out clean
+ *                while the form is untouched: the stream is drawn from
+ *                either way, so the same speck still falls in the same
+ *                place on the form.
  *   cap          clamp coverage at 1 before taking the root (an image can
  *                run over; a distance field was clamped on the way in)
  *   N            how far out the lattice goes, in cells; the default covers
@@ -3899,7 +3918,7 @@ const { INK, n, rng } = require("./_mark.js");
  */
 function halftone(o) {
   const opt = Object.assign({ x: 0, y: 0, w: 240, h: 240, cell: 4.4, angle: 15,
-    grain: 0.2, spread: 0.5, color: INK.black, seed: 3, min: 0.015, cap: false,
+    grain: 0.2, spread: 0.5, color: INK.black, seed: 3, min: 0.015, cap: false, stray: 0.35,
     N: 0, cover: () => 0, onBand: null, onDot: null }, o);
   const r = rng(opt.seed);
   const a = (opt.angle * Math.PI) / 180, ca = Math.cos(a), sa = Math.sin(a);
@@ -3914,7 +3933,7 @@ function halftone(o) {
       const x = cx + lx * ca - ly * sa, y = cy + lx * sa + ly * ca;
       if (x < opt.x - 4 || x > opt.x + opt.w + 4 || y < opt.y - 4 || y > opt.y + opt.h + 4) continue;
       let cov = opt.cover(x, y);
-      cov += (r() - 0.5) * opt.grain * (cov > 0.02 ? 1 : 0.35);
+      cov += (r() - 0.5) * opt.grain * (cov > 0.02 ? 1 : opt.stray);
       if (cov <= opt.min) continue;
       const rr = opt.cell * opt.spread * Math.sqrt(opt.cap ? Math.min(1, cov) : cov);
       if (rr < 0.16) continue;
@@ -4085,10 +4104,10 @@ const sShift = (f, dx, dy) => (x, y) => f(x - dx, y - dy);
    plate 09 (knocked out). */
 function screen(o) {
   const opt = Object.assign({ x: 0, y: 0, w: 240, h: 240, cell: 4.4, angle: 15,
-    falloff: 9, grain: 0.2, spread: 0.5, color: INK.black, seed: 3, sdf: () => 1e9,
+    falloff: 9, grain: 0.2, spread: 0.5, stray: 0.35, color: INK.black, seed: 3, sdf: () => 1e9,
     bound: null, onBand: null }, o);
   return halftone({ x: opt.x, y: opt.y, w: opt.w, h: opt.h, cell: opt.cell,
-    angle: opt.angle, grain: opt.grain, spread: opt.spread, color: opt.color,
+    angle: opt.angle, grain: opt.grain, spread: opt.spread, stray: opt.stray, color: opt.color,
     seed: opt.seed, onBand: opt.onBand,
     cover: fieldCover(opt.sdf, opt.falloff, opt.bound) });
 }
@@ -5946,7 +5965,7 @@ function meanAt(T, cx, cy, r, clip) {
  */
 function screenImage(o) {
   const opt = Object.assign({ img: null, x: 0, y: 0, w: 240, h: 240, cell: 6, angle: 15,
-    spread: 0.6, grain: 0.22, seed: 3, color: INK.black, lo: 0.05, hi: 0.7, gamma: 1,
+    spread: 0.6, grain: 0.22, stray: 0.35, seed: 3, color: INK.black, lo: 0.05, hi: 0.7, gamma: 1,
     soft: 1, invert: false, min: 0.016, src: null, from: 0, onBand: null }, o);
   const im = opt.img;
   const T = table(im);
@@ -5975,7 +5994,7 @@ function screenImage(o) {
   };
 
   return halftone({ x: opt.x, y: opt.y, w: opt.w, h: opt.h, cell: opt.cell,
-    angle: opt.angle, grain: opt.grain, spread: opt.spread, color: opt.color,
+    angle: opt.angle, grain: opt.grain, spread: opt.spread, stray: opt.stray, color: opt.color,
     seed: opt.seed, min: opt.min, cap: true, cover: ink, onBand: opt.onBand });
 }
 
@@ -6208,6 +6227,8 @@ const PARAMS = [
       help: "How far outside the form the dots keep printing, shrinking as they go. Small is a hard edge; large is a halo that dissolves outward until the body is more atmosphere than shape \u2014 plate 128 is nothing but fringe." },
     { id: "grain", type: "range", label: "grain", min: 0, max: 0.5, step: 0.01, def: 0.18, when: screened,
       help: "Random unevenness in the ink \u2014 dirt on the glass. It roughens the edges and throws loose dots across the empty parts of the sheet." },
+    { id: "gclean", type: "bool", label: "no grain on the ground", def: false, when: screened,
+      help: "The grain is dirt on the glass, and dirt falls on the whole sheet: as well as roughening the form it throws loose dots across the empty parts, which behind a photograph reads as a dirty background. Turn this on and the grain only lands where there is ink to roughen \u2014 the ground comes out empty and the form is untouched, speck for speck, because the same run of the copier is drawn from either way." },
     { id: "pseed", type: "seed", label: "screen seed", def: 5, when: screened,
       help: "Which particular run through the copier. Every speck of grain follows from this number, so the same number prints the same sheet, exactly." },
     { id: "plate2", type: "select", label: "second plate", def: "aucune", options: [
@@ -6455,7 +6476,7 @@ function stImage(s, img) {
     lo: s.imgLo, hi: s.imgHi, gamma: s.imgGamma, soft: s.imgSoft,
     invert: s.imgInvert, min: s.imgMin,
     cell: s.pitch, angle: s.angle, spread: s.dspread, grain: s.grain,
-    seed: s.pseed | 0 };
+    stray: s.gclean ? 0 : 0.35, seed: s.pseed | 0 };
 }
 /* the second plate, read for an image: shifted, let out under the first, or —
    in a separation — the whole picture, with the plate on top keeping only the
@@ -6577,7 +6598,7 @@ function buildPlate(state, hooks) {
   const ink = inkOf(s.ink), k = stMetrics(W, H);
   const pr = (sdf, color, o) => screen(Object.assign({ x: 0, y: 0, w: W, h: H, sdf,
     cell: s.pitch, angle: s.angle, spread: s.dspread, falloff: s.falloff,
-    grain: s.grain, seed: s.pseed | 0, color, bound }, o));
+    grain: s.grain, stray: s.gclean ? 0 : 0.35, seed: s.pseed | 0, color, bound }, o));
   const layers = [];
   /* the one pass worth watching arrive: it is the plate, the rest is furniture */
   let watched = -1;
@@ -6734,8 +6755,11 @@ function emitPlate(state) {
   if (s.bites > 0 && !isImg)
     F(`  f = sBite(f, mouths(f, ${cx}, ${cy}, ${q4(size * 0.62)}, ${s.bites}, ${s.biteSize}, q));`);
 
+  /* only said when it is not the default, so every plate already committed
+     emits the line it always emitted */
+  const clean = s.gclean ? " stray: 0," : "";
   const scr = (sdf, color, angle, seed) => `screen({ x: 0, y: 0, w: ${W}, h: ${H}, sdf: ${sdf}, `
-    + `cell: ${s.pitch}, falloff: ${s.falloff}, spread: ${s.dspread}, grain: ${s.grain}, `
+    + `cell: ${s.pitch}, falloff: ${s.falloff}, spread: ${s.dspread}, grain: ${s.grain},${clean} `
     + `angle: ${angle}, seed: ${seed}, color: ${K(color)} })`;
   const body = [];
   if (s.fSwipe) body.push(`swipe(${k.swX}, ${k.swY}, ${k.swW}, ${k.swH}, -4, q, ${K(s.fSwipeInk)})`);
@@ -6750,7 +6774,7 @@ function emitPlate(state) {
         + `lo: ${g.lo}, hi: ${s.imgHi}, gamma: ${s.imgGamma}, soft: ${s.imgSoft}, `
         + `min: ${s.imgMin},${s.imgInvert ? " invert: true," : ""}`
         + `${g.from ? ` from: ${g.from},` : ""}\n      `
-        + `cell: ${s.pitch}, angle: ${g.angle}, spread: ${g.spread}, grain: ${s.grain}, `
+        + `cell: ${s.pitch}, angle: ${g.angle}, spread: ${g.spread}, grain: ${s.grain},${clean} `
         + `seed: ${g.seed}, color: ${K(g.color)} })`;
     };
     if (s.plate2 !== "aucune") {

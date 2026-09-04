@@ -218,6 +218,8 @@ const PARAMS = [
       help: "How far outside the form the dots keep printing, shrinking as they go. Small is a hard edge; large is a halo that dissolves outward until the body is more atmosphere than shape \u2014 plate 128 is nothing but fringe." },
     { id: "grain", type: "range", label: "grain", min: 0, max: 0.5, step: 0.01, def: 0.18, when: screened,
       help: "Random unevenness in the ink \u2014 dirt on the glass. It roughens the edges and throws loose dots across the empty parts of the sheet." },
+    { id: "gclean", type: "bool", label: "no grain on the ground", def: false, when: screened,
+      help: "The grain is dirt on the glass, and dirt falls on the whole sheet: as well as roughening the form it throws loose dots across the empty parts, which behind a photograph reads as a dirty background. Turn this on and the grain only lands where there is ink to roughen \u2014 the ground comes out empty and the form is untouched, speck for speck, because the same run of the copier is drawn from either way." },
     { id: "pseed", type: "seed", label: "screen seed", def: 5, when: screened,
       help: "Which particular run through the copier. Every speck of grain follows from this number, so the same number prints the same sheet, exactly." },
     { id: "plate2", type: "select", label: "second plate", def: "aucune", options: [
@@ -465,7 +467,7 @@ function stImage(s, img) {
     lo: s.imgLo, hi: s.imgHi, gamma: s.imgGamma, soft: s.imgSoft,
     invert: s.imgInvert, min: s.imgMin,
     cell: s.pitch, angle: s.angle, spread: s.dspread, grain: s.grain,
-    seed: s.pseed | 0 };
+    stray: s.gclean ? 0 : 0.35, seed: s.pseed | 0 };
 }
 /* the second plate, read for an image: shifted, let out under the first, or —
    in a separation — the whole picture, with the plate on top keeping only the
@@ -587,7 +589,7 @@ function buildPlate(state, hooks) {
   const ink = inkOf(s.ink), k = stMetrics(W, H);
   const pr = (sdf, color, o) => screen(Object.assign({ x: 0, y: 0, w: W, h: H, sdf,
     cell: s.pitch, angle: s.angle, spread: s.dspread, falloff: s.falloff,
-    grain: s.grain, seed: s.pseed | 0, color, bound }, o));
+    grain: s.grain, stray: s.gclean ? 0 : 0.35, seed: s.pseed | 0, color, bound }, o));
   const layers = [];
   /* the one pass worth watching arrive: it is the plate, the rest is furniture */
   let watched = -1;
@@ -744,8 +746,11 @@ function emitPlate(state) {
   if (s.bites > 0 && !isImg)
     F(`  f = sBite(f, mouths(f, ${cx}, ${cy}, ${q4(size * 0.62)}, ${s.bites}, ${s.biteSize}, q));`);
 
+  /* only said when it is not the default, so every plate already committed
+     emits the line it always emitted */
+  const clean = s.gclean ? " stray: 0," : "";
   const scr = (sdf, color, angle, seed) => `screen({ x: 0, y: 0, w: ${W}, h: ${H}, sdf: ${sdf}, `
-    + `cell: ${s.pitch}, falloff: ${s.falloff}, spread: ${s.dspread}, grain: ${s.grain}, `
+    + `cell: ${s.pitch}, falloff: ${s.falloff}, spread: ${s.dspread}, grain: ${s.grain},${clean} `
     + `angle: ${angle}, seed: ${seed}, color: ${K(color)} })`;
   const body = [];
   if (s.fSwipe) body.push(`swipe(${k.swX}, ${k.swY}, ${k.swW}, ${k.swH}, -4, q, ${K(s.fSwipeInk)})`);
@@ -760,7 +765,7 @@ function emitPlate(state) {
         + `lo: ${g.lo}, hi: ${s.imgHi}, gamma: ${s.imgGamma}, soft: ${s.imgSoft}, `
         + `min: ${s.imgMin},${s.imgInvert ? " invert: true," : ""}`
         + `${g.from ? ` from: ${g.from},` : ""}\n      `
-        + `cell: ${s.pitch}, angle: ${g.angle}, spread: ${g.spread}, grain: ${s.grain}, `
+        + `cell: ${s.pitch}, angle: ${g.angle}, spread: ${g.spread}, grain: ${s.grain},${clean} `
         + `seed: ${g.seed}, color: ${K(g.color)} })`;
     };
     if (s.plate2 !== "aucune") {

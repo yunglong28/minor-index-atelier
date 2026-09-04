@@ -202,7 +202,7 @@ function meanAt(T, cx, cy, r, clip) {
  */
 function screenImage(o) {
   const opt = Object.assign({ img: null, x: 0, y: 0, w: 240, h: 240, cell: 6, angle: 15,
-    spread: 0.6, grain: 0.22, seed: 3, color: INK.black, lo: 0.05, hi: 0.7, gamma: 1,
+    spread: 0.6, grain: 0.22, stray: 0.35, seed: 3, color: INK.black, lo: 0.05, hi: 0.7, gamma: 1,
     soft: 1, invert: false, min: 0.016, src: null, from: 0, onBand: null }, o);
   const im = opt.img;
   const T = table(im);
@@ -231,7 +231,7 @@ function screenImage(o) {
   };
 
   return halftone({ x: opt.x, y: opt.y, w: opt.w, h: opt.h, cell: opt.cell,
-    angle: opt.angle, grain: opt.grain, spread: opt.spread, color: opt.color,
+    angle: opt.angle, grain: opt.grain, spread: opt.spread, stray: opt.stray, color: opt.color,
     seed: opt.seed, min: opt.min, cap: true, cover: ink, onBand: opt.onBand });
 }
 

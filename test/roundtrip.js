@@ -108,6 +108,12 @@ trip("flat · the appetite is not in the geometry",
   { mode: "plein", grow: 20, wobAmp: 8, bites: 5, occ: true, morph: 0.4 });
 trip("flat · the twist is", { mode: "plein", sym: "sun", twist: 0.006 });
 
+/* the grain, kept off the empty sheet: it is a press option, so it has to be
+   in the code the press emits or the plate comes back speckled */
+trip("grain · none on the ground", { sym: "sun", grain: 0.34, gclean: true });
+trip("grain · none on the ground, with a fringe to keep", { sym: "cell", grain: 0.4,
+  falloff: 26, gclean: true });
+
 trip("sheet · no ground", { bg: "none" });
 trip("sheet · no trim marks", { trimMarks: false });
 trip("sheet · a strip", { format: "bande" });
@@ -151,6 +157,9 @@ shot("levels wound in", { imgLo: 0.28, imgHi: 0.9, imgGamma: 1.6 });
 shot("soft, coarse and dirty", { imgSoft: 1.9, pitch: 8.4, grain: 0.34, dspread: 0.74 });
 shot("hard, fine and clean", { imgSoft: 0.35, pitch: 2.2, grain: 0.04, imgMin: 0.08 });
 shot("negative", { imgInvert: true, bg: "black", ink: "white" });
+shot("dirty, on a ground kept clean", { grain: 0.34, gclean: true });
+shot("dirty and clean-ground, with a second plate", { grain: 0.3, gclean: true,
+  plate2: "registre" });
 shot("second plate · out of register", { plate2: "registre" });
 shot("second plate · spread underneath", { plate2: "grossi" });
 shot("second plate · separation", { plate2: "separation" });

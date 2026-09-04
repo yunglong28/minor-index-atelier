@@ -130,10 +130,10 @@ const sShift = (f, dx, dy) => (x, y) => f(x - dx, y - dy);
    plate 09 (knocked out). */
 function screen(o) {
   const opt = Object.assign({ x: 0, y: 0, w: 240, h: 240, cell: 4.4, angle: 15,
-    falloff: 9, grain: 0.2, spread: 0.5, color: INK.black, seed: 3, sdf: () => 1e9,
+    falloff: 9, grain: 0.2, spread: 0.5, stray: 0.35, color: INK.black, seed: 3, sdf: () => 1e9,
     bound: null, onBand: null }, o);
   return halftone({ x: opt.x, y: opt.y, w: opt.w, h: opt.h, cell: opt.cell,
-    angle: opt.angle, grain: opt.grain, spread: opt.spread, color: opt.color,
+    angle: opt.angle, grain: opt.grain, spread: opt.spread, stray: opt.stray, color: opt.color,
     seed: opt.seed, onBand: opt.onBand,
     cover: fieldCover(opt.sdf, opt.falloff, opt.bound) });
 }
