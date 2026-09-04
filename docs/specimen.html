@@ -204,6 +204,10 @@
                                                border:1px solid var(--blu); }
   .sw-black{background:var(--black)}.sw-white{background:var(--white)}
   .sw-fluo{background:var(--fluo)}.sw-blu{background:var(--blu)}.sw-grey{background:var(--grey)}
+  .sw-none{background:repeating-linear-gradient(45deg,#fff,#fff 3px,#cfcfcb 3px,#cfcfcb 6px)}
+  /* no ground at all. The checker belongs to the page, not to the plate: it says
+     the sheet is see-through, and nothing of it is written into the SVG. */
+  .stage.clear { background-image:repeating-linear-gradient(45deg,#fff,#fff 9px,#dededa 9px,#dededa 18px); }
   .hint { font-size:10.5px; color:var(--dim); line-height:1.45; }
 
   .note { columns:2; column-gap:46px; line-height:1.7; color:#cfcfc9; font-size:13.5px; }
@@ -335,7 +339,8 @@
   <figure>
     <div class="fhead"><span class="fnum">Fig. 06</span><span class="ftitle">Set your own line</span>
       <span class="fcap">Type into the box: it is the real font file. Change the pass and the same
-        line is drawn, screened or flooded instead, on any of the five inks.</span></div>
+        line is drawn, screened or flooded instead, on any of the five inks — or on none of
+      them, which saves the letters with the ground cut away.</span></div>
     <div class="plate try">
       <div class="stage" id="stage">
         <div class="live" id="live" contenteditable="true" spellcheck="false">AUTOPHAGIE</div>
@@ -472,6 +477,9 @@
   "use strict";
   var M = window.MINOR;
   var INKS = ["white", "black", "fluo", "blu", "grey"];
+  /* a ground may also be no ground: the sheet is left out and the SVG is saved
+     with the letters alone, to sit on whatever it is put on */
+  var GROUNDS = INKS.concat(["none"]);
   var HEX = M.INK;   /* the one ink table, from _mark.js */
   var AZ = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   var el = function (t, c) { var e = document.createElement(t); if (c) e.className = c; return e; };
@@ -611,16 +619,16 @@
   var state = { text: "AUTOPHAGIE", pass: "type", size: 72, weight: 0.12,
                 track: 0.1, ground: "white", ink: "black" };
   var stage = document.getElementById("stage"), live = document.getElementById("live");
-  function swatches(host, key) {
-    INKS.forEach(function (ink) {
+  function swatches(host, key, inks) {
+    inks.forEach(function (ink) {
       var b = el("button", "sw-" + ink);
-      b.type = "button"; b.title = ink;
+      b.type = "button"; b.title = ink === "none" ? "no ground — transparent" : ink;
       b.onclick = function () { state[key] = ink; sync(); draw(); };
       host.appendChild(b);
     });
   }
-  swatches(document.getElementById("swGround"), "ground");
-  swatches(document.getElementById("swInk"), "ink");
+  swatches(document.getElementById("swGround"), "ground", GROUNDS);
+  swatches(document.getElementById("swInk"), "ink", INKS);
 
   /** the typed line as a plate — the same call a batch script would make */
   function plate(s) {
@@ -630,7 +638,7 @@
     var h = Math.round(cap * 1.5) + pad;
     var y = Math.round(pad * 0.7);
     var opt = { weight: s.weight, hand: 0.02, track: s.track, seed: 7 };
-    var ink = HEX[s.ink], bg = HEX[s.ground];
+    var ink = HEX[s.ink], bg = s.ground === "none" ? null : HEX[s.ground];
     if (s.pass === "cut") {
       return M.svg(w, h, M.text.textSolid(s.text, pad, y, cap,
         Object.assign({ color: ink }, opt)), bg);
@@ -648,7 +656,9 @@
   function draw() {
     if (timer) clearTimeout(timer);
     timer = setTimeout(function () {
-      stage.style.background = HEX[state.ground];
+      var clear = state.ground === "none";
+      stage.classList.toggle("clear", clear);
+      stage.style.background = clear ? "" : HEX[state.ground];
       if (state.pass === "type") {
         live.style.display = "";
         live.style.color = HEX[state.ink];
@@ -675,12 +685,13 @@
       state.weight < 0.1 ? "Light" : (state.weight < 0.16 ? "Regular" : "Bold");
     document.getElementById("tTrack").value = state.track;
     document.getElementById("vTrack").textContent = (+state.track).toFixed(2);
-    document.getElementById("vGround").textContent = state.ground;
+    document.getElementById("vGround").textContent =
+      state.ground === "none" ? "none — transparent" : state.ground;
     document.getElementById("vInk").textContent = state.ink;
-    [["swGround", "ground"], ["swInk", "ink"]].forEach(function (p) {
+    [["swGround", "ground", GROUNDS], ["swInk", "ink", INKS]].forEach(function (p) {
       var host = document.getElementById(p[0]);
       Array.prototype.forEach.call(host.children, function (b, i) {
-        b.setAttribute("aria-pressed", INKS[i] === state[p[1]] ? "true" : "false");
+        b.setAttribute("aria-pressed", p[2][i] === state[p[1]] ? "true" : "false");
       });
     });
     missing();
@@ -698,6 +709,9 @@
       + " — the drawn passes leave them out.";
     else if (state.ground === state.ink)
       hint.textContent = "Ground and ink are the same colour — nothing will show.";
+    else if (state.ground === "none")
+      hint.textContent = "No ground: the saved SVG is the letters and nothing else. "
+        + "The checker is this page, not the file.";
     else hint.textContent = "Black ground with white ink is the knock-out the plates use.";
   }
   document.getElementById("tText").oninput = function (e) {
