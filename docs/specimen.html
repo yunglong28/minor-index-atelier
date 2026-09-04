@@ -209,6 +209,9 @@
      the sheet is see-through, and nothing of it is written into the SVG. */
   .stage.clear { background-image:repeating-linear-gradient(45deg,#fff,#fff 9px,#dededa 9px,#dededa 18px); }
   .hint { font-size:10.5px; color:var(--dim); line-height:1.45; }
+  .saves { display:flex; gap:5px; }
+  .saves .b { flex:1; text-align:center; padding:7px 6px; }
+  .saves .b[disabled] { opacity:.55; cursor:default; }
 
   .note { columns:2; column-gap:46px; line-height:1.7; color:#cfcfc9; font-size:13.5px; }
   @media (max-width:820px) { .note { columns:1; } }
@@ -240,14 +243,14 @@
 
 <div class="hero">
   <div class="kicker"><b>Minor Index</b><span>A generated typeface</span>
-    <span>64 glyphs · three axes · four presses</span><span>Specimen 2026</span></div>
+    <span>103 glyphs · three axes · four presses</span><span>Specimen 2026</span></div>
   <h2 class="word">AUTOPHAGIE</h2>
 </div>
 <div class="thesis">
   <div class="bar">A generated typeface in which nothing was learned. The style vector is declared,
     not inferred — no corpus, no model, and nobody else's outlines anywhere in it.</div>
   <div class="sub">
-    <div><b id="nGlyphs">64</b>glyphs — caps, figures, French accents, &amp; and ?</div>
+    <div><b id="nGlyphs">103</b>glyphs — caps, the same cut small, figures, accents</div>
     <div><b id="nPoints">—</b>points in the letter A, every one on-curve</div>
     <div><b id="nBytes">—</b>bytes of TrueType, tables written by hand</div>
     <div><b id="nMs">—</b>ms to build all three weights, in this browser</div>
@@ -338,16 +341,18 @@
 
   <figure>
     <div class="fhead"><span class="fnum">Fig. 06</span><span class="ftitle">Set your own line</span>
-      <span class="fcap">Type into the box: it is the real font file. Change the pass and the same
-        line is drawn, screened or flooded instead, on any of the five inks — or on none of
-      them, which saves the letters with the ground cut away.</span></div>
+      <span class="fcap">Type into the box: it is the real font file, and lowercase sets the small
+        caps. Change the pass and the same line is drawn, screened or flooded instead, on any of
+        the five inks — or on none of them, which saves the letters with the ground cut away. It
+        leaves as an SVG, which is the drawing, or as a PNG at three times the size on screen,
+        which keeps the transparency and is what a chat window will take.</span></div>
     <div class="plate try">
       <div class="stage" id="stage">
         <div class="live" id="live" contenteditable="true" spellcheck="false">AUTOPHAGIE</div>
       </div>
       <div class="panel">
         <div class="f">
-          <label class="wide" for="tText">the words</label>
+          <label class="wide" for="tText">the words — lowercase sets small caps</label>
           <input class="wide" type="text" id="tText" value="AUTOPHAGIE" aria-label="text to set">
         </div>
         <div class="f">
@@ -384,18 +389,37 @@
           <div class="swatches" id="swInk"></div>
         </div>
         <div class="hint" id="hint">Black ground with white ink is the knock-out the plates use.</div>
-        <button class="b" id="tSave" style="width:100%">Save this line as SVG</button>
+        <div class="saves">
+          <button class="b" id="tSave">Save as SVG</button>
+          <button class="b" id="tPng">Save as PNG</button>
+        </div>
       </div>
     </div>
   </figure>
 
   <figure>
-    <div class="fhead"><span class="fnum">Fig. 07</span><span class="ftitle">The whole set</span>
-      <span class="fcap">Caps, figures, the accents French needs, the ampersand and the question
-        mark. Lowercase types the caps; there is no lowercase drawing yet.</span></div>
+    <div class="fhead"><span class="fnum">Fig. 07</span>
+      <span class="ftitle">The capitals, cut small</span>
+      <span class="fcap">There is no lowercase drawing and there is not going to be one: the film
+        speaks in capitals. So a lowercase letter is the capital cut small — cut, not
+        photographed. Reduce a capital and it arrives thin and narrow beside the one it came from,
+        so the small cap is redrawn: <b>72%</b> of the height, <b>7%</b> wider than that
+        reduction, and <b>86%</b> of the stem — set by eye against an A, because the counters
+        close as a letter comes down and a small cap on the capital's stem prints darker than the
+        capital beside it. The blue rule is the small-cap line.</span></div>
+    <div class="plate pad" id="small"></div>
+  </figure>
+
+  <figure>
+    <div class="fhead"><span class="fnum">Fig. 08</span><span class="ftitle">The whole set</span>
+      <span class="fcap">Caps, the same twenty-six cut small, figures, the accents French needs,
+        the ampersand and the question mark. Type in lowercase and the small caps come out —
+        in the drawn passes and in the font files alike.</span></div>
     <div class="plate pad set">
       ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>
+      abcdefghijklmnopqrstuvwxyz<br>
       0123456789 ÉÈÊËÀÂÇÎÏÔÛÙŒ<br>
+      éèêëàâçîïôûùœ<br>
       &amp; ? ! . , : - · ' / ( ) °
     </div>
   </figure>
@@ -435,6 +459,13 @@
         press does: coverage becomes dot area on a screen at 15° for the toner and 75° for the blu,
         and the ink either floods until the forms grow together or is choked back until only a
         kernel is left.</p>
+
+        <p><b>A lowercase letter is a capital cut small.</b> The face has no lowercase drawing
+        and will not have one, so the twenty-six are cut again at 72% of the cap, opened 7% wider
+        than that reduction and set at 86% of the stem: three numbers, applied to the
+        skeletons, and the small caps come out of the same file at the same seed. Type in
+        lowercase anywhere — this page, the atelier, the <code>.ttf</code> in your own
+        document — and that is what sets.</p>
 
         <p><b>The type is made of that same material.</b> These letters began as skeletons of lines
         and arcs with a wobble in the hand, the way a marker is pulled. A font has no pen, only
@@ -585,6 +616,35 @@
     });
   }
 
+  /* ---- Fig. 07 — the capitals cut small ---------------------------------
+     Three settings of one line, on one set of rules: the cap line, the
+     small-cap line and the baseline. Drawn, not typed, so the figure is the
+     drawing the font is cut from and not the font reporting on itself. */
+  function drawSmall() {
+    var host = document.getElementById("small");
+    if (!host || !M || !M.text) return;
+    var cap = 58, pad = 24, track = 0.1, SC = M.text.SC;
+    var lines = ["AUTOPHAGIE", "Autophagie", "autophagie"];
+    var lead = Math.round(cap * 1.62);
+    var w = Math.ceil(lines.reduce(function (m, t) {
+      return Math.max(m, M.text.textW(t, cap, track)); }, 0)) + pad * 2;
+    var h = pad + (lines.length - 1) * lead + Math.round(cap * 1.4);
+    var rule = function (y, c, dash) {
+      return '<line x1="0" y1="' + y + '" x2="' + w + '" y2="' + y + '" stroke="' + c
+        + '" stroke-width="1"' + (dash ? ' stroke-dasharray="3 4"' : "") + "/>";
+    };
+    var rules = "", body = "";
+    lines.forEach(function (t, i) {
+      var y = pad + i * lead;                       /* y is the cap line */
+      rules += rule(y, "#cfcfcb", true)
+        + rule(y + cap * (1 - SC.h), HEX.blu, true)
+        + rule(y + cap, "#cfcfcb", false);
+      body += M.text.textSolid(t, pad, y, cap, { weight: 0.13, hand: 0.02, track: track,
+                                                 seed: 7, color: HEX.black });
+    });
+    host.innerHTML = fit(w, h, rules + body);
+  }
+
   /* ---- Table 01 — measured, not claimed -------------------------------- */
   function now() { return (window.performance && performance.now) ? performance.now() : Date.now(); }
   function measure() {
@@ -630,13 +690,19 @@
   swatches(document.getElementById("swGround"), "ground", GROUNDS);
   swatches(document.getElementById("swInk"), "ink", INKS);
 
+  /** where the typed line sits, so the press and the raster agree about it */
+  function plateBox(s) {
+    var cap = s.size, pad = Math.round(cap * 0.55);
+    return { cap: cap, pad: pad,
+      w: Math.max(40, Math.round(M.text.textW(s.text || " ", cap, s.track))) + pad * 2,
+      h: Math.round(cap * 1.5) + pad,
+      y: Math.round(pad * 0.7) };
+  }
+
   /** the typed line as a plate — the same call a batch script would make */
   function plate(s) {
     if (!M || !M.text) return null;
-    var cap = s.size, pad = Math.round(cap * 0.55);
-    var w = Math.max(40, Math.round(M.text.textW(s.text || " ", cap, s.track))) + pad * 2;
-    var h = Math.round(cap * 1.5) + pad;
-    var y = Math.round(pad * 0.7);
+    var k = plateBox(s), cap = k.cap, pad = k.pad, w = k.w, h = k.h, y = k.y;
     var opt = { weight: s.weight, hand: 0.02, track: s.track, seed: 7 };
     var ink = HEX[s.ink], bg = s.ground === "none" ? null : HEX[s.ground];
     if (s.pass === "cut") {
@@ -697,7 +763,8 @@
     missing();
   }
 
-  /* the face is 64 glyphs: say plainly when a typed character is not one of them,
+  /* the face is caps and the same caps cut small: say plainly when a typed
+     character is not one of them,
      because the drawn passes drop it while the type pass falls back to another font */
   function missing() {
     var hint = document.getElementById("hint");
@@ -715,10 +782,10 @@
     else hint.textContent = "Black ground with white ink is the knock-out the plates use.";
   }
   document.getElementById("tText").oninput = function (e) {
-    state.text = e.target.value.toUpperCase(); e.target.value = state.text; missing(); draw();
+    state.text = e.target.value; missing(); draw();
   };
   live.oninput = function () {
-    state.text = live.textContent.replace(/\s+/g, " ").toUpperCase();
+    state.text = live.textContent.replace(/\s+/g, " ");
     document.getElementById("tText").value = state.text;
     missing();
   };
@@ -726,17 +793,64 @@
   document.getElementById("tSize").oninput = function (e) { state.size = +e.target.value; sync(); draw(); };
   document.getElementById("tWeight").onchange = function (e) { state.weight = +e.target.value; sync(); draw(); };
   document.getElementById("tTrack").oninput = function (e) { state.track = +e.target.value; sync(); draw(); };
-  document.getElementById("tSave").onclick = function () {
-    var s = Object.assign({}, state);
-    if (s.pass === "type") s.pass = "cut";              /* an SVG has no font to lean on */
-    var svg = plate(s);
-    if (!svg) return;
-    var blob = new Blob([svg], { type: "image/svg+xml" });
+  /* one name for both files, from the words that were set */
+  function fileName(ext) {
+    return (state.text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+            .slice(0, 32) || "line") + "." + ext;
+  }
+  function save(blob, name) {
     var a = el("a");
     a.href = URL.createObjectURL(blob);
-    a.download = (state.text.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 32) || "line") + ".svg";
+    a.download = name;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  }
+  /* the line as it would be cut. An SVG has no font to lean on, so the type
+     pass is drawn: what leaves is always the drawing and never a font call. */
+  function asPlate() {
+    var s = Object.assign({}, state);
+    if (s.pass === "type") s.pass = "cut";
+    return { svg: plate(s), box: plateBox(s) };
+  }
+  document.getElementById("tSave").onclick = function () {
+    var p = asPlate();
+    if (p.svg) save(new Blob([p.svg], { type: "image/svg+xml" }), fileName("svg"));
+  };
+
+  /* The same plate, rasterised here rather than on a server: the SVG is handed
+     to an <img> and drawn into a canvas at three times its size. Nothing in the
+     plate is fetched from anywhere, so the canvas stays clean and can be read
+     back — and a plate with no ground arrives as a PNG with none either,
+     because a canvas starts transparent and only the rect would have filled it. */
+  var PNG_SCALE = 3;
+  var pngBtn = document.getElementById("tPng");
+  pngBtn.onclick = function () {
+    var p = asPlate();
+    if (!p.svg) return;
+    var was = pngBtn.textContent;
+    pngBtn.disabled = true; pngBtn.textContent = "drawing…";
+    var done = function (msg) {
+      pngBtn.disabled = false; pngBtn.textContent = was;
+      if (msg) document.getElementById("hint").textContent = msg;
+    };
+    var url = URL.createObjectURL(new Blob([p.svg], { type: "image/svg+xml;charset=utf-8" }));
+    var img = new Image();
+    img.onload = function () {
+      var c = el("canvas");
+      c.width = Math.round(p.box.w * PNG_SCALE);
+      c.height = Math.round(p.box.h * PNG_SCALE);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(function (blob) {
+        if (blob) save(blob, fileName("png"));
+        done(blob ? c.width + " × " + c.height + " px saved." : "The PNG could not be written.");
+      }, "image/png");
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(url);
+      done("This browser would not rasterise the plate — the SVG still saves.");
+    };
+    img.src = url;
   };
 
   /* the atelier sits next door on the site, and online when this page does not */
@@ -795,7 +909,7 @@
   })();
 
   sync(); draw();
-  drawMatrix(); drawInterp(); drawPress();
+  drawMatrix(); drawInterp(); drawPress(); drawSmall();
   setTimeout(measure, 40);            /* the fonts get built once the page is up */
 })();
 </script>

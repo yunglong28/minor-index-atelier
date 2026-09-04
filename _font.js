@@ -99,7 +99,7 @@ function outlineGlyph(ch, opt) {
   /* drawn exactly as a plate draws it, then the polylines are read back */
   const tp = T.textPaths(ch, 0, 0, 1, { weight: o.weight, hand: o.hand, seed: o.seed,
                                         width: o.width, slant: o.slant, track: 0 });
-  const r = (o.weight / 2) * CAP;
+  const r = ((o.weight * g.pen) / 2) * CAP;      /* a small cap keeps its stem */
   const rings = [], flips = [];
   const F = (p) => [p[0] * CAP, (1 - p[1]) * CAP];      /* design y-down to font y-up */
   const wind = (pts) => {
@@ -128,7 +128,7 @@ function outlineGlyph(ch, opt) {
       }
     }
   }
-  const adv = Math.round((g.w + T.TRACK) * CAP * o.width);
+  const adv = Math.round((g.w + g.side + T.TRACK) * CAP * o.width);
   return { contours: rings.map((ring) => ring.map((p) => [Math.round(p[0]), Math.round(p[1])])),
            adv, flips };
 }
@@ -190,7 +190,7 @@ function glyphField(ch, opt) {
   const S = o.scale;
   const tp = T.textPaths(ch, 0, 0, 1, { weight: o.weight, hand: o.hand, seed: o.seed,
                                         width: o.width, slant: o.slant, track: 0 });
-  const r = (o.weight / 2) * S;
+  const r = ((o.weight * g.pen) / 2) * S;        /* a small cap keeps its stem */
   const F = (p) => [p[0] * S, (1 - p[1]) * S];
   const segs = [];
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -206,7 +206,7 @@ function glyphField(ch, opt) {
       }
     }
   }
-  const adv = (g.w + T.TRACK) * S * o.width;
+  const adv = (g.w + g.side + T.TRACK) * S * o.width;
   if (!segs.length) return { d: null, r, adv, scale: S, box: null, bound: null };
   const d = (x, y) => {
     let m = 1e9;
@@ -515,8 +515,13 @@ function buildTTF(opt) {
   const wclass = o.usWeightClass || weightClass(o.weight);
   const extra = ["É", "È", "Ê", "Ë", "À", "Â", "Ç",
                  "Î", "Ï", "Ô", "Û", "Ù"];
-  const chars = Object.keys(T.G).concat(extra)
+  const caps = Object.keys(T.G).concat(extra)
     .filter((c, i, a) => a.indexOf(c) === i && c !== " ");
+  /* and every one of them again, cut small. Lowercase used to be an alias for
+     the capital in the cmap; it is a drawing of its own now, so a word set in
+     mixed case sets in caps and small caps and not in shouting. */
+  const chars = caps.concat(caps.filter((c) => c.toLowerCase() !== c)
+    .map((c) => c.toLowerCase()));
   const glyphs = [{ contours: [], adv: Math.round(0.32 * CAP) }];       /* 0 = .notdef */
   const map = {};
   const space = T.glyph(" ");
@@ -532,9 +537,6 @@ function buildTTF(opt) {
     const g = o.cut ? pressGlyph(ch, o) : outlineGlyph(ch, o);
     if (!g) continue;
     map[ch.codePointAt(0)] = glyphs.length;
-    /* lowercase types the caps — accented lowercase too, which French needs */
-    const low = ch.toLowerCase();
-    if (low !== ch) map[low.codePointAt(0)] = glyphs.length;
     glyphs.push(g);
   }
   return tables(o, glyphs, map, { style: o.style, usWeightClass: wclass, weight: o.weight });
@@ -610,7 +612,7 @@ function tables(o, glyphs, map, k) {
     u16(bold ? 0x0020 : 0x0040),                  /* fsSelection: BOLD or REGULAR */
     u16(32), u16(0xfffd),
     i16(ASC), i16(DESC), i16(200), u16(ASC), u16(-DESC), u32(1), u32(0),
-    i16(Math.round(0.52 * CAP)), i16(CAP), u16(2), u16(2), u16(2));
+    i16(Math.round(T.SC.h * CAP)), i16(CAP), u16(2), u16(2), u16(2));  /* sx, sCap */
   const post = cat(u32(0x00030000), u32(0), i16(0), i16(0), u32(0), u32(0), u32(0), u32(0), u32(0));
   const nameT = nameTable([
     [0, "Generated from the MINOR INDEX drawing. Not drawn in a font editor."],
@@ -756,8 +758,10 @@ function buildVF(opt) {
   }
 
   const extra = ["É", "È", "Ê", "Ë", "À", "Â", "Ç", "Î", "Ï", "Ô", "Û", "Ù"];
-  const chars = Object.keys(T.G).concat(extra)
+  const caps = Object.keys(T.G).concat(extra)
     .filter((c, i, a) => a.indexOf(c) === i && c !== " ");
+  const chars = caps.concat(caps.filter((c) => c.toLowerCase() !== c)
+    .map((c) => c.toLowerCase()));
 
   const glyphs = [{ contours: [], adv: Math.round(0.32 * CAP), vary: null }];
   const map = {};
@@ -768,8 +772,6 @@ function buildVF(opt) {
     const g = outlineGlyph(ch, base);
     if (!g) continue;
     map[ch.codePointAt(0)] = glyphs.length;
-    const low = ch.toLowerCase();
-    if (low !== ch) map[low.codePointAt(0)] = glyphs.length;
     /* every corner drawn with the default's joints and winding, so the points
        line up one for one and a delta means something */
     const vary = corners.map((c) => {

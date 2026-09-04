@@ -74,6 +74,37 @@ const G = {
   "Œ": [1.14, [a(0.36, 0.5, 0.36, 0.5, 45, 315), l(0.62, 0.04, 0.62, 0.96),
                l(0.58, 0.03, 1.12, 0.03), l(0.62, 0.5, 1.02, 0.5), l(0.58, 0.97, 1.12, 0.97)]],
 };
+/* ---- the letters cut small ----------------------------------------------
+ *
+ * There is no lowercase drawing and there is not going to be one: the film
+ * speaks in capitals. So a lowercase letter is the capital cut small — cut,
+ * not photographed. A capital reduced on a copier arrives thin and narrow
+ * beside the one it was reduced from; a small cap is redrawn to keep the stem
+ * and to open the width, so the two sit on a line together and neither looks
+ * further away than the other.
+ *
+ * Three numbers, and they are the whole design:
+ *   h    how tall, against the cap. The letter is hung from the baseline.
+ *   w    how much wider than the reduction, to give back what height took.
+ *   pen  the stem it keeps, against the cap's. Not 1: the counters close as
+ *        the letter comes down, so a small cap on the capital's stem prints
+ *        darker than the capital beside it. Set by eye against an A.
+ *   side an allowance on the advance, on top of the tracking everything gets.
+ *        The stem barely came down and the letter did, so at the tracking the
+ *        capitals are set on the ink very nearly touches: small caps are
+ *        letterspaced, and this is that, in cap units like everything else.
+ */
+const SC = { h: 0.72, w: 1.07, pen: 0.86, side: 0.04 };
+const scPen = SC.pen / SC.h;      /* the pen is a fraction of cap: undo the reduction */
+const scSeg = (sg) => {
+  const kx = SC.h * SC.w, ky = SC.h, dy = 1 - SC.h;   /* y is 0 at the cap, 1 at the base */
+  return sg[0] === "l"
+    ? l(sg[1] * kx, dy + sg[2] * ky, sg[3] * kx, dy + sg[4] * ky)
+    /* an axis-aligned ellipse scaled on its axes is still swept by the same
+       angles, so the arcs come through untouched apart from their radii */
+    : a(sg[1] * kx, dy + sg[2] * ky, sg[3] * kx, sg[4] * ky, sg[5], sg[6]);
+};
+
 /* the accents french needs, hung off the base letter */
 const ACC = {
   "É": ["E", "acute"], "È": ["E", "grave"], "Ê": ["E", "circ"], "Ë": ["E", "trema"],
@@ -90,20 +121,34 @@ const accent = (kind, w) => {
   return [];
 };
 
-const glyph = (ch) => {
-  const up = ch.toUpperCase();
-  if (G[up]) return { w: G[up][0], segs: G[up][1] };
+const capGlyph = (up) => {
+  if (G[up]) return { w: G[up][0], segs: G[up][1], pen: 1, side: 0 };
   if (ACC[up]) {
     const b = G[ACC[up][0]];
-    return { w: b[0], segs: b[1].concat(accent(ACC[up][1], b[0])) };
+    return { w: b[0], segs: b[1].concat(accent(ACC[up][1], b[0])), pen: 1, side: 0 };
   }
   return null;
+};
+/* cut once and kept: a page sets the same letter a few thousand times */
+const SMALL = {};
+const smallGlyph = (up) => {
+  if (SMALL[up] !== undefined) return SMALL[up];
+  const c = capGlyph(up);
+  SMALL[up] = c && { w: c.w * SC.h * SC.w, segs: c.segs.map(scSeg), pen: scPen,
+                     side: SC.side, sc: true };
+  return SMALL[up];
+};
+
+const glyph = (ch) => {
+  const up = ch.toUpperCase();
+  if (up !== ch) return smallGlyph(up);      /* lowercase is the letter cut small */
+  return capGlyph(up);
 };
 
 const TRACK = 0.10;   /* tightened: words have to read as words */
 const advance = (ch, track) => {
   const g = glyph(ch);
-  return (g ? g.w : 0.46) + (track === undefined ? TRACK : track);
+  return (g ? g.w + (g.side || 0) : 0.46) + (track === undefined ? TRACK : track);
 };
 /** width of a drawn string at a given cap height */
 const textW = (s, cap, track) => {
@@ -148,6 +193,22 @@ function seg2path(sg, x, y, cap, hand, rnd) {
   return P.map((p, i) => `${i ? "L" : "M"} ${n(p[0])} ${n(p[1])}`).join(" ");
 }
 
+/* A stroke-width belongs to a group, not to a path, and a line with small
+ * caps in it has two of them. So the marks are gathered by the pen that made
+ * them: one pen, one group — which is what a line of capitals was before
+ * there were small caps, byte for byte. */
+function Pens() { this.order = []; this.byPen = new Map(); }
+Pens.prototype.at = function (pen) {
+  if (!this.byPen.has(pen)) { this.byPen.set(pen, []); this.order.push(pen); }
+  return this.byPen.get(pen);
+};
+Pens.prototype.wrap = function (color, fallback) {
+  const one = (pen, body) => `<g fill="none" stroke="${color}" stroke-width="${n(pen)}" `
+    + `stroke-linecap="round" stroke-linejoin="round">${body}</g>`;
+  if (!this.order.length) return one(fallback, "");     /* nothing set: still a group */
+  return this.order.map((pen) => one(pen, this.byPen.get(pen).join(""))).join("");
+};
+
 /**
  * Drawn lettering. y is the cap line; the baseline lands at y + cap.
  *   weight  stroke as a fraction of cap (0.1 ≈ a marker, 0.2 ≈ a brush)
@@ -156,15 +217,16 @@ function seg2path(sg, x, y, cap, hand, rnd) {
 function strokeText(s, x, y, cap, opts) {
   const o = Object.assign({ color: INK.black, weight: 0.11, hand: 0.02, track: TRACK, seed: 7 }, opts);
   const rnd = rng(o.seed);
-  const out = [];
+  const pens = new Pens();
   let cx = x;
   for (const ch of [...s]) {
     const g = glyph(ch);
-    if (g) for (const sg of g.segs) out.push(`<path d="${seg2path(sg, cx, y, cap, o.hand, rnd)}"/>`);
+    if (g) for (const sg of g.segs) {
+      pens.at(cap * o.weight * g.pen).push(`<path d="${seg2path(sg, cx, y, cap, o.hand, rnd)}"/>`);
+    }
     cx += advance(ch, o.track) * cap;
   }
-  return `<g fill="none" stroke="${o.color}" stroke-width="${n(cap * o.weight)}" `
-    + `stroke-linecap="round" stroke-linejoin="round">${out.join("")}</g>`;
+  return pens.wrap(o.color, cap * o.weight);
 }
 
 /** The same letters bent round a ring. `radius` is always the cap line:
@@ -179,7 +241,7 @@ function arcStrokeText(s, cx, cy, radius, midDeg, cap, opts) {
   const total = S.reduce((t, ch) => t + advance(ch, o.track), 0) - o.track;
   const sgn = o.flip ? -1 : 1;
   let cur = -total / 2;
-  const out = [];
+  const pens = new Pens();
   for (const ch of S) {
     const g = glyph(ch);
     const w = g ? g.w : 0.46;
@@ -190,12 +252,12 @@ function arcStrokeText(s, cx, cy, radius, midDeg, cap, opts) {
       const T = o.flip
         ? `translate(0 ${n(-radius)}) rotate(180) translate(${n(-w / 2 * cap)} 0)`
         : `translate(${n(-w / 2 * cap)} ${n(-radius)})`;
-      out.push(`<g transform="translate(${n(cx)} ${n(cy)}) rotate(${n(at)}) ${T}">${paths}</g>`);
+      pens.at(cap * o.weight * g.pen)
+        .push(`<g transform="translate(${n(cx)} ${n(cy)}) rotate(${n(at)}) ${T}">${paths}</g>`);
     }
     cur += advance(ch, o.track);
   }
-  return `<g fill="none" stroke="${o.color}" stroke-width="${n(cap * o.weight)}" `
-    + `stroke-linecap="round" stroke-linejoin="round">${out.join("")}</g>`;
+  return pens.wrap(o.color, cap * o.weight);
 }
 
 /* ---- letters as material, not as type ----------------------------------
@@ -231,7 +293,7 @@ function textPaths(str, x, y, cap, opts) {
         walkSeg(sg, push);
         runs.push(P);
       }
-      out.push({ ch, runs, x: cx, w: g.w * cap * o.width });
+      out.push({ ch, runs, x: cx, w: g.w * cap * o.width, pen: o.weight * cap * g.pen });
     }
     cx += advance(ch, o.track) * cap * o.width;
   }
@@ -240,15 +302,21 @@ function textPaths(str, x, y, cap, opts) {
 
 /** the same letters, cut: one stroked path per run */
 function pathsSolid(tp, color) {
-  const d = tp.glyphs.map((g) => g.runs.map((P) =>
-    P.map((pt, i) => `${i ? "L" : "M"} ${n(pt[0])} ${n(pt[1])}`).join(" ")).join(" ")).join(" ");
-  return `<g fill="none" stroke="${color}" stroke-width="${n(tp.weight)}" `
+  const pens = new Pens();
+  for (const g of tp.glyphs) {
+    pens.at(g.pen === undefined ? tp.weight : g.pen).push(g.runs.map((P) =>
+      P.map((pt, i) => `${i ? "L" : "M"} ${n(pt[0])} ${n(pt[1])}`).join(" ")).join(" "));
+  }
+  const one = (pen, d) => `<g fill="none" stroke="${color}" stroke-width="${n(pen)}" `
     + `stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></g>`;
+  if (!pens.order.length) return one(tp.weight, "");
+  return pens.order.map((pen) => one(pen, pens.byPen.get(pen).join(" "))).join("");
 }
 
 /** the same letters, as distance: capsules, one bounding circle per glyph */
 function pathsField(tp, grow) {
   const items = tp.glyphs.map((g) => {
+    const pen = g.pen === undefined ? tp.weight : g.pen;
     const segs = [];
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const P of g.runs) {
@@ -256,11 +324,11 @@ function pathsField(tp, grow) {
         const [px, py] = P[i];
         if (px < x0) x0 = px; if (px > x1) x1 = px;
         if (py < y0) y0 = py; if (py > y1) y1 = py;
-        if (i) segs.push({ x1: P[i - 1][0], y1: P[i - 1][1], x2: px, y2: py, w: tp.weight });
+        if (i) segs.push({ x1: P[i - 1][0], y1: P[i - 1][1], x2: px, y2: py, w: pen });
       }
     }
     return { segs, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2,
-             r: Math.hypot(x1 - x0, y1 - y0) / 2 + tp.weight };
+             r: Math.hypot(x1 - x0, y1 - y0) / 2 + pen };
   });
   const G2 = (grow || 0);
   return (x, y) => {
@@ -288,6 +356,6 @@ const textBox = (str, x, y, cap, o) => {
   return { x, y, w: tp.width, h: cap * (1 + (o && o.slant ? 0.1 : 0)), cap };
 };
 
-module.exports = { strokeText, arcStrokeText, textW, fitCap, centerX, rightX, glyph, G,
+module.exports = { strokeText, arcStrokeText, textW, fitCap, centerX, rightX, glyph, G, SC,
   walkSeg,
   textPaths, pathsSolid, pathsField, textSolid, textField, textBox, advance, TRACK };

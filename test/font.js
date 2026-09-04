@@ -73,9 +73,23 @@ for (const w of WEIGHTS) {
   const missed = codes.filter((c) => cm.map[c] !== built.map[c]);
   T.ok(at("every mapped codepoint reads back (" + codes.length + ")"),
     missed.length === 0, missed.slice(0, 8).map((c) => "U+" + c.toString(16)).join(" "));
-  T.ok(at("lowercase types the caps"),
-    cm.map["a".codePointAt(0)] === cm.map["A".codePointAt(0)]
-    && cm.map["é".codePointAt(0)] === cm.map["É".codePointAt(0)]);
+  /* lowercase used to be an alias for the capital. It is a drawing of its
+     own now — the same letter cut small — so what is checked is that it is a
+     different glyph, that it stands at the small-cap height the drawing
+     declares, and that it kept its stem instead of being photographed down. */
+  const gid = (c) => cm.map[c.codePointAt(0)];
+  T.ok(at("lowercase is its own glyph, not the capital again"),
+    gid("a") !== gid("A") && gid("é") !== gid("É") && gid("œ") !== gid("Œ"));
+  const capH = f.glyph(gid("H")).yMax, scH = f.glyph(gid("h")).yMax;
+  const pen = (w.weight * F.CAP) / 2;                    /* the cap's, as a radius */
+  const want = LT.SC.h * F.CAP + pen * LT.SC.pen / LT.SC.h;
+  /* the hand shakes the top of a letter by half its wobble either way, so
+     the height is checked to the wobble and not to the unit */
+  const tol = 0.015 * F.CAP + 2;
+  T.ok(at("the small cap stands at " + Math.round(LT.SC.h * 100) + "% of the cap"),
+    Math.abs(scH - want) <= tol, scH + " against " + Math.round(want));
+  T.ok(at("the small cap is narrower than the cap it was cut from"),
+    f.glyph(gid("h")).xMax < f.glyph(gid("H")).xMax);
   T.ok(at("space is a glyph with an advance and no outline"),
     f.glyph(cm.map[32]).empty === true);
 

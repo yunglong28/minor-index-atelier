@@ -166,8 +166,12 @@ printing a photograph, and two dozen rolls — are built both ways and compared.
 
 ## The typeface
 
-**Minor Index** — 64 glyphs: caps, figures, the accents French needs, `&`, `?`,
-`Œ`. The pen, the width and the slant were parameters of the plates long before
+**Minor Index** — 103 glyphs: caps, the same twenty-six and the accents cut
+small, figures, the accents French needs, `&`, `?`, `Œ`. There is no lowercase
+drawing and there is not going to be one — the film speaks in capitals — so a
+lowercase letter is the capital cut small: 72% of the height, 7% wider than that
+reduction, and 86% of the stem, because a capital merely photographed down
+arrives thin and narrow beside the one it came from. The pen, the width and the slant were parameters of the plates long before
 they were axes of a font, so the file that comes out is **variable**: `wght`
 100–900, `wdth` 75–125, `slnt` −15–0, and seven named instances. The three cut
 weights are the same three settings, for anywhere a variable font is not welcome.

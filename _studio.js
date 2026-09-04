@@ -247,7 +247,7 @@ const PARAMS = [
       { v: "cut", label: "cut \u2014 laid on top, sharp and untouched" } ],
       help: "Printed drops the word into the field before anything else happens, so the screen, the twist, the growth and the bites all take it: it is printed, not placed on top. Cut lays the finished letters over the plate with clean edges, the way a marker would." },
     { id: "text", type: "text", label: "the word", def: "AUTOPHAGIE", when: (s) => s.tmode !== "none",
-      help: "Caps, figures, French accents, & and ?. Lowercase types the caps." },
+      help: "Caps, figures, French accents, & and ?. Lowercase sets small caps \u2014 the same capitals cut to 72% of the height, redrawn to keep their stem." },
     { id: "tcap", type: "range", label: "font size", unit: "px", min: 8, max: 400, step: 1, def: 96,
       when: (s) => s.tmode !== "none",
       help: "Cap height \u2014 the height of an A in sheet units, which is what a size is here. Type it, drag the slider, or take the corner handle of the word on the sheet." },
