@@ -1,19 +1,19 @@
 /* MINOR INDEX — the borrowed body.
  *
  * Something that was never drawn for this identity, run through the same
- * press as everything else: logo/pokemon.png, screened at the pitch and
+ * press as everything else: assets/pokemon.png, screened at the pitch and
  * spread of plate 78, where the copier is hot and the dots have grown into
  * each other. Nothing here is redrawn by hand — the image is decoded in
  * _raster.js and only ever asked how much ink it would hold.
  *
- *   node logo/mkpoke.js              node logo/mkpoke.js --only 96
+ *   node batches/mkpoke.js              node batches/mkpoke.js --only 96
  */
 const path = require("path");
-const S = require("./_sheet.js");
-const { readPNG, screenImage, bbox } = require("./_raster.js");
+const S = require("../lib/_sheet.js");
+const { readPNG, screenImage, bbox } = require("../lib/_raster.js");
 const { INK, run } = S;
 
-const IMG = readPNG(path.join(__dirname, "pokemon.png"));
+const IMG = readPNG(path.join(__dirname, "..", "assets", "pokemon.png"));
 /* the levels that hold this particular body: the gloves stay light, the
    trunk goes to three quarters, the spiral and the eyes go solid */
 const LV = { lo: 0.12, hi: 0.72, gamma: 0.95 };
@@ -62,4 +62,4 @@ plate("99-pokemon-detoure-blanc", 640, 640, () => ({
       seed: 9, color: INK.white })),
 }));
 
-run(__dirname, P);
+run(P);

@@ -14,12 +14,12 @@
  * solid on every plate since 23; the rules always said print it the way 08
  * was printed, and `cellSDF` is what that took.
  *
- *   node logo/mkautophagie.js                  all of them
- *   node logo/mkautophagie.js 5150             reroll the seeded ones
- *   node logo/mkautophagie.js --only 122,129   just these
+ *   node batches/mkautophagie.js                  all of them
+ *   node batches/mkautophagie.js 5150             reroll the seeded ones
+ *   node batches/mkautophagie.js --only 122,129   just these
  */
-const S = require("./_sheet.js");
-const Y = require("./_glyphs.js");
+const S = require("../lib/_sheet.js");
+const Y = require("../lib/_glyphs.js");
 const { INK, n, rng, pick, axes, brackets, polar, swipe, G, place, run,
         ticks, reg, band, frame, print, mouths } = S;
 const { cell, sunGeom, sunSolid, sunSDF, screen, cellGeom, cellSDF, phylloPts, sPts,
@@ -292,4 +292,4 @@ plate("131-rouleau-autophagie", 820, 1140, (r) => {
   return { bg, ink: fg, body: sw.join("") + sym + G(fg, n(1 + r() * 1.3), body.join("")) };
 });
 
-run(__dirname, P);
+run(P);

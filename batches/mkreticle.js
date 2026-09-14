@@ -5,12 +5,12 @@
  * composition is rolled from a seed, so the measuring apparatus is as
  * arbitrary as the thing it claims to measure.
  *
- *   node logo/mkreticle.js            (same seeds every run)
- *   node logo/mkreticle.js 4821       (roll a different set)
+ *   node batches/mkreticle.js            (same seeds every run)
+ *   node batches/mkreticle.js 4821       (roll a different set)
  */
 const fs = require("fs");
 const path = require("path");
-const OUT = require("./_sheet.js").PLATES(__dirname);   /* plates/ */
+const OUT = require("../lib/_sheet.js").PLATES();   /* plates/ */
 const SEED0 = parseInt(process.argv[2] || "1207", 10);
 
 const INK = {
@@ -344,4 +344,4 @@ write("38-reticle-night.svg", compose(SEED0 + 77, { dark: true }));
 write("39-reticle-roll-a.svg", compose(SEED0 + 131, {}));
 write("40-reticle-roll-b.svg", compose(SEED0 + 199, { hand: 2.2 }));
 
-console.log("→ " + OUT + "   (pass a seed to reroll: node logo/mkreticle.js 4821)");
+console.log("→ " + OUT + "   (pass a seed to reroll: node batches/mkreticle.js 4821)");

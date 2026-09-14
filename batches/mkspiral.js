@@ -12,12 +12,12 @@
  * the warp is the same arithmetic whether the plate is cut solid or screened,
  * so the two are the same body.
  *
- *   node logo/mkspiral.js                  all of them
- *   node logo/mkspiral.js 5150             reroll the seeded ones
- *   node logo/mkspiral.js --only 105,109   just these
+ *   node batches/mkspiral.js                  all of them
+ *   node batches/mkspiral.js 5150             reroll the seeded ones
+ *   node batches/mkspiral.js --only 105,109   just these
  */
-const S = require("./_sheet.js");
-const Y = require("./_glyphs.js");
+const S = require("../lib/_sheet.js");
+const Y = require("../lib/_glyphs.js");
 const { INK, n, rng, pick, axes, brackets, polar, swipe, G, place, run,
         ticks, reg, band, frame, print, mouths } = S;
 const { blob, cell, sunGeom, sunSolid, sunSDF, sunWhirl, screen, spiralPath, phylloPts,
@@ -322,4 +322,4 @@ plate("115-rouleau-spirale", 820, 1140, (r) => {
   return { bg, ink: fg, body: sw.join("") + sym + G(fg, n(1 + r() * 1.3), body.join("")) };
 });
 
-run(__dirname, P);
+run(P);

@@ -11,7 +11,7 @@ const path = require("path");
 const vm = require("vm");
 const T = require("./_t.js");
 const ROOT = path.join(__dirname, "..");
-const ST = require(path.join(ROOT, "_studio.js"));
+const ST = require(path.join(ROOT, "lib", "_studio.js"));
 
 T.head("the press worker — the wire between the panel and the plate");
 
@@ -22,7 +22,7 @@ function boot() {
     Number, Date, RegExp, Error, console, isFinite, parseInt, parseFloat, Infinity });
   ctx.window = undefined;
   vm.runInContext(fs.readFileSync(path.join(ROOT, "docs", "_bundle.js"), "utf8"), ctx);
-  vm.runInContext(fs.readFileSync(path.join(ROOT, "src", "press.worker.js"), "utf8"), ctx);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, "site", "press.worker.js"), "utf8"), ctx);
   return { self, sent, ctx };
 }
 
@@ -111,7 +111,7 @@ T.head("the pages — every control the script reaches for is on the page");
    page silently are checked instead: a script that does not parse, and a
    script asking for an element that the markup does not have. */
 for (const file of ["index.html", "specimen.html"]) {
-  const src = fs.readFileSync(path.join(ROOT, "src", file), "utf8");
+  const src = fs.readFileSync(path.join(ROOT, "site", file), "utf8");
   const blocks = (src.match(/<script>([\s\S]*?)<\/script>/g) || [])
     .map((b) => b.replace(/^<script>/, "").replace(/<\/script>$/, ""));
   let bad = 0;

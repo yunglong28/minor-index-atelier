@@ -2,17 +2,17 @@
  * No oxide, no cream: black, cool white, Blu nCHANT 02, and the film's fluo
  * fluo yellow promoted from highlighter to ground. The table is in _mark.js.
  *
- *   node logo/mkwild.js           node logo/mkwild.js 8123   (reroll)
+ *   node batches/mkwild.js           node batches/mkwild.js 8123   (reroll)
  */
 const fs = require("fs");
 const path = require("path");
-const M = require("./_mark.js");
+const M = require("../lib/_mark.js");
 const {
   INK, GROT, MONO, ARMS, n, rng, pick,
   markDots, L, axes, brackets, dimension, callout, trim, polar, swipe, svg, G,
 } = M;
 
-const OUT = require("./_sheet.js").PLATES(__dirname);   /* plates/ */
+const OUT = require("../lib/_sheet.js").PLATES();   /* plates/ */
 const SEED0 = parseInt(process.argv[2] || "3307", 10);
 
 const CAPTIONS = [
@@ -309,4 +309,4 @@ write("52-wild-roll.svg", (() => {
     bg);
 })());
 
-console.log("→ " + OUT + "   (reroll: node logo/mkwild.js 8123)");
+console.log("→ " + OUT + "   (reroll: node batches/mkwild.js 8123)");

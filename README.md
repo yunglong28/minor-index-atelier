@@ -6,15 +6,16 @@ It is not a logo with variations. It is a small machine that prints plates.
 **[The atelier](https://yunglong28.github.io/minor-index-atelier/)** — make a plate ·
 **[The typeface](https://yunglong28.github.io/minor-index-atelier/specimen.html)** — see it, try it, install it
 
-    npm test                               everything below, checked
-    node mkautophagie.js                   print a batch
-    node mkautophagie.js 5150              reroll it
-    node mkautophagie.js --only 122,129    just these two
-    open plates/index.html                 the contact sheet, all 124
-    node mkfont.js                         the family: one variable file, three cut weights,
-                                           three presses — screened, over-inked, knocked out
-    node mkbundle.js                       rebuild docs/ — the whole site
-    npm run build                          both of the last two
+    npm test                                  everything below, checked
+    node batches/mkautophagie.js              print a batch
+    node batches/mkautophagie.js 5150         reroll it
+    node batches/mkautophagie.js --only 122,129   just these two
+    npm run plates                            print every batch
+    open plates/index.html                    the contact sheet, all 124
+    npm run fonts                             the family: one variable file, three cut weights,
+                                              three presses — screened, over-inked, knocked out
+    npm run site                              rebuild docs/ — the whole site
+    npm run build                             both of the last two
 
 ## What it is
 
@@ -75,22 +76,30 @@ do four things, in this order.
 
 ## The repository
 
+Four folders are written by hand and two are printed into. Nothing in the
+second pair is ever edited: delete either and `npm run build` / `npm run
+plates` makes it again.
+
 ```
-_mark.js        the ink table, the retired mark, the instrument, svg/G
-_press.js       the copier: one rotated lattice, three things to put through it
-_glyphs.js      the bodies, and everything that can be done to one
-_letters.js     the drawn alphabet: skeletons, and the two ways to read them
-_furniture.js   ticks, crosses, bands, mouths, the sheet — no disk, so both share it
-_font.js        the alphabet as TrueType — cut, variable, and printed; tables by hand
-_raster.js      a PNG decoded here rather than by a library, and read as light
-_studio.js      the vocabulary declared once: PARAMS, buildPlate, emitPlate
-_sheet.js       the CLI, the writer, the gallery — the parts that touch a disk
-_type.js        the 5×7 dot alphabet — retired, kept because 53–76 used it
-mk*.js          one generator per batch, plus mkbundle and mkfont
-src/            the two pages and the press worker, hand-written
+lib/            the vocabulary — everything the plates and the atelier share
+  _mark.js        the ink table, the retired mark, the instrument, svg/G
+  _press.js       the copier: one rotated lattice, three things to put through it
+  _glyphs.js      the bodies, and everything that can be done to one
+  _letters.js     the drawn alphabet: skeletons, and the two ways to read them
+  _furniture.js   ticks, crosses, bands, mouths, the sheet — no disk, so both share it
+  _font.js        the alphabet as TrueType — cut, variable, and printed; tables by hand
+  _raster.js      a PNG decoded here rather than by a library, and read as light
+  _studio.js      the vocabulary declared once: PARAMS, buildPlate, emitPlate
+  _sheet.js       the CLI, the writer, the gallery — the parts that touch a disk
+  _type.js        the 5×7 dot alphabet — retired, kept because 53–76 used it
+batches/        one script per batch of numbered plates → plates/
+make/           mkbundle.js → docs/ (the site), mkfont.js → docs/fonts/
+site/           the two pages and the press worker, hand-written → docs/
+assets/         what a plate borrows and did not draw: pokemon.png
 test/           what the paragraphs above are allowed to claim
-plates/         the 124 printed plates and their contact sheet
-docs/           the published site. Generated. Every file in it.
+
+plates/         printed. The 124 plates and their contact sheet.
+docs/           printed. The published site — every file in it.
 ```
 
 | batch | plates |
@@ -125,8 +134,8 @@ be dragged to move it and taken by the corner to resize it. `Handles` turns
 those boxes off. Every ink is the house table with a well beside it, and the
 colour it mixes is written into the plate and into the code as a hex.
 
-The panel opens on the choice that decides everything below it: **grow a body**,
-or **use an image**. Drop one on the sheet — or paste it, or choose a file — and
+The panel opens on the choice that decides everything below it: **shape**, or
+**image**. Drop one on the sheet — or paste it, or choose a file — and
 it is screened by the same press: the pitch, the angle, the dot, the grain and
 the second plate are the controls that were already there, and levels are added
 under the body — floor, ceiling, curve, softness. Nothing is redrawn and nothing
@@ -199,18 +208,18 @@ way the default was.
   tables read back the way a rasteriser reads them; every batch printing its
   committed plates; a streamed plate against a whole one; the arithmetic the
   image side of the press is built on; the emitted code against the plate it
-  claims to rebuild; and `docs/` against what `mkbundle.js` writes.
+  claims to rebuild; and `docs/` against what `make/mkbundle.js` writes.
   No dependencies — for the same reason there is no font library and no PNG
   library in here.
-* **`docs/` is generated.** Edit `src/index.html`, `src/specimen.html` and
-  `src/press.worker.js`, then `node mkbundle.js`. The ink table is written into
+* **`docs/` is generated.** Edit `site/index.html`, `site/specimen.html` and
+  `site/press.worker.js`, then `npm run site`. The ink table is written into
   the pages from `_mark.js` at build time, so a page cannot invent a palette.
-  `mkbundle.js` also writes `docs/atelier.html` — one self-contained file, for
+  `make/mkbundle.js` also writes `docs/atelier.html` — one self-contained file, for
   the Claude artifact and for opening straight off the disk, which is why it
   carries the press worker inside it as text.
 * **Keep `docs/.nojekyll`.** GitHub Pages runs Jekyll, Jekyll drops any path
   beginning with an underscore, and `_bundle.js` silently 404s — the pages still
-  load, only the tester and the figures stop working. `mkbundle.js` writes it.
+  load, only the tester and the figures stop working. `make/mkbundle.js` writes it.
 * **Preview with a real browser engine.** ImageMagick silently drops every stroke
   and every mask, so it lies about these files. Headless Chrome hangs on this
   machine; WebKit through QuickLook does not:

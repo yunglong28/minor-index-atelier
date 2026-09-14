@@ -11,7 +11,7 @@
 const path = require("path");
 const T = require("./_t.js");
 const ROOT = path.join(__dirname, "..");
-const ST = require(path.join(ROOT, "_studio.js"));
+const ST = require(path.join(ROOT, "lib", "_studio.js"));
 
 T.head("the press — a plate that arrives in bands is the plate");
 

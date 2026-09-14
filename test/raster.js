@@ -16,8 +16,8 @@
 const path = require("path");
 const T = require("./_t.js");
 const ROOT = path.join(__dirname, "..");
-const RA = require(path.join(ROOT, "_raster.js"));
-const ST = require(path.join(ROOT, "_studio.js"));
+const RA = require(path.join(ROOT, "lib", "_raster.js"));
+const ST = require(path.join(ROOT, "lib", "_studio.js"));
 
 T.head("the image, read as light — the table under the screen");
 

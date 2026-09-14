@@ -9,16 +9,18 @@ const path = require("path");
 const vm = require("vm");
 const T = require("./_t.js");
 const ROOT = path.join(__dirname, "..");
-const S = require(path.join(ROOT, "_sheet.js"));
-const Y = require(path.join(ROOT, "_glyphs.js"));
-const LT = require(path.join(ROOT, "_letters.js"));
-const RA = require(path.join(ROOT, "_raster.js"));
-const ST = require(path.join(ROOT, "_studio.js"));
+const S = require(path.join(ROOT, "lib", "_sheet.js"));
+const Y = require(path.join(ROOT, "lib", "_glyphs.js"));
+const LT = require(path.join(ROOT, "lib", "_letters.js"));
+const RA = require(path.join(ROOT, "lib", "_raster.js"));
+const ST = require(path.join(ROOT, "lib", "_studio.js"));
 
 const SCOPE = Object.assign({}, Y, S, {
   textField: LT.textField, textSolid: LT.textSolid,
   screenImage: RA.screenImage, bbox: RA.bbox, readPNG: RA.readPNG,
-  INK: S.INK, path: path, __dirname: ROOT,
+  /* emitted image code reads the file beside the script, so the scope this
+     runs in is the folder the repository's own photograph sits in */
+  INK: S.INK, path: path, __dirname: path.join(ROOT, "assets"),
   console: console, Math: Math, Object: Object, Array: Array, JSON: JSON,
   Number: Number, String: String, Infinity: Infinity, isFinite: isFinite,
 });
@@ -146,7 +148,7 @@ trip("sheet · the frame", { format: "cadre", size: 900, px: 500, py: 90 });
    the emitted code reads the file off the disk, so the plate on screen and
    the plate the code prints only agree if the levels, the crop, the placing
    and the separation all survive being written out. */
-const PHOTO = RA.readPNG(path.join(ROOT, "pokemon.png"));
+const PHOTO = RA.readPNG(path.join(ROOT, "assets", "pokemon.png"));
 ST.useImage(PHOTO);
 const shot = (label, over) => trip("image · " + label,
   Object.assign({ sym: "image", imgName: "pokemon.png", size: 420, px: 110, py: 110 }, over));

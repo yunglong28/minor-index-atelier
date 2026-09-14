@@ -18,39 +18,35 @@
     margin:0; background:var(--ground); color:var(--black);
     font:400 12.5px/1.5 var(--sans); font-variant-numeric:tabular-nums;
     -webkit-font-smoothing:antialiased;
-    display:grid; grid-template-rows:auto 1fr auto; height:100vh; overflow:hidden;
+    display:grid; grid-template-rows:auto 1fr auto; height:100dvh; overflow:hidden;
   }
   h1,h2,h3 { margin:0; font-weight:700; }
   button, input, select { font:inherit; color:inherit; }
   .caps { font-stretch:118%; letter-spacing:.13em; text-transform:uppercase; }
 
-  header { display:flex; align-items:stretch; background:var(--white); border-bottom:1px solid var(--rule); }
-  .brand { display:flex; align-items:center; gap:9px; padding:0 13px; border-right:1px solid var(--rule); flex:none; }
+  header { display:flex; align-items:stretch; flex-wrap:wrap; background:var(--white);
+           border-bottom:1px solid var(--rule); }
+  .brand { display:flex; align-items:center; gap:8px; padding:0 11px; border-right:1px solid var(--rule); flex:none; }
   .brand .dot { width:9px; height:9px; background:var(--black); flex:none; }
   .brand h1 { font-size:12.5px; font-stretch:118%; letter-spacing:.13em; text-transform:uppercase; white-space:nowrap; }
   nav { display:flex; align-items:stretch; flex:none; }
-  nav a { display:flex; align-items:center; padding:0 13px; text-decoration:none; color:inherit;
+  nav a { display:flex; align-items:center; padding:0 11px; text-decoration:none; color:inherit;
           border-right:1px solid var(--rule); font-size:11px; font-weight:600; font-stretch:112%;
           letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
   nav a:hover { background:var(--grey); }
   nav a[aria-current=page] { background:var(--black); color:var(--white); }
   nav a:focus-visible { outline:2px solid var(--blu); outline-offset:-2px; }
-  .plateid { display:flex; align-items:center; gap:7px; padding:8px 12px; border-right:1px solid var(--rule); flex:none; }
+  .plateid { display:flex; align-items:center; gap:6px; padding:7px 10px; border-right:1px solid var(--rule); flex:none; }
   .plateid .lbl { color:var(--dim); font-size:11px; }
   .plateid input { background:transparent; border:0; border-bottom:1px solid var(--rule); padding:2px 3px; font-weight:600; }
-  .plateid input.num { width:46px; text-align:right; }
-  .plateid input.nom { width:130px; }
+  .plateid input.num { width:40px; text-align:right; }
+  .plateid input.nom { width:104px; }
   .plateid input:focus { outline:none; border-bottom-color:var(--blu); background:#fff; }
-  .acts { display:flex; align-items:center; gap:5px; padding:8px 10px; flex:1 1 auto; min-width:0; }
-  .acts .sep { width:1px; align-self:stretch; background:var(--rule); opacity:.3; margin:0 4px; flex:none; }
-  .acts .lab { font-size:9.5px; color:var(--dim); font-stretch:118%; letter-spacing:.14em;
-               text-transform:uppercase; flex:none; }
-  .stats { margin-left:auto; display:flex; gap:12px; align-items:center; padding:0 12px; flex:none;
-           white-space:nowrap; border-left:1px solid var(--rule); color:var(--dim); font-size:11.5px; }
-  .stats b { color:var(--black); font-weight:700; }
+  .acts { display:flex; align-items:center; flex-wrap:wrap; gap:4px; padding:7px 8px; flex:1 1 auto; min-width:0; }
+  .acts .sep { width:1px; align-self:stretch; background:var(--rule); opacity:.3; margin:0 3px; flex:none; }
 
   button.b { white-space:nowrap; flex:none; background:var(--white); border:1px solid var(--rule);
-             padding:5px 11px; cursor:pointer; font-size:11px; font-weight:600;
+             padding:5px 9px; cursor:pointer; font-size:11px; font-weight:600;
              font-stretch:112%; letter-spacing:.09em; text-transform:uppercase; }
   button.b:hover { background:var(--grey); }
   button.b:active { background:var(--black); color:var(--white); }
@@ -63,15 +59,14 @@
   .acts .b.ghost[aria-pressed=true] { background:var(--grey); color:var(--black); }
   .acts .b.ghost[aria-pressed=true]::before { content:"\2713 "; color:var(--blu); }
 
-  main { display:grid; grid-template-columns:1fr 372px; min-height:0; }
+  main { display:grid; grid-template-columns:1fr clamp(296px, 25vw, 360px); min-height:0; }
   .stage { position:relative; display:grid; place-items:center; padding:26px; min-height:0; overflow:hidden; }
   .sheet { box-shadow:0 2px 0 rgba(0,0,0,.4); line-height:0; max-width:100%; }
   .sheet svg { display:block; max-width:none; max-height:none; }
-  .stagenote { position:absolute; left:22px; bottom:11px; font-size:10.5px; color:#3f3f3b;
-               font-stretch:112%; letter-spacing:.1em; text-transform:uppercase;
-               background:var(--ground); padding:3px 7px; pointer-events:none;
-               max-width:calc(100% - 260px); overflow:hidden; text-overflow:ellipsis;
-               white-space:nowrap; }
+  .stats { position:absolute; left:22px; bottom:11px; display:flex; gap:11px; align-items:center;
+           font-size:11px; color:#3f3f3b; background:var(--ground); padding:3px 7px;
+           pointer-events:none; white-space:nowrap; max-width:calc(100% - 290px); overflow:hidden; }
+  .stats b { color:var(--black); font-weight:700; }
   .viewport { position:absolute; inset:0; overflow:hidden; display:grid; place-items:center; cursor:grab; }
   .viewport.dragging { cursor:grabbing; }
   .viewport > * { grid-area:1/1; }
@@ -127,16 +122,12 @@
 
   .panel { background:var(--white); border-left:1px solid var(--rule); overflow-y:auto; min-height:0; }
   .modes { display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--rule); }
-  .modes button { display:flex; flex-direction:column; gap:2px; align-items:flex-start; text-align:left;
-                  padding:11px 13px; border:0; border-right:1px solid var(--rule); cursor:pointer;
+  .modes button { display:flex; align-items:center; text-align:left; padding:9px 13px; border:0; border-right:1px solid var(--rule); cursor:pointer;
                   background:var(--white); font-size:11px; font-weight:600; font-stretch:112%;
                   letter-spacing:.09em; text-transform:uppercase; }
   .modes button:last-child { border-right:0; }
   .modes button:hover { background:var(--grey); }
-  .modes button .sub { font-size:10.5px; font-weight:400; font-stretch:100%; letter-spacing:0;
-                       text-transform:none; color:var(--dim); }
   .modes button[aria-pressed=true] { background:var(--black); color:var(--white); }
-  .modes button[aria-pressed=true] .sub { color:#a3a39e; }
   .modes button:focus-visible { outline:2px solid var(--blu); outline-offset:-2px; }
   .presets { padding:11px 13px; border-bottom:1px solid var(--rule); display:flex; flex-wrap:wrap; gap:5px; }
   .presets .lab { width:100%; font-size:10px; color:var(--dim); margin-bottom:3px;
@@ -146,11 +137,9 @@
   .presets button:hover { background:var(--fluo); }
 
   section.grp { border-bottom:1px solid var(--rule); }
-  section.grp > h2 { display:flex; align-items:baseline; gap:8px; padding:10px 13px; cursor:pointer;
+  section.grp > h2 { display:flex; align-items:baseline; gap:8px; padding:9px 13px; cursor:pointer;
                      user-select:none; font-size:11.5px; font-stretch:118%; letter-spacing:.14em;
-                     text-transform:uppercase; flex-wrap:wrap; }
-  section.grp > h2 .note { font-size:11px; font-weight:400; font-stretch:100%; letter-spacing:0;
-                           text-transform:none; color:var(--dim); }
+                     text-transform:uppercase; }
   section.grp > h2::before { content:"−"; width:10px; color:var(--dim); }
   section.grp.shut > h2::before { content:"+"; }
   section.grp.shut .fields { display:none; }
@@ -264,9 +253,8 @@
   .invite kbd { border:1px solid var(--rule); padding:0 4px; font:inherit; background:var(--grey); }
 
   footer { background:var(--black); color:var(--white); border-top:1px solid var(--rule); }
-  .draw { display:flex; align-items:center; gap:10px; padding:8px 14px; cursor:pointer; }
+  .draw { display:flex; align-items:center; gap:10px; padding:7px 14px; cursor:pointer; }
   .draw h3 { font-size:11.5px; font-stretch:118%; letter-spacing:.14em; text-transform:uppercase; }
-  .draw .note { font-size:11px; color:#a3a39e; }
   .draw .arrow { margin-left:auto; }
   pre { margin:0; padding:0 14px 15px; max-height:34vh; overflow:auto; font-family:var(--sans);
         font-size:12px; line-height:1.62; white-space:pre; color:#e9e9e5; }
@@ -279,7 +267,9 @@
            opacity:0; pointer-events:none; transition:opacity .18s; }
   .toast.on { opacity:1; }
   @media (prefers-reduced-motion:reduce) { .toast { transition:none; } }
-  @media (max-width:1180px) { header { flex-wrap:wrap; } .stats { border-left:0; } }
+  /* a short laptop: give the sheet back the height the drawer would take */
+  @media (max-height:760px) { pre { max-height:26vh; } .stage { padding:16px; } }
+  @media (max-width:1060px) { .plateid .lbl, .brand h1 { display:none; } }
   @media (max-width:900px) {
     body { height:auto; overflow:auto; }
     main { grid-template-columns:1fr; }
@@ -304,19 +294,14 @@
     <button class="b key" id="roll" title="roll a whole plate at random (R)">Roll</button>
     <button class="b" id="nine" title="roll nine and pick one (N)">Nine</button>
     <span class="sep"></span>
-    <span class="lab">save</span>
     <button class="b" id="save" title="save the plate as SVG (S)">SVG</button>
     <button class="b" id="png" title="save a 2× PNG of the plate">PNG</button>
     <button class="b" id="ttf" title="build a font at this pen and save it (T)">TTF</button>
     <button class="b" id="vf" title="the whole family in one file — weight, width and slant as axes (V)">VF</button>
     <button class="b" id="copycode" title="copy the code that rebuilds this plate (C)">Code</button>
     <span class="sep"></span>
-    <button class="b ghost" id="explain" aria-pressed="true" title="show what each control does">Explain</button>
+    <button class="b ghost" id="explain" aria-pressed="false" title="show what each control does">Explain</button>
     <button class="b ghost" id="reset" title="back to the default plate">Reset</button>
-  </div>
-  <div class="stats">
-    <span><b id="sdim">—</b> px</span><span><b id="sdots">—</b> dots</span>
-    <span><b id="skb">—</b> kb</span><span><b id="sms">—</b> ms</span>
   </div>
 </header>
 
@@ -326,7 +311,10 @@
       <div class="sheet" id="sheet"></div>
       <div class="marks" id="marks"></div>
     </div>
-    <div class="stagenote" id="stagenote">one plate — a body, an appetite, a press, and its furniture</div>
+    <div class="stats">
+      <span><b id="sdim">—</b> px</span><span><b id="sdots">—</b> dots</span>
+      <span><b id="skb">—</b> kb</span><span><b id="sms">—</b> ms</span>
+    </div>
     <div class="zoom">
       <button class="b ghost" id="handles" aria-pressed="true"
               title="show the boxes round the body and the word — drag them to place them">Handles</button>
@@ -340,29 +328,26 @@
   </div>
   <div class="panel" id="panel">
     <div class="modes" id="modes">
-      <button type="button" data-mode="body" aria-pressed="true">Grow a body
-        <span class="sub">sun, cell, spiral, seed head…</span></button>
-      <button type="button" data-mode="image" aria-pressed="false">Use an image
-        <span class="sub">a photograph, through the same press</span></button>
+      <button type="button" data-mode="body" aria-pressed="true">Shape</button>
+      <button type="button" data-mode="image" aria-pressed="false">Image</button>
     </div>
-    <div class="presets" id="presets"><span class="lab" id="plab">start from a plate that exists</span></div>
+    <div class="presets" id="presets"><span class="lab">Presets</span></div>
   </div>
 </main>
 
 <footer id="footer" class="shut">
   <div class="draw" id="draw">
-    <h3>The code</h3>
-    <span class="note">paste it into any mk*.js — it rebuilds this exact plate, byte for byte</span>
+    <h3>Code</h3>
     <span class="arrow" id="arrow">▲</span>
   </div>
   <pre id="code"></pre>
 </footer>
 <div class="toast" id="toast"></div>
-<div class="dropveil" id="dropveil" hidden><div>drop it — this image goes through the same press</div></div>
+<div class="dropveil" id="dropveil" hidden><div>drop the image</div></div>
 <input type="file" id="imgfile" accept="image/*" hidden>
 <div class="sheetnine" id="nineview" hidden>
   <div class="ninebar">
-    <h3>Nine rolls</h3><span class="note">click one to take it — Esc to leave</span>
+    <h3>Nine rolls</h3><span class="note">click one to take it</span>
     <button class="b ghost" id="nineclose">Close</button>
   </div>
   <div class="ninegrid" id="ninegrid"></div>
@@ -2766,7 +2751,7 @@ const notFlat = (s) => s.mode !== "plein";
 const noBody = (s) => s.sym === "none";
 const grown = (s) => s.sym !== "none" && s.sym !== "image";
 const PARAMS = [
-  { id: "sheet", label: "THE SHEET", note: "size, ground, and the marks that say it was printed", fields: [
+  { id: "sheet", label: "Sheet", fields: [
     { id: "format", type: "select", label: "format", def: "carre",
       help: "Sizes taken from plates that exist, plus the frame the film itself is cut at. Custom frees the two sliders below.",
       options: SHEETS.map((f) => ({ v: f.id, label: f.label })) },
@@ -2778,11 +2763,10 @@ const PARAMS = [
     { id: "trimMarks", type: "bool", label: "trim marks", def: true,
       help: "Crop crosses in the four corners, the way a press hands a sheet over." },
   ] },
-  { id: "image", label: "THE IMAGE", note: "levels first, then the same screen as everything else",
-    when: (s) => s.sym === "image", fields: [
-    { id: "imgName", type: "image", label: "the file", def: "image.png",
+  { id: "image", label: "Image", when: (s) => s.sym === "image", fields: [
+    { id: "imgName", type: "image", label: "file", def: "image.png",
       help: "Any photograph, drawing or frame. It is never redrawn — it is only ever asked how much ink it would hold, exactly as plate 95 asks it of a borrowed body. Drop a file anywhere on the sheet, or paste one." },
-    { id: "imgCrop", type: "bool", label: "crop to the body", def: true,
+    { id: "imgCrop", type: "bool", label: "crop to content", def: true,
       help: "Frame what the image actually occupies rather than the empty canvas around it. Only tells them apart where there is transparency." },
     { id: "imgLo", type: "range", label: "lights", min: 0, max: 0.6, step: 0.01, def: 0.12,
       help: "How much ink a place has to hold before it prints at all. Raise it and the pale half of the image empties out." },
@@ -2792,38 +2776,34 @@ const PARAMS = [
       help: "Everything between the two. Under 1 opens them up, over 1 closes them down." },
     { id: "imgSoft", type: "range", label: "softness", min: 0.3, max: 2, step: 0.05, def: 0.8,
       help: "How much of the image one dot reads. Wide is the blur a real screen has; narrow keeps the detail and starts to sparkle." },
-    { id: "imgMin", type: "range", label: "faint dots", min: 0.005, max: 0.2, step: 0.005, def: 0.015,
+    { id: "imgMin", type: "range", label: "min dot", min: 0.005, max: 0.2, step: 0.005, def: 0.015,
       help: "The coverage a dot has to reach to be printed at all. Raise it to clear the loose dots off the ground — that is what plates 98 and 99 do." },
     { id: "imgInvert", type: "bool", label: "negative", def: false,
       help: "The image read the other way round: the light holds the ink." },
   ] },
-  { id: "corps", label: "THE BODY", note: "one form — the sun, the cell, or something grown out of them",
-    alt: (s) => (s.sym === "image"
-      ? { label: "PLACING", note: "how large the image prints, and where it sits" }
-      : s.sym === "none"
-      ? { label: "NO BODY", note: "nothing is grown — the plate is its ground, its word and its furniture" }
-      : null),
+  { id: "corps", label: "Shape",
+    alt: (s) => (s.sym === "image" ? { label: "Placement" } : null),
     fields: [
-    { id: "sym", type: "select", label: "body", def: "sun", when: notImage, options: [
-      { v: "sun", label: "sun — disc and rays" },
-      { v: "corona", label: "corona — rays, no disc" },
-      { v: "cell", label: "cell — soma, spikes, satellites" },
-      { v: "network", label: "network — several cells" },
-      { v: "seed", label: "seed head — 137.5° spiral of grains" },
-      { v: "lace", label: "lace — a sun eaten full of holes" },
-      { v: "spiral", label: "spiral — one logarithmic band" },
-      { v: "shell", label: "shell — spiral with chamber walls" },
-      { v: "rings", label: "rings — concentric" },
-      { v: "two", label: "two bodies — sun and cell grown together" },
-      { v: "field", label: "field — a scatter of small suns" },
-      { v: "disc", label: "disc — the plain kernel" },
-      { v: "none", label: "none — no body at all" },
-      { v: "image", label: "image — a body that is not ours" } ],
+    { id: "sym", type: "select", label: "shape", def: "sun", when: notImage, options: [
+      { v: "sun", label: "sun" },
+      { v: "corona", label: "corona" },
+      { v: "cell", label: "cell" },
+      { v: "network", label: "network" },
+      { v: "seed", label: "seed head" },
+      { v: "lace", label: "lace" },
+      { v: "spiral", label: "spiral" },
+      { v: "shell", label: "shell" },
+      { v: "rings", label: "rings" },
+      { v: "two", label: "sun + cell" },
+      { v: "field", label: "field of suns" },
+      { v: "disc", label: "disc" },
+      { v: "none", label: "none" },
+      { v: "image", label: "image" } ],
       help: "Every body is a distance field, not a shape: it answers how far outside you are. That is why anything can be cut into anything. None grows nothing: the sheet keeps its ground, its word and its furniture, which is what a title card is." },
     { id: "size", type: "range", label: "size", unit: "px", min: 100, max: 1920, step: 1, def: 520,
       when: (s) => !noBody(s),
       help: "The body's box. Push it past the sheet to make it bleed off the edge — plates 78 and 101 do." },
-    { id: "seed", type: "seed", label: "body seed", def: 7, when: (s) => notImage(s) && !noBody(s),
+    { id: "seed", type: "seed", label: "shape seed", def: 7, when: (s) => notImage(s) && !noBody(s),
       help: "Which particular organism grows. Same seed, same body, every time." },
     /* x and y are one control, not two sliders: the atelier draws them as a
        pair of fields and a box on the sheet you can take hold of. */
@@ -2842,9 +2822,9 @@ const PARAMS = [
       help: "How far the long ones do. Set both equal for an even star." },
     { id: "sat", type: "range", label: "satellites", min: 2, max: 9, step: 1, def: 4, when: (s) => CELLY.indexOf(s.sym) >= 0,
       help: "Bodies hanging off the cell on filaments." },
-    { id: "count", type: "range", label: "how many", min: 2, max: 18, step: 1, def: 6, when: is("sym", "network", "field"),
+    { id: "count", type: "range", label: "count", min: 2, max: 18, step: 1, def: 6, when: is("sym", "network", "field"),
       help: "Bodies scattered inside the box, placed by the body seed." },
-    { id: "seeds", type: "range", label: "grains", min: 30, max: 620, step: 10, def: 300, when: is("sym", "seed", "lace"),
+    { id: "seeds", type: "range", label: "grain count", min: 30, max: 620, step: 10, def: 300, when: is("sym", "seed", "lace"),
       help: "For the seed head, how many grains; for lace, how many holes are eaten out." },
     { id: "gspace", type: "range", label: "grain spacing", min: 6, max: 30, step: 0.5, def: 16, when: is("sym", "seed", "lace"),
       help: "Distance between them. Tight spacing closes the head into one mass." },
@@ -2854,32 +2834,30 @@ const PARAMS = [
       help: "How fast it opens out. Low is a coiled watch spring, high is a wide sweep." },
     { id: "sband", type: "range", label: "band width", min: 2, max: 48, step: 1, def: 14, when: is("sym", "spiral", "shell"),
       help: "Thickness at the outer end — it tapers to nothing at the middle." },
-    { id: "ringN", type: "range", label: "how many rings", min: 2, max: 14, step: 1, def: 5, when: is("sym", "rings"),
+    { id: "ringN", type: "range", label: "rings", min: 2, max: 14, step: 1, def: 5, when: is("sym", "rings"),
       help: "Concentric circles, evenly spaced out to the edge of the box." },
     { id: "ringW", type: "range", label: "ring width", unit: "px", min: 1, max: 40, step: 1, def: 8, when: is("sym", "rings"),
       help: "How heavy each circle is drawn." },
   ] },
-  { id: "appetit", label: "APPETITE", note: "what is done to the form before it reaches the press",
+  { id: "appetit", label: "Distortion",
     /* the appetite is something done to a distance field. A flat cut is the
        geometry itself, and only the twist is in the geometry (sunWhirl), so
        on a flat pass this group shows what a flat cut can actually take —
        and disappears entirely for the bodies that can take nothing. */
     when: (s) => s.sym !== "image" && (s.mode !== "plein" || FIELDY.indexOf(s.sym) >= 0)
       && (!noBody(s) || s.tmode === "printed"),
-    alt: (s) => s.mode === "plein"
-      ? { label: "APPETITE", note: "a flat cut is the body itself — only the twist is in the geometry" } : null,
     fields: [
-    { id: "morph", type: "range", label: "toward the cell", min: 0, max: 1, step: 0.02, def: 0,
+    { id: "morph", type: "range", label: "morph to cell", min: 0, max: 1, step: 0.02, def: 0,
       when: (s) => s.sym === "sun" && notFlat(s),
       help: "Slides the sun into the cell. The middle is neither — plate 123 is this slider in five steps." },
-    { id: "grow", type: "range", label: "fatten / starve", unit: "px", min: -34, max: 44, step: 1, def: 0, when: notFlat,
+    { id: "grow", type: "range", label: "weight", unit: "px", min: -34, max: 44, step: 1, def: 0, when: notFlat,
       help: "Weight, in units of ink. A printer calls it spread and choke: right fattens the whole form, left eats it back until only the kernel is left." },
     { id: "twist", type: "range", label: "twist", min: -0.03, max: 0.03, step: 0.0005, def: 0,
       when: (s) => notFlat(s) || FIELDY.indexOf(s.sym) >= 0,
       help: "Turns the form about its own middle, more the further out you go, so straight rays bend into a vortex. Either sign turns; this is the whole SPIRALE batch." },
-    { id: "wobAmp", type: "range", label: "tremble", unit: "px", min: 0, max: 22, step: 0.5, def: 0, when: notFlat,
+    { id: "wobAmp", type: "range", label: "wobble", unit: "px", min: 0, max: 22, step: 0.5, def: 0, when: notFlat,
       help: "Pushes the whole edge around with noise, by up to this many units, so nothing is machine-true." },
-    { id: "wobScale", type: "range", label: "tremble scale", unit: "px", min: 8, max: 130, step: 1, def: 46, when: (s) => s.wobAmp > 0 && notFlat(s),
+    { id: "wobScale", type: "range", label: "wobble scale", unit: "px", min: 8, max: 130, step: 1, def: 46, when: (s) => s.wobAmp > 0 && notFlat(s),
       help: "Small is a jitter along the edge; large is a slow swell through the whole body." },
     { id: "bites", type: "range", label: "bites", min: 0, max: 16, step: 1, def: 0, when: notFlat,
       help: "Mouths taken out where the body actually ends — the edge is found first, then bitten." },
@@ -2895,10 +2873,10 @@ const PARAMS = [
     { id: "occR", type: "range", label: "eclipse radius", unit: "px", min: 20, max: 420, step: 1, def: 150,
       when: (s) => s.occ && notFlat(s) },
   ] },
-  { id: "presse", label: "THE PRESS", note: "how the form is put on paper: as dots on a ruled screen, or cut solid", fields: [
-    { id: "mode", type: "select", label: "pass", def: "ecran", when: notImage,
-      options: [{ v: "ecran", label: "screened \u2014 through the copier, as dots" },
-                { v: "plein", label: "flat \u2014 cut solid, no dots" }],
+  { id: "presse", label: "Print", fields: [
+    { id: "mode", type: "select", label: "mode", def: "ecran", when: notImage,
+      options: [{ v: "ecran", label: "screened" },
+                { v: "plein", label: "flat" }],
       help: "Screened sends the form through the copier: how much ink a spot would hold becomes a dot of that size, on a ruled grid. Flat skips the copier and cuts the form in one solid colour, the way plates 77 and 80 were cut. Everything below this line is the copier, so a flat pass hides most of it." },
     { id: "ink", type: "ink", label: "ink", def: "black",
       help: "The colour this pass prints in \u2014 the body, and any word printed with it. Custom mixes one that is not in the table." },
@@ -2913,15 +2891,15 @@ const PARAMS = [
       help: "How far outside the form the dots keep printing, shrinking as they go. Small is a hard edge; large is a halo that dissolves outward until the body is more atmosphere than shape \u2014 plate 128 is nothing but fringe." },
     { id: "grain", type: "range", label: "grain", min: 0, max: 0.5, step: 0.01, def: 0.18, when: screened,
       help: "Random unevenness in the ink \u2014 dirt on the glass. It roughens the edges and throws loose dots across the empty parts of the sheet." },
-    { id: "gclean", type: "bool", label: "no grain on the ground", def: false, when: screened,
+    { id: "gclean", type: "bool", label: "grain on ink only", def: false, when: screened,
       help: "The grain is dirt on the glass, and dirt falls on the whole sheet: as well as roughening the form it throws loose dots across the empty parts, which behind a photograph reads as a dirty background. Turn this on and the grain only lands where there is ink to roughen \u2014 the ground comes out empty and the form is untouched, speck for speck, because the same run of the copier is drawn from either way." },
-    { id: "pseed", type: "seed", label: "screen seed", def: 5, when: screened,
+    { id: "pseed", type: "seed", label: "print seed", def: 5, when: screened,
       help: "Which particular run through the copier. Every speck of grain follows from this number, so the same number prints the same sheet, exactly." },
     { id: "plate2", type: "select", label: "second plate", def: "aucune", options: [
-      { v: "aucune", label: "none \u2014 one pass, one colour" },
-      { v: "registre", label: "out of register \u2014 the same form, shifted" },
-      { v: "grossi", label: "spread underneath \u2014 a rim around the form" },
-      { v: "separation", label: "separation \u2014 the shadows on a plate of their own",
+      { v: "aucune", label: "none" },
+      { v: "registre", label: "out of register" },
+      { v: "grossi", label: "spread underneath" },
+      { v: "separation", label: "separation",
         when: (s) => s.sym === "image" } ],
       help: "A second colour, printed underneath the first. Out of register is the same form again, moved a few units \u2014 the misprint of plate 107. Spread lets the lower plate out past the upper one so a rim of colour shows all round \u2014 plate 119. Separation is what a two-colour press does to a photograph: the lower ink carries the whole picture, the upper one only the shadows, and where they lie on each other you get a black neither ink has alone." },
     { id: "p2ink", type: "ink", label: "second ink", def: "blu", when: (s) => s.plate2 !== "aucune",
@@ -2937,13 +2915,13 @@ const PARAMS = [
     { id: "p2grow", type: "range", label: "spread by", unit: "px", min: 2, max: 30, step: 1, def: 9, when: is("plate2", "grossi"),
       help: "How far the plate underneath is let out past the one on top \u2014 the width of the rim. On a flat cut it is a pen of that ink run round the edge, which is exactly what a press does to spread a plate." },
   ] },
-  { id: "lettrage", label: "LETTERING", note: "a word, cut from the same material as the bodies", fields: [
-    { id: "tmode", type: "select", label: "lettering", def: "none", options: [
-      { v: "none", label: "none \u2014 no word on this plate" },
-      { v: "printed", label: "printed \u2014 the press takes the word too" },
-      { v: "cut", label: "cut \u2014 laid on top, sharp and untouched" } ],
+  { id: "lettrage", label: "Text", fields: [
+    { id: "tmode", type: "select", label: "mode", def: "none", options: [
+      { v: "none", label: "none" },
+      { v: "printed", label: "printed" },
+      { v: "cut", label: "cut" } ],
       help: "Printed drops the word into the field before anything else happens, so the screen, the twist, the growth and the bites all take it: it is printed, not placed on top. Cut lays the finished letters over the plate with clean edges, the way a marker would." },
-    { id: "text", type: "text", label: "the word", def: "AUTOPHAGIE", when: (s) => s.tmode !== "none",
+    { id: "text", type: "text", label: "word", def: "AUTOPHAGIE", when: (s) => s.tmode !== "none",
       help: "Caps, figures, French accents, & and ?. Lowercase sets small caps \u2014 the same capitals cut to 72% of the height, redrawn to keep their stem." },
     { id: "tcap", type: "range", label: "font size", unit: "px", min: 8, max: 400, step: 1, def: 96,
       when: (s) => s.tmode !== "none",
@@ -2953,7 +2931,7 @@ const PARAMS = [
       help: "Where the word sits: the left end of the cap line, measured from the top-left corner of the sheet. Drag the word on the sheet, type the numbers, or use the align buttons to sit it against an edge or in the middle." },
     { id: "ty", type: "range", label: "y", unit: "px", axis: "y", pair: "tx",
       min: -400, max: 1900, step: 1, def: 400, when: (s) => s.tmode !== "none" },
-    { id: "tink", type: "ink", label: "word colour", def: "same", options: ["same"].concat(INKS),
+    { id: "tink", type: "ink", label: "text ink", def: "same", options: ["same"].concat(INKS),
       when: (s) => s.tmode !== "none",
       help: "Same means the word takes the ink of the pass it goes through. Give it a colour of its own and it becomes a plate of its own: it is pulled on a separate pass, so the twist, the growth and the bites that take the body no longer take the word." },
     { id: "tweight", type: "range", label: "stroke weight", min: 0.04, max: 0.34, step: 0.005, def: 0.12,
@@ -2971,27 +2949,27 @@ const PARAMS = [
     { id: "thand", type: "range", label: "shake", min: 0, max: 0.09, step: 0.002, def: 0.02,
       when: (s) => s.tmode !== "none",
       help: "How far the pen wanders off the ruled line. Zero is machine-made; 0.02 is a steady hand; past 0.05 the letters start to come apart." },
-    { id: "tseed", type: "seed", label: "hand seed", def: 7, when: (s) => s.tmode !== "none",
+    { id: "tseed", type: "seed", label: "shake seed", def: 7, when: (s) => s.tmode !== "none",
       help: "Which particular hand drew it. The shake follows from this number, so the same number draws the same word." },
   ] },
-  { id: "mobilier", label: "FURNITURE", note: "what a press leaves behind that is not the image", fields: [
-    { id: "fInk", type: "ink", label: "furniture ink", def: "black",
+  { id: "mobilier", label: "Marks", fields: [
+    { id: "fInk", type: "ink", label: "ink", def: "black",
       help: "Also the colour of the trim marks. On a black ground, set it to white." },
     { id: "fBrackets", type: "bool", label: "corner brackets", def: false,
       help: "Hairline corners that frame the sheet like an instrument." },
-    { id: "fAxes", type: "bool", label: "ticked axes", def: false,
+    { id: "fAxes", type: "bool", label: "axes", def: false,
       help: "Cross-hairs with graduations, measuring nothing in particular." },
     { id: "fPolar", type: "bool", label: "polar grid", def: false },
     { id: "fRing", type: "bool", label: "ring", def: false },
-    { id: "fTicks", type: "bool", label: "crown of ticks", def: false,
+    { id: "fTicks", type: "bool", label: "tick ring", def: false,
       help: "Small squares on a circle — the collar around the emblem of plate 77." },
-    { id: "fBand", type: "bool", label: "band at the foot", def: false,
+    { id: "fBand", type: "bool", label: "bottom band", def: false,
       help: "A solid bar across the bottom, where a poster would carry its credits." },
     { id: "fBandInk", type: "ink", label: "band ink", def: "fluo", when: (s) => s.fBand },
-    { id: "fSwipe", type: "bool", label: "marker swipe", def: false,
+    { id: "fSwipe", type: "bool", label: "highlighter swipe", def: false,
       help: "One pull of a highlighter across the sheet, uneven at both ends." },
-    { id: "fSwipeInk", type: "ink", label: "marker ink", def: "fluo", when: (s) => s.fSwipe },
-    { id: "fReg", type: "bool", label: "registration crosses", def: false,
+    { id: "fSwipeInk", type: "ink", label: "highlighter ink", def: "fluo", when: (s) => s.fSwipe },
+    { id: "fReg", type: "bool", label: "register marks", def: false,
       help: "The targets a printer lines two plates up with." },
   ] },
 ];
@@ -6080,7 +6058,7 @@ const notFlat = (s) => s.mode !== "plein";
 const noBody = (s) => s.sym === "none";
 const grown = (s) => s.sym !== "none" && s.sym !== "image";
 const PARAMS = [
-  { id: "sheet", label: "THE SHEET", note: "size, ground, and the marks that say it was printed", fields: [
+  { id: "sheet", label: "Sheet", fields: [
     { id: "format", type: "select", label: "format", def: "carre",
       help: "Sizes taken from plates that exist, plus the frame the film itself is cut at. Custom frees the two sliders below.",
       options: SHEETS.map((f) => ({ v: f.id, label: f.label })) },
@@ -6092,11 +6070,10 @@ const PARAMS = [
     { id: "trimMarks", type: "bool", label: "trim marks", def: true,
       help: "Crop crosses in the four corners, the way a press hands a sheet over." },
   ] },
-  { id: "image", label: "THE IMAGE", note: "levels first, then the same screen as everything else",
-    when: (s) => s.sym === "image", fields: [
-    { id: "imgName", type: "image", label: "the file", def: "image.png",
+  { id: "image", label: "Image", when: (s) => s.sym === "image", fields: [
+    { id: "imgName", type: "image", label: "file", def: "image.png",
       help: "Any photograph, drawing or frame. It is never redrawn — it is only ever asked how much ink it would hold, exactly as plate 95 asks it of a borrowed body. Drop a file anywhere on the sheet, or paste one." },
-    { id: "imgCrop", type: "bool", label: "crop to the body", def: true,
+    { id: "imgCrop", type: "bool", label: "crop to content", def: true,
       help: "Frame what the image actually occupies rather than the empty canvas around it. Only tells them apart where there is transparency." },
     { id: "imgLo", type: "range", label: "lights", min: 0, max: 0.6, step: 0.01, def: 0.12,
       help: "How much ink a place has to hold before it prints at all. Raise it and the pale half of the image empties out." },
@@ -6106,38 +6083,34 @@ const PARAMS = [
       help: "Everything between the two. Under 1 opens them up, over 1 closes them down." },
     { id: "imgSoft", type: "range", label: "softness", min: 0.3, max: 2, step: 0.05, def: 0.8,
       help: "How much of the image one dot reads. Wide is the blur a real screen has; narrow keeps the detail and starts to sparkle." },
-    { id: "imgMin", type: "range", label: "faint dots", min: 0.005, max: 0.2, step: 0.005, def: 0.015,
+    { id: "imgMin", type: "range", label: "min dot", min: 0.005, max: 0.2, step: 0.005, def: 0.015,
       help: "The coverage a dot has to reach to be printed at all. Raise it to clear the loose dots off the ground — that is what plates 98 and 99 do." },
     { id: "imgInvert", type: "bool", label: "negative", def: false,
       help: "The image read the other way round: the light holds the ink." },
   ] },
-  { id: "corps", label: "THE BODY", note: "one form — the sun, the cell, or something grown out of them",
-    alt: (s) => (s.sym === "image"
-      ? { label: "PLACING", note: "how large the image prints, and where it sits" }
-      : s.sym === "none"
-      ? { label: "NO BODY", note: "nothing is grown — the plate is its ground, its word and its furniture" }
-      : null),
+  { id: "corps", label: "Shape",
+    alt: (s) => (s.sym === "image" ? { label: "Placement" } : null),
     fields: [
-    { id: "sym", type: "select", label: "body", def: "sun", when: notImage, options: [
-      { v: "sun", label: "sun — disc and rays" },
-      { v: "corona", label: "corona — rays, no disc" },
-      { v: "cell", label: "cell — soma, spikes, satellites" },
-      { v: "network", label: "network — several cells" },
-      { v: "seed", label: "seed head — 137.5° spiral of grains" },
-      { v: "lace", label: "lace — a sun eaten full of holes" },
-      { v: "spiral", label: "spiral — one logarithmic band" },
-      { v: "shell", label: "shell — spiral with chamber walls" },
-      { v: "rings", label: "rings — concentric" },
-      { v: "two", label: "two bodies — sun and cell grown together" },
-      { v: "field", label: "field — a scatter of small suns" },
-      { v: "disc", label: "disc — the plain kernel" },
-      { v: "none", label: "none — no body at all" },
-      { v: "image", label: "image — a body that is not ours" } ],
+    { id: "sym", type: "select", label: "shape", def: "sun", when: notImage, options: [
+      { v: "sun", label: "sun" },
+      { v: "corona", label: "corona" },
+      { v: "cell", label: "cell" },
+      { v: "network", label: "network" },
+      { v: "seed", label: "seed head" },
+      { v: "lace", label: "lace" },
+      { v: "spiral", label: "spiral" },
+      { v: "shell", label: "shell" },
+      { v: "rings", label: "rings" },
+      { v: "two", label: "sun + cell" },
+      { v: "field", label: "field of suns" },
+      { v: "disc", label: "disc" },
+      { v: "none", label: "none" },
+      { v: "image", label: "image" } ],
       help: "Every body is a distance field, not a shape: it answers how far outside you are. That is why anything can be cut into anything. None grows nothing: the sheet keeps its ground, its word and its furniture, which is what a title card is." },
     { id: "size", type: "range", label: "size", unit: "px", min: 100, max: 1920, step: 1, def: 520,
       when: (s) => !noBody(s),
       help: "The body's box. Push it past the sheet to make it bleed off the edge — plates 78 and 101 do." },
-    { id: "seed", type: "seed", label: "body seed", def: 7, when: (s) => notImage(s) && !noBody(s),
+    { id: "seed", type: "seed", label: "shape seed", def: 7, when: (s) => notImage(s) && !noBody(s),
       help: "Which particular organism grows. Same seed, same body, every time." },
     /* x and y are one control, not two sliders: the atelier draws them as a
        pair of fields and a box on the sheet you can take hold of. */
@@ -6156,9 +6129,9 @@ const PARAMS = [
       help: "How far the long ones do. Set both equal for an even star." },
     { id: "sat", type: "range", label: "satellites", min: 2, max: 9, step: 1, def: 4, when: (s) => CELLY.indexOf(s.sym) >= 0,
       help: "Bodies hanging off the cell on filaments." },
-    { id: "count", type: "range", label: "how many", min: 2, max: 18, step: 1, def: 6, when: is("sym", "network", "field"),
+    { id: "count", type: "range", label: "count", min: 2, max: 18, step: 1, def: 6, when: is("sym", "network", "field"),
       help: "Bodies scattered inside the box, placed by the body seed." },
-    { id: "seeds", type: "range", label: "grains", min: 30, max: 620, step: 10, def: 300, when: is("sym", "seed", "lace"),
+    { id: "seeds", type: "range", label: "grain count", min: 30, max: 620, step: 10, def: 300, when: is("sym", "seed", "lace"),
       help: "For the seed head, how many grains; for lace, how many holes are eaten out." },
     { id: "gspace", type: "range", label: "grain spacing", min: 6, max: 30, step: 0.5, def: 16, when: is("sym", "seed", "lace"),
       help: "Distance between them. Tight spacing closes the head into one mass." },
@@ -6168,32 +6141,30 @@ const PARAMS = [
       help: "How fast it opens out. Low is a coiled watch spring, high is a wide sweep." },
     { id: "sband", type: "range", label: "band width", min: 2, max: 48, step: 1, def: 14, when: is("sym", "spiral", "shell"),
       help: "Thickness at the outer end — it tapers to nothing at the middle." },
-    { id: "ringN", type: "range", label: "how many rings", min: 2, max: 14, step: 1, def: 5, when: is("sym", "rings"),
+    { id: "ringN", type: "range", label: "rings", min: 2, max: 14, step: 1, def: 5, when: is("sym", "rings"),
       help: "Concentric circles, evenly spaced out to the edge of the box." },
     { id: "ringW", type: "range", label: "ring width", unit: "px", min: 1, max: 40, step: 1, def: 8, when: is("sym", "rings"),
       help: "How heavy each circle is drawn." },
   ] },
-  { id: "appetit", label: "APPETITE", note: "what is done to the form before it reaches the press",
+  { id: "appetit", label: "Distortion",
     /* the appetite is something done to a distance field. A flat cut is the
        geometry itself, and only the twist is in the geometry (sunWhirl), so
        on a flat pass this group shows what a flat cut can actually take —
        and disappears entirely for the bodies that can take nothing. */
     when: (s) => s.sym !== "image" && (s.mode !== "plein" || FIELDY.indexOf(s.sym) >= 0)
       && (!noBody(s) || s.tmode === "printed"),
-    alt: (s) => s.mode === "plein"
-      ? { label: "APPETITE", note: "a flat cut is the body itself — only the twist is in the geometry" } : null,
     fields: [
-    { id: "morph", type: "range", label: "toward the cell", min: 0, max: 1, step: 0.02, def: 0,
+    { id: "morph", type: "range", label: "morph to cell", min: 0, max: 1, step: 0.02, def: 0,
       when: (s) => s.sym === "sun" && notFlat(s),
       help: "Slides the sun into the cell. The middle is neither — plate 123 is this slider in five steps." },
-    { id: "grow", type: "range", label: "fatten / starve", unit: "px", min: -34, max: 44, step: 1, def: 0, when: notFlat,
+    { id: "grow", type: "range", label: "weight", unit: "px", min: -34, max: 44, step: 1, def: 0, when: notFlat,
       help: "Weight, in units of ink. A printer calls it spread and choke: right fattens the whole form, left eats it back until only the kernel is left." },
     { id: "twist", type: "range", label: "twist", min: -0.03, max: 0.03, step: 0.0005, def: 0,
       when: (s) => notFlat(s) || FIELDY.indexOf(s.sym) >= 0,
       help: "Turns the form about its own middle, more the further out you go, so straight rays bend into a vortex. Either sign turns; this is the whole SPIRALE batch." },
-    { id: "wobAmp", type: "range", label: "tremble", unit: "px", min: 0, max: 22, step: 0.5, def: 0, when: notFlat,
+    { id: "wobAmp", type: "range", label: "wobble", unit: "px", min: 0, max: 22, step: 0.5, def: 0, when: notFlat,
       help: "Pushes the whole edge around with noise, by up to this many units, so nothing is machine-true." },
-    { id: "wobScale", type: "range", label: "tremble scale", unit: "px", min: 8, max: 130, step: 1, def: 46, when: (s) => s.wobAmp > 0 && notFlat(s),
+    { id: "wobScale", type: "range", label: "wobble scale", unit: "px", min: 8, max: 130, step: 1, def: 46, when: (s) => s.wobAmp > 0 && notFlat(s),
       help: "Small is a jitter along the edge; large is a slow swell through the whole body." },
     { id: "bites", type: "range", label: "bites", min: 0, max: 16, step: 1, def: 0, when: notFlat,
       help: "Mouths taken out where the body actually ends — the edge is found first, then bitten." },
@@ -6209,10 +6180,10 @@ const PARAMS = [
     { id: "occR", type: "range", label: "eclipse radius", unit: "px", min: 20, max: 420, step: 1, def: 150,
       when: (s) => s.occ && notFlat(s) },
   ] },
-  { id: "presse", label: "THE PRESS", note: "how the form is put on paper: as dots on a ruled screen, or cut solid", fields: [
-    { id: "mode", type: "select", label: "pass", def: "ecran", when: notImage,
-      options: [{ v: "ecran", label: "screened \u2014 through the copier, as dots" },
-                { v: "plein", label: "flat \u2014 cut solid, no dots" }],
+  { id: "presse", label: "Print", fields: [
+    { id: "mode", type: "select", label: "mode", def: "ecran", when: notImage,
+      options: [{ v: "ecran", label: "screened" },
+                { v: "plein", label: "flat" }],
       help: "Screened sends the form through the copier: how much ink a spot would hold becomes a dot of that size, on a ruled grid. Flat skips the copier and cuts the form in one solid colour, the way plates 77 and 80 were cut. Everything below this line is the copier, so a flat pass hides most of it." },
     { id: "ink", type: "ink", label: "ink", def: "black",
       help: "The colour this pass prints in \u2014 the body, and any word printed with it. Custom mixes one that is not in the table." },
@@ -6227,15 +6198,15 @@ const PARAMS = [
       help: "How far outside the form the dots keep printing, shrinking as they go. Small is a hard edge; large is a halo that dissolves outward until the body is more atmosphere than shape \u2014 plate 128 is nothing but fringe." },
     { id: "grain", type: "range", label: "grain", min: 0, max: 0.5, step: 0.01, def: 0.18, when: screened,
       help: "Random unevenness in the ink \u2014 dirt on the glass. It roughens the edges and throws loose dots across the empty parts of the sheet." },
-    { id: "gclean", type: "bool", label: "no grain on the ground", def: false, when: screened,
+    { id: "gclean", type: "bool", label: "grain on ink only", def: false, when: screened,
       help: "The grain is dirt on the glass, and dirt falls on the whole sheet: as well as roughening the form it throws loose dots across the empty parts, which behind a photograph reads as a dirty background. Turn this on and the grain only lands where there is ink to roughen \u2014 the ground comes out empty and the form is untouched, speck for speck, because the same run of the copier is drawn from either way." },
-    { id: "pseed", type: "seed", label: "screen seed", def: 5, when: screened,
+    { id: "pseed", type: "seed", label: "print seed", def: 5, when: screened,
       help: "Which particular run through the copier. Every speck of grain follows from this number, so the same number prints the same sheet, exactly." },
     { id: "plate2", type: "select", label: "second plate", def: "aucune", options: [
-      { v: "aucune", label: "none \u2014 one pass, one colour" },
-      { v: "registre", label: "out of register \u2014 the same form, shifted" },
-      { v: "grossi", label: "spread underneath \u2014 a rim around the form" },
-      { v: "separation", label: "separation \u2014 the shadows on a plate of their own",
+      { v: "aucune", label: "none" },
+      { v: "registre", label: "out of register" },
+      { v: "grossi", label: "spread underneath" },
+      { v: "separation", label: "separation",
         when: (s) => s.sym === "image" } ],
       help: "A second colour, printed underneath the first. Out of register is the same form again, moved a few units \u2014 the misprint of plate 107. Spread lets the lower plate out past the upper one so a rim of colour shows all round \u2014 plate 119. Separation is what a two-colour press does to a photograph: the lower ink carries the whole picture, the upper one only the shadows, and where they lie on each other you get a black neither ink has alone." },
     { id: "p2ink", type: "ink", label: "second ink", def: "blu", when: (s) => s.plate2 !== "aucune",
@@ -6251,13 +6222,13 @@ const PARAMS = [
     { id: "p2grow", type: "range", label: "spread by", unit: "px", min: 2, max: 30, step: 1, def: 9, when: is("plate2", "grossi"),
       help: "How far the plate underneath is let out past the one on top \u2014 the width of the rim. On a flat cut it is a pen of that ink run round the edge, which is exactly what a press does to spread a plate." },
   ] },
-  { id: "lettrage", label: "LETTERING", note: "a word, cut from the same material as the bodies", fields: [
-    { id: "tmode", type: "select", label: "lettering", def: "none", options: [
-      { v: "none", label: "none \u2014 no word on this plate" },
-      { v: "printed", label: "printed \u2014 the press takes the word too" },
-      { v: "cut", label: "cut \u2014 laid on top, sharp and untouched" } ],
+  { id: "lettrage", label: "Text", fields: [
+    { id: "tmode", type: "select", label: "mode", def: "none", options: [
+      { v: "none", label: "none" },
+      { v: "printed", label: "printed" },
+      { v: "cut", label: "cut" } ],
       help: "Printed drops the word into the field before anything else happens, so the screen, the twist, the growth and the bites all take it: it is printed, not placed on top. Cut lays the finished letters over the plate with clean edges, the way a marker would." },
-    { id: "text", type: "text", label: "the word", def: "AUTOPHAGIE", when: (s) => s.tmode !== "none",
+    { id: "text", type: "text", label: "word", def: "AUTOPHAGIE", when: (s) => s.tmode !== "none",
       help: "Caps, figures, French accents, & and ?. Lowercase sets small caps \u2014 the same capitals cut to 72% of the height, redrawn to keep their stem." },
     { id: "tcap", type: "range", label: "font size", unit: "px", min: 8, max: 400, step: 1, def: 96,
       when: (s) => s.tmode !== "none",
@@ -6267,7 +6238,7 @@ const PARAMS = [
       help: "Where the word sits: the left end of the cap line, measured from the top-left corner of the sheet. Drag the word on the sheet, type the numbers, or use the align buttons to sit it against an edge or in the middle." },
     { id: "ty", type: "range", label: "y", unit: "px", axis: "y", pair: "tx",
       min: -400, max: 1900, step: 1, def: 400, when: (s) => s.tmode !== "none" },
-    { id: "tink", type: "ink", label: "word colour", def: "same", options: ["same"].concat(INKS),
+    { id: "tink", type: "ink", label: "text ink", def: "same", options: ["same"].concat(INKS),
       when: (s) => s.tmode !== "none",
       help: "Same means the word takes the ink of the pass it goes through. Give it a colour of its own and it becomes a plate of its own: it is pulled on a separate pass, so the twist, the growth and the bites that take the body no longer take the word." },
     { id: "tweight", type: "range", label: "stroke weight", min: 0.04, max: 0.34, step: 0.005, def: 0.12,
@@ -6285,27 +6256,27 @@ const PARAMS = [
     { id: "thand", type: "range", label: "shake", min: 0, max: 0.09, step: 0.002, def: 0.02,
       when: (s) => s.tmode !== "none",
       help: "How far the pen wanders off the ruled line. Zero is machine-made; 0.02 is a steady hand; past 0.05 the letters start to come apart." },
-    { id: "tseed", type: "seed", label: "hand seed", def: 7, when: (s) => s.tmode !== "none",
+    { id: "tseed", type: "seed", label: "shake seed", def: 7, when: (s) => s.tmode !== "none",
       help: "Which particular hand drew it. The shake follows from this number, so the same number draws the same word." },
   ] },
-  { id: "mobilier", label: "FURNITURE", note: "what a press leaves behind that is not the image", fields: [
-    { id: "fInk", type: "ink", label: "furniture ink", def: "black",
+  { id: "mobilier", label: "Marks", fields: [
+    { id: "fInk", type: "ink", label: "ink", def: "black",
       help: "Also the colour of the trim marks. On a black ground, set it to white." },
     { id: "fBrackets", type: "bool", label: "corner brackets", def: false,
       help: "Hairline corners that frame the sheet like an instrument." },
-    { id: "fAxes", type: "bool", label: "ticked axes", def: false,
+    { id: "fAxes", type: "bool", label: "axes", def: false,
       help: "Cross-hairs with graduations, measuring nothing in particular." },
     { id: "fPolar", type: "bool", label: "polar grid", def: false },
     { id: "fRing", type: "bool", label: "ring", def: false },
-    { id: "fTicks", type: "bool", label: "crown of ticks", def: false,
+    { id: "fTicks", type: "bool", label: "tick ring", def: false,
       help: "Small squares on a circle — the collar around the emblem of plate 77." },
-    { id: "fBand", type: "bool", label: "band at the foot", def: false,
+    { id: "fBand", type: "bool", label: "bottom band", def: false,
       help: "A solid bar across the bottom, where a poster would carry its credits." },
     { id: "fBandInk", type: "ink", label: "band ink", def: "fluo", when: (s) => s.fBand },
-    { id: "fSwipe", type: "bool", label: "marker swipe", def: false,
+    { id: "fSwipe", type: "bool", label: "highlighter swipe", def: false,
       help: "One pull of a highlighter across the sheet, uneven at both ends." },
-    { id: "fSwipeInk", type: "ink", label: "marker ink", def: "fluo", when: (s) => s.fSwipe },
-    { id: "fReg", type: "bool", label: "registration crosses", def: false,
+    { id: "fSwipeInk", type: "ink", label: "highlighter ink", def: "fluo", when: (s) => s.fSwipe },
+    { id: "fReg", type: "bool", label: "register marks", def: false,
       help: "The targets a printer lines two plates up with." },
   ] },
 ];
@@ -7233,12 +7204,11 @@ global.MINOR = {
     var sec = el("section", "grp");
     var h = el("h2");
     var gl = el("span", null, grp.label); gl.style.whiteSpace = "nowrap";
-    h.appendChild(gl); h.appendChild(el("span", "note", grp.note));
+    h.appendChild(gl);
     h.onclick = function () { sec.classList.toggle("shut"); };
     var box = el("div", "fields");
     sec.appendChild(h); sec.appendChild(box); panel.appendChild(sec);
-    var gn = h.lastChild;
-    groups.push({ sec: sec, grp: grp, label: gl, note: gn });
+    groups.push({ sec: sec, grp: grp, label: gl });
 
     var byId = {}, drawn = {};
     grp.fields.forEach(function (f) { byId[f.id] = f; });
@@ -7463,18 +7433,12 @@ global.MINOR = {
       g.sec.hidden = !M.visible(g.grp, state);
       var a = g.grp.alt && g.grp.alt(state);
       g.label.textContent = a ? a.label : g.grp.label;
-      g.note.textContent = a ? a.note : g.grp.note;
     });
     modeBtns.forEach(function (b) {
       b.setAttribute("aria-pressed",
         (b.getAttribute("data-mode") === "image") === onImage ? "true" : "false");
     });
     pbuttons.forEach(function (p) { p.b.hidden = p.image !== onImage; });
-    document.getElementById("plab").textContent = onImage
-      ? "start from one of the borrowed plates" : "start from a plate that exists";
-    document.getElementById("stagenote").textContent = onImage
-      ? "an image, printed like everything else on this page"
-      : "one plate \u2014 a body, an appetite, a press, and its furniture";
     paintPicker();
     document.getElementById("num").value = state.num;
     document.getElementById("nom").value = state.name;
@@ -8105,11 +8069,13 @@ global.MINOR = {
     }, function () { localSave(name, text); });
   };
   var ex = document.getElementById("explain");
-  ex.onclick = function () {
-    var on = ex.getAttribute("aria-pressed") !== "true";
+  function explain(on) {
     ex.setAttribute("aria-pressed", on ? "true" : "false");
     document.body.classList.toggle("nohelp", !on);
-  };
+    try { localStorage.setItem(KEY + ":explain", on ? "1" : "0"); } catch (e) {}
+  }
+  ex.onclick = function () { explain(ex.getAttribute("aria-pressed") !== "true"); };
+  try { explain(localStorage.getItem(KEY + ":explain") === "1"); } catch (e) { explain(false); }
   document.getElementById("reset").onclick = function () {
     remember(null);
     state = Object.assign({}, M.DEFAULTS, { name: "untitled" }); sync(); render(false);
@@ -8120,6 +8086,9 @@ global.MINOR = {
   document.getElementById("draw").onclick = function () {
     footer.classList.toggle("shut");
     document.getElementById("arrow").textContent = footer.classList.contains("shut") ? "▲" : "▼";
+    /* the drawer takes its height out of the stage: a sheet that was fitted
+       stays fitted, exactly as it does when the window is resized */
+    if (view.fitted) fit();
   };
   document.addEventListener("keydown", function (e) {
     if ((e.metaKey || e.ctrlKey) && (e.key === "z" || e.key === "Z")) {

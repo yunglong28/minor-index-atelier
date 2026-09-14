@@ -8,8 +8,8 @@ const path = require("path");
 const T = require("./_t.js");
 const TTF = require("./ttf.js");
 const ROOT = path.join(__dirname, "..");
-const F = require(path.join(ROOT, "_font.js"));
-const LT = require(path.join(ROOT, "_letters.js"));
+const F = require(path.join(ROOT, "lib", "_font.js"));
+const LT = require(path.join(ROOT, "lib", "_letters.js"));
 
 /* what each version of OS/2 has to weigh */
 const OS2LEN = { 0: 78, 1: 86, 2: 96, 3: 96, 4: 96, 5: 100 };

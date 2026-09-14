@@ -8,14 +8,21 @@ const ROOT = path.join(__dirname, "..");
 
 T.head("house rules");
 
-const js = fs.readdirSync(ROOT).filter((f) => /\.js$/.test(f));
-const src = {};
-for (const f of js) src[f] = fs.readFileSync(path.join(ROOT, f), "utf8");
+/* the three folders that hold hand-written JavaScript. Everything below
+   speaks in basenames, because a module is known by its name here. */
+const CODE = ["lib", "batches", "make"];
+const js = [], where = {}, src = {};
+for (const d of CODE)
+  for (const f of fs.readdirSync(path.join(ROOT, d)).filter((f) => /\.js$/.test(f))) {
+    js.push(f);
+    where[f] = d + "/" + f;
+    src[f] = fs.readFileSync(path.join(ROOT, d, f), "utf8");
+  }
 
 /* 1. every file parses */
 for (const f of js) {
-  try { new Function(src[f]); T.ok(f + " parses", true); }
-  catch (e) { T.ok(f + " parses", false, e.message); }
+  try { new Function(src[f]); T.ok(where[f] + " parses", true); }
+  catch (e) { T.ok(where[f] + " parses", false, e.message); }
 }
 
 /* 2. the bundle ships to a browser: no fs, no path, outside the node-only files */
@@ -27,7 +34,7 @@ for (const f of BUNDLED) {
   /* _raster.js requires fs deliberately and guards the one call that needs it */
   if (f !== "_raster.js" && /require\(["']fs["']\)/.test(src[f])) bad.push("fs");
   if (/require\(["']path["']\)/.test(src[f])) bad.push("path");
-  T.ok(f + " can run in a page", bad.length === 0, "requires " + bad.join(", "));
+  T.ok(where[f] + " can run in a page", bad.length === 0, "requires " + bad.join(", "));
 }
 
 /* 3. one Lehmer generator, not eight */
@@ -55,10 +62,10 @@ for (const f of js) {
 T.ok("nothing but _mark.js writes an ink out in hex", strays.length === 0, strays.join(" "));
 
 /* and the pages ask for the table by name rather than copying it */
-const pages = fs.existsSync(path.join(ROOT, "src"))
-  ? fs.readdirSync(path.join(ROOT, "src")).filter((f) => /\.html$/.test(f)) : [];
+const pages = fs.existsSync(path.join(ROOT, "site"))
+  ? fs.readdirSync(path.join(ROOT, "site")).filter((f) => /\.html$/.test(f)) : [];
 const painted = pages.filter((f) =>
-  hexes.test(fs.readFileSync(path.join(ROOT, "src", f), "utf8")));
+  hexes.test(fs.readFileSync(path.join(ROOT, "site", f), "utf8")));
 T.ok("the source pages take their palette from _mark.js (" + pages.length + ")",
   painted.length === 0, painted.join(" "));
 

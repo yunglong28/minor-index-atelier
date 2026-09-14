@@ -9,16 +9,16 @@
  * `_letters.js` has a `G` (the glyph table) and `_mark.js` has a `G` (the SVG
  * group), and in one shared scope one of them would quietly win.
  *
- * Nothing hand-written lives in `docs/`. The two pages are written in `src/`
+ * Nothing hand-written lives in `docs/`. The two pages are written in `site/`
  * and copied out with the ink table filled in from `_mark.js`, so the site is
  * a build product all the way down and can be deleted and made again.
  *
- *   node logo/mkbundle.js       → logo/docs/
- *   require("./mkbundle.js").build()   → { filename: contents }, written nowhere
+ *   node make/mkbundle.js            → docs/
+ *   require("./make/mkbundle.js").build()  → { filename: contents }, written nowhere
  */
 const fs = require("fs");
 const path = require("path");
-const { INK } = require("./_mark.js");
+const { INK } = require("../lib/_mark.js");
 
 /* in dependency order */
 const SRC = ["_mark.js", "_press.js", "_glyphs.js", "_letters.js", "_furniture.js",
@@ -39,8 +39,10 @@ const EXPOSE = {
 /* and two namespaces, kept whole */
 const NAMESPACES = { text: "_letters.js", font: "_font.js" };
 
-const dir = __dirname;
-const readSrc = (f) => fs.readFileSync(path.join(dir, f), "utf8");
+const ROOT = path.join(__dirname, "..");
+const readSrc = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
+/* a module by name, from the one folder the vocabulary lives in */
+const readLib = (f) => readSrc(path.join("lib", f));
 
 /* the ink table, as CSS custom properties, so a page cannot invent a palette */
 const inkCSS = "    " + Object.keys(INK).map((k) => `--${k}:${INK[k]};`).join(" ")
@@ -53,7 +55,7 @@ function bundle() {
     + `__MI__[${JSON.stringify(f)}] = (function () {\n`
     + `var module = { exports: {} }, exports = module.exports;\n`
     + `var require = function (p) { return __MI__[p.replace("./", "")]; };\n`
-    + readSrc(f)
+    + readLib(f)
     + `\nreturn module.exports;\n})();`);
   const picks = [];
   for (const f in EXPOSE) for (const k of EXPOSE[f]) picks.push(`  ${k}: __MI__[${JSON.stringify(f)}].${k},`);
@@ -73,7 +75,7 @@ ${picks.join("\n")}
 }
 
 /* a page, with the ink table written into it */
-const page = (name) => readSrc(path.join("src", name))
+const page = (name) => readSrc(path.join("site", name))
   .replace(/^ *\/\* @INK[^\n]*\n/m, inkCSS + "\n");
 
 /* nothing may end a script tag from inside one */
@@ -82,7 +84,7 @@ const inTag = (js) => js.replace(/<\/(script)/gi, "<\\/$1");
 /** everything docs/ is made of, as { filename: contents } */
 function build() {
   const b = bundle();
-  const worker = readSrc(path.join("src", "press.worker.js"));
+  const worker = readSrc(path.join("site", "press.worker.js"));
   const index = page("index.html");
   const spec = page("specimen.html");
   const out = {
@@ -109,7 +111,7 @@ function build() {
 module.exports = { build, bundle, EXPOSE, SRC };
 
 if (require.main === module) {
-  const web = path.join(dir, "docs");        /* GitHub Pages serves this folder */
+  const web = path.join(ROOT, "docs");       /* GitHub Pages serves this folder */
   fs.mkdirSync(web, { recursive: true });
   fs.writeFileSync(path.join(web, ".nojekyll"), "");
   const out = build();

@@ -19,39 +19,35 @@
     margin:0; background:var(--ground); color:var(--black);
     font:400 12.5px/1.5 var(--sans); font-variant-numeric:tabular-nums;
     -webkit-font-smoothing:antialiased;
-    display:grid; grid-template-rows:auto 1fr auto; height:100vh; overflow:hidden;
+    display:grid; grid-template-rows:auto 1fr auto; height:100dvh; overflow:hidden;
   }
   h1,h2,h3 { margin:0; font-weight:700; }
   button, input, select { font:inherit; color:inherit; }
   .caps { font-stretch:118%; letter-spacing:.13em; text-transform:uppercase; }
 
-  header { display:flex; align-items:stretch; background:var(--white); border-bottom:1px solid var(--rule); }
-  .brand { display:flex; align-items:center; gap:9px; padding:0 13px; border-right:1px solid var(--rule); flex:none; }
+  header { display:flex; align-items:stretch; flex-wrap:wrap; background:var(--white);
+           border-bottom:1px solid var(--rule); }
+  .brand { display:flex; align-items:center; gap:8px; padding:0 11px; border-right:1px solid var(--rule); flex:none; }
   .brand .dot { width:9px; height:9px; background:var(--black); flex:none; }
   .brand h1 { font-size:12.5px; font-stretch:118%; letter-spacing:.13em; text-transform:uppercase; white-space:nowrap; }
   nav { display:flex; align-items:stretch; flex:none; }
-  nav a { display:flex; align-items:center; padding:0 13px; text-decoration:none; color:inherit;
+  nav a { display:flex; align-items:center; padding:0 11px; text-decoration:none; color:inherit;
           border-right:1px solid var(--rule); font-size:11px; font-weight:600; font-stretch:112%;
           letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
   nav a:hover { background:var(--grey); }
   nav a[aria-current=page] { background:var(--black); color:var(--white); }
   nav a:focus-visible { outline:2px solid var(--blu); outline-offset:-2px; }
-  .plateid { display:flex; align-items:center; gap:7px; padding:8px 12px; border-right:1px solid var(--rule); flex:none; }
+  .plateid { display:flex; align-items:center; gap:6px; padding:7px 10px; border-right:1px solid var(--rule); flex:none; }
   .plateid .lbl { color:var(--dim); font-size:11px; }
   .plateid input { background:transparent; border:0; border-bottom:1px solid var(--rule); padding:2px 3px; font-weight:600; }
-  .plateid input.num { width:46px; text-align:right; }
-  .plateid input.nom { width:130px; }
+  .plateid input.num { width:40px; text-align:right; }
+  .plateid input.nom { width:104px; }
   .plateid input:focus { outline:none; border-bottom-color:var(--blu); background:#fff; }
-  .acts { display:flex; align-items:center; gap:5px; padding:8px 10px; flex:1 1 auto; min-width:0; }
-  .acts .sep { width:1px; align-self:stretch; background:var(--rule); opacity:.3; margin:0 4px; flex:none; }
-  .acts .lab { font-size:9.5px; color:var(--dim); font-stretch:118%; letter-spacing:.14em;
-               text-transform:uppercase; flex:none; }
-  .stats { margin-left:auto; display:flex; gap:12px; align-items:center; padding:0 12px; flex:none;
-           white-space:nowrap; border-left:1px solid var(--rule); color:var(--dim); font-size:11.5px; }
-  .stats b { color:var(--black); font-weight:700; }
+  .acts { display:flex; align-items:center; flex-wrap:wrap; gap:4px; padding:7px 8px; flex:1 1 auto; min-width:0; }
+  .acts .sep { width:1px; align-self:stretch; background:var(--rule); opacity:.3; margin:0 3px; flex:none; }
 
   button.b { white-space:nowrap; flex:none; background:var(--white); border:1px solid var(--rule);
-             padding:5px 11px; cursor:pointer; font-size:11px; font-weight:600;
+             padding:5px 9px; cursor:pointer; font-size:11px; font-weight:600;
              font-stretch:112%; letter-spacing:.09em; text-transform:uppercase; }
   button.b:hover { background:var(--grey); }
   button.b:active { background:var(--black); color:var(--white); }
@@ -64,15 +60,14 @@
   .acts .b.ghost[aria-pressed=true] { background:var(--grey); color:var(--black); }
   .acts .b.ghost[aria-pressed=true]::before { content:"\2713 "; color:var(--blu); }
 
-  main { display:grid; grid-template-columns:1fr 372px; min-height:0; }
+  main { display:grid; grid-template-columns:1fr clamp(296px, 25vw, 360px); min-height:0; }
   .stage { position:relative; display:grid; place-items:center; padding:26px; min-height:0; overflow:hidden; }
   .sheet { box-shadow:0 2px 0 rgba(0,0,0,.4); line-height:0; max-width:100%; }
   .sheet svg { display:block; max-width:none; max-height:none; }
-  .stagenote { position:absolute; left:22px; bottom:11px; font-size:10.5px; color:#3f3f3b;
-               font-stretch:112%; letter-spacing:.1em; text-transform:uppercase;
-               background:var(--ground); padding:3px 7px; pointer-events:none;
-               max-width:calc(100% - 260px); overflow:hidden; text-overflow:ellipsis;
-               white-space:nowrap; }
+  .stats { position:absolute; left:22px; bottom:11px; display:flex; gap:11px; align-items:center;
+           font-size:11px; color:#3f3f3b; background:var(--ground); padding:3px 7px;
+           pointer-events:none; white-space:nowrap; max-width:calc(100% - 290px); overflow:hidden; }
+  .stats b { color:var(--black); font-weight:700; }
   .viewport { position:absolute; inset:0; overflow:hidden; display:grid; place-items:center; cursor:grab; }
   .viewport.dragging { cursor:grabbing; }
   .viewport > * { grid-area:1/1; }
@@ -128,16 +123,12 @@
 
   .panel { background:var(--white); border-left:1px solid var(--rule); overflow-y:auto; min-height:0; }
   .modes { display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--rule); }
-  .modes button { display:flex; flex-direction:column; gap:2px; align-items:flex-start; text-align:left;
-                  padding:11px 13px; border:0; border-right:1px solid var(--rule); cursor:pointer;
+  .modes button { display:flex; align-items:center; text-align:left; padding:9px 13px; border:0; border-right:1px solid var(--rule); cursor:pointer;
                   background:var(--white); font-size:11px; font-weight:600; font-stretch:112%;
                   letter-spacing:.09em; text-transform:uppercase; }
   .modes button:last-child { border-right:0; }
   .modes button:hover { background:var(--grey); }
-  .modes button .sub { font-size:10.5px; font-weight:400; font-stretch:100%; letter-spacing:0;
-                       text-transform:none; color:var(--dim); }
   .modes button[aria-pressed=true] { background:var(--black); color:var(--white); }
-  .modes button[aria-pressed=true] .sub { color:#a3a39e; }
   .modes button:focus-visible { outline:2px solid var(--blu); outline-offset:-2px; }
   .presets { padding:11px 13px; border-bottom:1px solid var(--rule); display:flex; flex-wrap:wrap; gap:5px; }
   .presets .lab { width:100%; font-size:10px; color:var(--dim); margin-bottom:3px;
@@ -147,11 +138,9 @@
   .presets button:hover { background:var(--fluo); }
 
   section.grp { border-bottom:1px solid var(--rule); }
-  section.grp > h2 { display:flex; align-items:baseline; gap:8px; padding:10px 13px; cursor:pointer;
+  section.grp > h2 { display:flex; align-items:baseline; gap:8px; padding:9px 13px; cursor:pointer;
                      user-select:none; font-size:11.5px; font-stretch:118%; letter-spacing:.14em;
-                     text-transform:uppercase; flex-wrap:wrap; }
-  section.grp > h2 .note { font-size:11px; font-weight:400; font-stretch:100%; letter-spacing:0;
-                           text-transform:none; color:var(--dim); }
+                     text-transform:uppercase; }
   section.grp > h2::before { content:"−"; width:10px; color:var(--dim); }
   section.grp.shut > h2::before { content:"+"; }
   section.grp.shut .fields { display:none; }
@@ -265,9 +254,8 @@
   .invite kbd { border:1px solid var(--rule); padding:0 4px; font:inherit; background:var(--grey); }
 
   footer { background:var(--black); color:var(--white); border-top:1px solid var(--rule); }
-  .draw { display:flex; align-items:center; gap:10px; padding:8px 14px; cursor:pointer; }
+  .draw { display:flex; align-items:center; gap:10px; padding:7px 14px; cursor:pointer; }
   .draw h3 { font-size:11.5px; font-stretch:118%; letter-spacing:.14em; text-transform:uppercase; }
-  .draw .note { font-size:11px; color:#a3a39e; }
   .draw .arrow { margin-left:auto; }
   pre { margin:0; padding:0 14px 15px; max-height:34vh; overflow:auto; font-family:var(--sans);
         font-size:12px; line-height:1.62; white-space:pre; color:#e9e9e5; }
@@ -280,7 +268,9 @@
            opacity:0; pointer-events:none; transition:opacity .18s; }
   .toast.on { opacity:1; }
   @media (prefers-reduced-motion:reduce) { .toast { transition:none; } }
-  @media (max-width:1180px) { header { flex-wrap:wrap; } .stats { border-left:0; } }
+  /* a short laptop: give the sheet back the height the drawer would take */
+  @media (max-height:760px) { pre { max-height:26vh; } .stage { padding:16px; } }
+  @media (max-width:1060px) { .plateid .lbl, .brand h1 { display:none; } }
   @media (max-width:900px) {
     body { height:auto; overflow:auto; }
     main { grid-template-columns:1fr; }
@@ -305,19 +295,14 @@
     <button class="b key" id="roll" title="roll a whole plate at random (R)">Roll</button>
     <button class="b" id="nine" title="roll nine and pick one (N)">Nine</button>
     <span class="sep"></span>
-    <span class="lab">save</span>
     <button class="b" id="save" title="save the plate as SVG (S)">SVG</button>
     <button class="b" id="png" title="save a 2× PNG of the plate">PNG</button>
     <button class="b" id="ttf" title="build a font at this pen and save it (T)">TTF</button>
     <button class="b" id="vf" title="the whole family in one file — weight, width and slant as axes (V)">VF</button>
     <button class="b" id="copycode" title="copy the code that rebuilds this plate (C)">Code</button>
     <span class="sep"></span>
-    <button class="b ghost" id="explain" aria-pressed="true" title="show what each control does">Explain</button>
+    <button class="b ghost" id="explain" aria-pressed="false" title="show what each control does">Explain</button>
     <button class="b ghost" id="reset" title="back to the default plate">Reset</button>
-  </div>
-  <div class="stats">
-    <span><b id="sdim">—</b> px</span><span><b id="sdots">—</b> dots</span>
-    <span><b id="skb">—</b> kb</span><span><b id="sms">—</b> ms</span>
   </div>
 </header>
 
@@ -327,7 +312,10 @@
       <div class="sheet" id="sheet"></div>
       <div class="marks" id="marks"></div>
     </div>
-    <div class="stagenote" id="stagenote">one plate — a body, an appetite, a press, and its furniture</div>
+    <div class="stats">
+      <span><b id="sdim">—</b> px</span><span><b id="sdots">—</b> dots</span>
+      <span><b id="skb">—</b> kb</span><span><b id="sms">—</b> ms</span>
+    </div>
     <div class="zoom">
       <button class="b ghost" id="handles" aria-pressed="true"
               title="show the boxes round the body and the word — drag them to place them">Handles</button>
@@ -341,29 +329,26 @@
   </div>
   <div class="panel" id="panel">
     <div class="modes" id="modes">
-      <button type="button" data-mode="body" aria-pressed="true">Grow a body
-        <span class="sub">sun, cell, spiral, seed head…</span></button>
-      <button type="button" data-mode="image" aria-pressed="false">Use an image
-        <span class="sub">a photograph, through the same press</span></button>
+      <button type="button" data-mode="body" aria-pressed="true">Shape</button>
+      <button type="button" data-mode="image" aria-pressed="false">Image</button>
     </div>
-    <div class="presets" id="presets"><span class="lab" id="plab">start from a plate that exists</span></div>
+    <div class="presets" id="presets"><span class="lab">Presets</span></div>
   </div>
 </main>
 
 <footer id="footer" class="shut">
   <div class="draw" id="draw">
-    <h3>The code</h3>
-    <span class="note">paste it into any mk*.js — it rebuilds this exact plate, byte for byte</span>
+    <h3>Code</h3>
     <span class="arrow" id="arrow">▲</span>
   </div>
   <pre id="code"></pre>
 </footer>
 <div class="toast" id="toast"></div>
-<div class="dropveil" id="dropveil" hidden><div>drop it — this image goes through the same press</div></div>
+<div class="dropveil" id="dropveil" hidden><div>drop the image</div></div>
 <input type="file" id="imgfile" accept="image/*" hidden>
 <div class="sheetnine" id="nineview" hidden>
   <div class="ninebar">
-    <h3>Nine rolls</h3><span class="note">click one to take it — Esc to leave</span>
+    <h3>Nine rolls</h3><span class="note">click one to take it</span>
     <button class="b ghost" id="nineclose">Close</button>
   </div>
   <div class="ninegrid" id="ninegrid"></div>
@@ -547,12 +532,11 @@
     var sec = el("section", "grp");
     var h = el("h2");
     var gl = el("span", null, grp.label); gl.style.whiteSpace = "nowrap";
-    h.appendChild(gl); h.appendChild(el("span", "note", grp.note));
+    h.appendChild(gl);
     h.onclick = function () { sec.classList.toggle("shut"); };
     var box = el("div", "fields");
     sec.appendChild(h); sec.appendChild(box); panel.appendChild(sec);
-    var gn = h.lastChild;
-    groups.push({ sec: sec, grp: grp, label: gl, note: gn });
+    groups.push({ sec: sec, grp: grp, label: gl });
 
     var byId = {}, drawn = {};
     grp.fields.forEach(function (f) { byId[f.id] = f; });
@@ -777,18 +761,12 @@
       g.sec.hidden = !M.visible(g.grp, state);
       var a = g.grp.alt && g.grp.alt(state);
       g.label.textContent = a ? a.label : g.grp.label;
-      g.note.textContent = a ? a.note : g.grp.note;
     });
     modeBtns.forEach(function (b) {
       b.setAttribute("aria-pressed",
         (b.getAttribute("data-mode") === "image") === onImage ? "true" : "false");
     });
     pbuttons.forEach(function (p) { p.b.hidden = p.image !== onImage; });
-    document.getElementById("plab").textContent = onImage
-      ? "start from one of the borrowed plates" : "start from a plate that exists";
-    document.getElementById("stagenote").textContent = onImage
-      ? "an image, printed like everything else on this page"
-      : "one plate \u2014 a body, an appetite, a press, and its furniture";
     paintPicker();
     document.getElementById("num").value = state.num;
     document.getElementById("nom").value = state.name;
@@ -1419,11 +1397,13 @@
     }, function () { localSave(name, text); });
   };
   var ex = document.getElementById("explain");
-  ex.onclick = function () {
-    var on = ex.getAttribute("aria-pressed") !== "true";
+  function explain(on) {
     ex.setAttribute("aria-pressed", on ? "true" : "false");
     document.body.classList.toggle("nohelp", !on);
-  };
+    try { localStorage.setItem(KEY + ":explain", on ? "1" : "0"); } catch (e) {}
+  }
+  ex.onclick = function () { explain(ex.getAttribute("aria-pressed") !== "true"); };
+  try { explain(localStorage.getItem(KEY + ":explain") === "1"); } catch (e) { explain(false); }
   document.getElementById("reset").onclick = function () {
     remember(null);
     state = Object.assign({}, M.DEFAULTS, { name: "untitled" }); sync(); render(false);
@@ -1434,6 +1414,9 @@
   document.getElementById("draw").onclick = function () {
     footer.classList.toggle("shut");
     document.getElementById("arrow").textContent = footer.classList.contains("shut") ? "▲" : "▼";
+    /* the drawer takes its height out of the stage: a sheet that was fitted
+       stays fitted, exactly as it does when the window is resized */
+    if (view.fitted) fit();
   };
   document.addEventListener("keydown", function (e) {
     if ((e.metaKey || e.ctrlKey) && (e.key === "z" || e.key === "Z")) {

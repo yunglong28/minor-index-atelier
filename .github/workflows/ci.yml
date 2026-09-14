@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: "22" }
-      - run: node mkbundle.js && node mkfont.js
+      - run: npm run build
       - name: nothing changed
         run: |
           if [ -n "$(git status --porcelain)" ]; then

@@ -9,11 +9,11 @@
  *   C · RETICLE       the mark as an instrument: hairline brackets, ticked
  *       axes, an ellipse, a boxed label. Precision around something vague.
  *
- *   node logo/mkalt.js
+ *   node batches/mkalt.js
  */
 const fs = require("fs");
 const path = require("path");
-const OUT = require("./_sheet.js").PLATES(__dirname);   /* plates/ */
+const OUT = require("../lib/_sheet.js").PLATES();   /* plates/ */
 
 const INK = {
   stock: "#d9d7ce", toner: "#17160f", blu: "#001ef7",
@@ -144,7 +144,7 @@ write("22-compression-more-soon.svg", svg(760, 220,
    ====================================================================== */
 /* the cell now lives in _glyphs.js, where mksol.js can reach it too. Its
    default colour is the current palette's, so this batch names its own. */
-const { cell: neural } = require("./_glyphs.js");
+const { cell: neural } = require("../lib/_glyphs.js");
 
 /* 23 — the cell. One soma, four satellites, white on black. */
 write("23-neural-mark.svg", svg(240, 240, neural({ color: INK.stock }), INK.toner));

@@ -3,16 +3,16 @@
  * mark, or the same blocks as the compression plates. Nothing is left to
  * whatever machine opens the file.
  *
- *   node logo/mktype.js            node logo/mktype.js 5150   (reroll)
+ *   node batches/mktype.js            node batches/mktype.js 5150   (reroll)
  */
 const fs = require("fs");
 const path = require("path");
-const M = require("./_mark.js");
-const T = require("./_type.js");
+const M = require("../lib/_mark.js");
+const T = require("../lib/_type.js");
 const { INK, ARMS, n, rng, pick, markDots, axes, brackets, polar, trim, swipe, svg, G, L } = M;
 const { dotText, blockText, textWidth, fitCell, centerX, rightX } = T;
 
-const OUT = require("./_sheet.js").PLATES(__dirname);   /* plates/ */
+const OUT = require("../lib/_sheet.js").PLATES();   /* plates/ */
 const SEED0 = parseInt(process.argv[2] || "6104", 10);
 const write = (name, c) => {
   fs.writeFileSync(path.join(OUT, name), c);
@@ -223,4 +223,4 @@ write("64-roll-dot.svg", (() => {
     bg);
 })());
 
-console.log("→ " + OUT + "   (reroll: node logo/mktype.js 5150)");
+console.log("→ " + OUT + "   (reroll: node batches/mktype.js 5150)");

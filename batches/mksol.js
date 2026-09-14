@@ -7,12 +7,12 @@
  *   · no lettering. The sheet carries the image and the page furniture, and
  *     nothing that has to be read.
  *
- *   node logo/mksol.js                 all of them
- *   node logo/mksol.js 5150            reroll the seeded ones
- *   node logo/mksol.js --only 85,93    just these
+ *   node batches/mksol.js                 all of them
+ *   node batches/mksol.js 5150            reroll the seeded ones
+ *   node batches/mksol.js --only 85,93    just these
  */
-const S = require("./_sheet.js");
-const Y = require("./_glyphs.js");
+const S = require("../lib/_sheet.js");
+const Y = require("../lib/_glyphs.js");
 const { INK, n, pick, axes, brackets, polar, swipe, G, place, run,
         ticks, reg, band, frame, print, mouths } = S;
 const { cell, sunGeom, sunSolid, sunSDF, screen, sDisc, sSub, sShift } = Y;
@@ -266,4 +266,4 @@ plate("94-champ-de-nuit", 900, 640, (r) => {
   return { bg: INK.black, ink: INK.white, body: G(INK.white, 0.7, marks.join("")) + out.join("") };
 });
 
-run(__dirname, P);
+run(P);

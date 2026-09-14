@@ -5,7 +5,7 @@ const fs = require("fs");
 const path = require("path");
 const T = require("./_t.js");
 const ROOT = path.join(__dirname, "..");
-const B = require(path.join(ROOT, "mkbundle.js"));
+const B = require(path.join(ROOT, "make", "mkbundle.js"));
 
 T.head("the site — docs/ is what mkbundle.js writes, and nothing else");
 

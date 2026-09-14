@@ -9,7 +9,7 @@ const os = require("os");
 const path = require("path");
 const T = require("./_t.js");
 const ROOT = path.join(__dirname, "..");
-const S = require(path.join(ROOT, "_sheet.js"));
+const S = require(path.join(ROOT, "lib", "_sheet.js"));
 
 const BATCHES = ["mklogo", "mkalt", "mkreticle", "mkwild", "mktype",
                  "mkposter", "mksol", "mkpoke", "mkspiral", "mkautophagie"];
@@ -23,7 +23,7 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "minor-plates-"));
 const realRun = S.run;
 const realPlates = S.PLATES;
 let captured = null;
-S.run = function (root, plates, argv) { captured = { plates: plates, argv: argv }; };
+S.run = function (plates, argv) { captured = { plates: plates, argv: argv }; };
 S.PLATES = function () { fs.mkdirSync(path.join(scratch, "plates"), { recursive: true }); 
                          return path.join(scratch, "plates"); };
 
@@ -32,8 +32,8 @@ let missing = 0;
 for (const b of BATCHES) {
   captured = null;
   const argv = process.argv;
-  process.argv = [argv[0], path.join(ROOT, b + ".js")];
-  try { require(path.join(ROOT, b + ".js")); }
+  process.argv = [argv[0], path.join(ROOT, "batches", b + ".js")];
+  try { require(path.join(ROOT, "batches", b + ".js")); }
   catch (e) { T.ok(b + " runs", false, e.stack); process.argv = argv; continue; }
   process.argv = argv;
 

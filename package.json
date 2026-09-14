@@ -9,10 +9,10 @@
   },
   "scripts": {
     "test": "node test/all.js",
-    "build": "node mkbundle.js && node mkfont.js",
-    "site": "node mkbundle.js",
-    "fonts": "node mkfont.js",
-    "plates": "node mklogo.js && node mkalt.js && node mkreticle.js && node mkwild.js && node mktype.js && node mkposter.js && node mksol.js && node mkpoke.js && node mkspiral.js && node mkautophagie.js",
+    "build": "npm run site && npm run fonts",
+    "site": "node make/mkbundle.js",
+    "fonts": "node make/mkfont.js",
+    "plates": "node batches/mklogo.js && node batches/mkalt.js && node batches/mkreticle.js && node batches/mkwild.js && node batches/mktype.js && node batches/mkposter.js && node batches/mksol.js && node batches/mkpoke.js && node batches/mkspiral.js && node batches/mkautophagie.js",
     "lint": "node test/lint.js"
   }
 }

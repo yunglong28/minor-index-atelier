@@ -5,11 +5,11 @@
  * is made of the dots themselves — dense where the form is, thinning into
  * grain at its edges. Xerox noise, ink spread, hand-annotation.
  *
- *   node logo/mklogo.js
+ *   node batches/mklogo.js
  */
 const fs = require("fs");
 const path = require("path");
-const OUT = require("./_sheet.js").PLATES(__dirname);   /* plates/ */
+const OUT = require("../lib/_sheet.js").PLATES();   /* plates/ */
 
 const INK = {
   stock: "#d9d7ce",

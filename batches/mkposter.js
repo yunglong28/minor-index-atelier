@@ -4,11 +4,11 @@
  * stamp, a ticket, a wedge, a specimen, a slip, a fiche. Same two plates, same
  * marker, same alphabet — nothing here uses a font either.
  *
- *   node logo/mkposter.js            node logo/mkposter.js 5150   (reroll)
+ *   node batches/mkposter.js            node batches/mkposter.js 5150   (reroll)
  */
-const M = require("./_mark.js");
-const S = require("./_sheet.js");
-const T = require("./_type.js");
+const M = require("../lib/_mark.js");
+const S = require("../lib/_sheet.js");
+const T = require("../lib/_type.js");
 const { markDots } = M;
 const { INK, ARMS, n, rng, pick, axes, brackets, polar, trim, swipe, svg, G, L, run } = S;
 const { dotText, blockText, textWidth, fitCell, centerX, rightX, F } = T;
@@ -374,4 +374,4 @@ sw.join("")
     + G(fg, 1.1, trim(W, H, 18, 9)) };
 });
 
-run(__dirname, P);
+run(P);

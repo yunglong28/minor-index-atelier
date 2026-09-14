@@ -17,17 +17,17 @@
  * in its own family: set a word in `Minor Index Knockout` and the slabs meet
  * into one band with the word cut out of it.
  *
- *   node logo/mkfont.js            → docs/fonts/
+ *   node make/mkfont.js            → docs/fonts/
  */
 const fs = require("fs");
 const path = require("path");
-const F = require("./_font.js");
+const F = require("../lib/_font.js");
 
 /* the family is declared in _font.js, so mkfont.js and the tests cannot
    disagree about what the three weights are */
 const WEIGHTS = F.FAMILY;
 
-const dir = path.join(__dirname, "docs", "fonts");
+const dir = path.join(__dirname, "..", "docs", "fonts");
 fs.mkdirSync(dir, { recursive: true });
 
 const made = [];
@@ -62,4 +62,4 @@ for (const p of F.PRESSES) {
     + `${p.label} — ${family}`);
 }
 
-console.log("→ docs/specimen.html loads them (run `node mkbundle.js` to build the site)");
+console.log("→ docs/specimen.html loads them (run `npm run site` to build the site)");
