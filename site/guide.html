@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Minor Index Guide</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&display=swap">
+<style>
+  /* The guide is printed with the system it describes: the ink table comes
+     from _mark.js, every figure is pulled by the same press the atelier
+     uses, and the type is the drawn alphabet. Nothing here is a picture of
+     the identity — it is the identity, run. */
+  @font-face { font-family:"Minor Index"; font-weight:300; font-display:swap;
+               src:url("fonts/MinorIndex-Light.ttf") format("truetype"); }
+  @font-face { font-family:"Minor Index"; font-weight:400; font-display:swap;
+               src:url("fonts/MinorIndex-Regular.ttf") format("truetype"); }
+  @font-face { font-family:"Minor Index"; font-weight:700; font-display:swap;
+               src:url("fonts/MinorIndex-Bold.ttf") format("truetype"); }
+  @font-face { font-family:"Minor Index Screened"; font-display:swap;
+               src:url("fonts/MinorIndex-Screened.ttf") format("truetype"); }
+  :root {
+    /* @INK — the table in _mark.js, written in here by mkbundle.js */
+    --ground:#8f8f8c; --rule:var(--black); --dim:#6f6f6a; --hair:rgba(20,20,16,.16); --hair2:rgba(20,20,16,.08);
+    --sans:'Archivo','Helvetica Neue',Helvetica,Arial,sans-serif;
+    --face:'Minor Index','Archivo','Helvetica Neue',Helvetica,Arial,sans-serif;
+    --bar:44px; --gut:clamp(16px, 3vw, 34px);
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; scroll-padding-top:calc(var(--bar) + 12px); }
+  @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+  body { margin:0; background:var(--white); color:var(--black); overflow-x:hidden;
+         font:400 14px/1.55 var(--sans); font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3,h4 { margin:0; font-weight:700; }
+  p { margin:0; }
+  a { color:inherit; }
+  :focus-visible { outline:2px solid var(--blu); outline-offset:2px; }
+  .cap { font-size:10.5px; font-weight:600; font-stretch:118%; letter-spacing:.14em; text-transform:uppercase; }
+  .dim { color:var(--dim); }
+
+  /* ---- the bar, shared with the atelier ---- */
+  header { position:sticky; top:0; z-index:20; display:flex; align-items:stretch; height:var(--bar);
+           background:var(--white); border-bottom:1px solid var(--rule); }
+  .brand { display:flex; align-items:center; gap:8px; padding:0 14px; border-right:1px solid var(--rule); flex:none; }
+  .brand .dot { width:9px; height:9px; background:var(--black); }
+  .brand h1 { font-size:12px; font-stretch:118%; letter-spacing:.13em; text-transform:uppercase; white-space:nowrap; }
+  nav.top { display:flex; align-items:stretch; border-right:1px solid var(--rule); }
+  nav.top a { display:flex; align-items:center; padding:0 12px; text-decoration:none; color:var(--dim);
+              font-size:11px; font-weight:600; font-stretch:112%; letter-spacing:.09em; text-transform:uppercase;
+              box-shadow:inset 0 -3px 0 transparent; white-space:nowrap; }
+  nav.top a:hover { color:var(--black); }
+  nav.top a[aria-current=page] { color:var(--black); box-shadow:inset 0 -3px 0 var(--black); }
+  .ver { margin-left:auto; display:flex; align-items:center; padding:0 14px; gap:10px; }
+  .ver .cap { color:var(--dim); }
+
+  /* ---- the layout: an index down the side, the chapters beside it ---- */
+  .wrap { display:grid; grid-template-columns:220px minmax(0,1fr); }
+  aside.toc { position:sticky; top:var(--bar); height:calc(100dvh - var(--bar)); overflow:auto;
+              border-right:1px solid var(--rule); padding:18px 0; }
+  aside.toc a { display:grid; grid-template-columns:30px 1fr; padding:6px 18px; text-decoration:none;
+                font-size:12px; font-weight:500; color:var(--dim); border-left:3px solid transparent; }
+  aside.toc a b { font-weight:700; font-size:10.5px; letter-spacing:.06em; color:var(--dimmer, #8a8a85); }
+  aside.toc a:hover { color:var(--black); background:var(--grey); }
+  aside.toc a.on { color:var(--black); border-left-color:var(--black); }
+  aside.toc a.on b { color:var(--blu); }
+  aside.toc .foot { padding:18px; margin-top:12px; border-top:1px solid var(--hair); font-size:11px; color:var(--dim); line-height:1.5; }
+  main { min-width:0; }
+
+  /* ---- a chapter ---- */
+  section.ch { border-bottom:1px solid var(--rule); }
+  .chead { display:grid; grid-template-columns:minmax(120px, 22%) minmax(0,1fr); gap:0 var(--gut);
+           padding:clamp(34px,6vw,72px) var(--gut) clamp(22px,3vw,36px); align-items:end; }
+  .chead .no { font-family:var(--face); font-weight:700; font-size:clamp(64px,10vw,150px); line-height:.78; letter-spacing:-.01em; }
+  .chead h2 { font-family:var(--face); font-weight:700; font-size:clamp(30px,4.6vw,64px); line-height:.95; text-transform:uppercase; }
+  .chead p.lead { margin-top:14px; max-width:62ch; font-size:clamp(15px,1.4vw,18px); line-height:1.45; }
+  .chead .cap { display:block; margin-bottom:12px; color:var(--dim); }
+  .body { padding:0 var(--gut) clamp(40px,6vw,72px); }
+  .sub { display:grid; grid-template-columns:minmax(120px, 22%) minmax(0,1fr); gap:10px var(--gut);
+         padding:22px 0; border-top:1px solid var(--hair); }
+  .sub > h3 { font-size:10.5px; font-weight:700; font-stretch:118%; letter-spacing:.14em; text-transform:uppercase; padding-top:3px; }
+  .sub > h3 small { display:block; margin-top:6px; font-size:11.5px; font-weight:400; letter-spacing:0; text-transform:none;
+                    font-stretch:100%; color:var(--dim); line-height:1.45; }
+  .prose { max-width:66ch; }
+  .prose p + p { margin-top:10px; }
+
+  /* the figures: a sheet on the ground, as on the easel */
+  .plate { background:var(--ground); line-height:0; position:relative; overflow:hidden; }
+  .plate svg { width:100%; height:auto; display:block; }
+  .plate.pad { padding:clamp(12px,2vw,24px); }
+  .plate.pad svg { box-shadow:0 1px 0 rgba(0,0,0,.2), 0 10px 26px -14px rgba(0,0,0,.5); }
+  .plate[data-wait]::after { content:""; position:absolute; left:10px; top:10px; width:7px; height:7px; background:var(--blu); }
+  .plate[data-wait] { min-height:120px; }
+  figcaption, .lab { display:flex; justify-content:space-between; gap:10px; padding-top:7px; font-size:11px; line-height:1.35; }
+  figcaption b, .lab b { font-weight:700; }
+  figure { margin:0; min-width:0; }
+  .grid { display:grid; gap:clamp(10px,1.4vw,18px); }
+  .g2 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .g3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .g4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .g5 { grid-template-columns:repeat(5,minmax(0,1fr)); }
+  .note { border-left:3px solid var(--black); padding:8px 12px; background:var(--grey); font-size:12.5px; max-width:66ch; }
+  .note.warn { border-left-color:var(--blu); }
+
+  /* ---- 00, the cover ---- */
+  .cover { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); border-bottom:1px solid var(--rule); min-height:calc(100dvh - var(--bar)); }
+  .cover .plate { border-right:1px solid var(--rule); display:grid; place-items:center; }
+  .cover .plate svg { max-height:calc(100dvh - var(--bar)); }
+  .cover .side { display:flex; flex-direction:column; justify-content:space-between; padding:var(--gut); gap:28px; }
+  .cover h2 { font-family:var(--face); font-weight:700; font-size:clamp(44px,6.4vw,104px); line-height:.86; text-transform:uppercase; }
+  .cover .what { font-size:clamp(15px,1.5vw,19px); line-height:1.45; max-width:40ch; margin-top:18px; }
+  .meta { display:grid; grid-template-columns:auto 1fr; gap:6px 16px; font-size:12px; border-top:1px solid var(--rule); padding-top:14px; }
+  .meta dt { color:var(--dim); } .meta dd { margin:0; font-weight:600; }
+
+  /* ---- 01, principles ---- */
+  .rules { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); border-top:1px solid var(--rule); border-left:1px solid var(--rule); }
+  .rules > div { border-right:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:18px 20px 22px; min-height:180px;
+                 display:flex; flex-direction:column; gap:10px; }
+  .rules b.n { font-size:11px; color:var(--blu); font-weight:700; letter-spacing:.08em; }
+  .rules h4 { font-family:var(--face); font-weight:700; font-size:clamp(20px,2.2vw,28px); line-height:1; text-transform:uppercase; }
+  .rules p { font-size:13px; color:#2c2c28; max-width:52ch; }
+
+  /* ---- 02, marks ---- */
+  .family .plate { aspect-ratio:1; display:grid; place-items:center; background:var(--white); border:1px solid var(--hair); }
+  .family .plate svg { width:100%; height:100%; }
+  .role { padding-top:9px; }
+  .role b { display:block; font-family:var(--face); font-weight:700; font-size:22px; text-transform:uppercase; line-height:1; }
+  .role p { font-size:12px; margin-top:6px; color:#2c2c28; }
+  .role .use { margin-top:8px; display:flex; flex-wrap:wrap; gap:4px; }
+  .role .use span { font-size:10px; font-weight:600; border:1px solid var(--hair); padding:1px 6px; letter-spacing:.03em; }
+  table.spec { width:100%; border-collapse:collapse; font-size:12px; }
+  table.spec th, table.spec td { text-align:left; padding:8px 10px 8px 0; border-bottom:1px solid var(--hair); vertical-align:top; }
+  table.spec th { font-size:10px; font-weight:700; font-stretch:118%; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+  table.spec td b { font-weight:700; }
+  .scroll-x { overflow-x:auto; }
+  .matrix { display:grid; grid-template-columns:110px repeat(4,minmax(0,1fr)); gap:8px; align-items:center; }
+  .matrix .rh { font-size:10.5px; font-weight:700; font-stretch:118%; letter-spacing:.1em; text-transform:uppercase; }
+  .matrix .ch { font-size:10.5px; color:var(--dim); padding-bottom:4px; }
+  .matrix .plate { aspect-ratio:1; }
+
+  /* ---- 03, ink ---- */
+  .inks { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); border:1px solid var(--rule); }
+  .ink { min-height:340px; display:flex; flex-direction:column; justify-content:space-between; padding:14px; border-right:1px solid var(--rule); }
+  .ink:last-child { border-right:0; }
+  .ink h4 { font-family:var(--face); font-weight:700; font-size:clamp(22px,2.4vw,34px); line-height:.95; text-transform:uppercase; }
+  .ink .role { font-size:11.5px; padding-top:6px; }
+  .ink dl { display:grid; grid-template-columns:auto 1fr; gap:2px 10px; margin:0; font-size:11px; }
+  .ink dt { opacity:.6; } .ink dd { margin:0; font-weight:600; }
+  .ink button.copy { border:1px solid currentColor; background:transparent; color:inherit; font:600 10px var(--sans);
+                     letter-spacing:.08em; text-transform:uppercase; padding:3px 7px; cursor:pointer; align-self:flex-start; margin-top:10px; }
+  .ladder { display:grid; grid-template-columns:110px repeat(5,minmax(0,1fr)); gap:6px; align-items:center; }
+  .ladder .plate { aspect-ratio:2.2; background:var(--white); border:1px solid var(--hair); }
+  .ladder .ch { font-size:10.5px; color:var(--dim); }
+  .pairs { display:grid; grid-template-columns:110px repeat(5,minmax(0,1fr)); gap:4px; font-size:11px; }
+  .pairs .sw { aspect-ratio:1.6; display:grid; place-items:center; border:1px solid var(--hair); font-family:var(--face); font-weight:700; font-size:clamp(14px,1.6vw,22px); position:relative; }
+  .pairs .sw.no { opacity:.28; }
+  .pairs .sw.no::after { content:""; position:absolute; inset:0; background:linear-gradient(to top right, transparent calc(50% - .6px), var(--black) 50%, transparent calc(50% + .6px)); }
+  .pairs .h { font-size:10px; color:var(--dim); font-weight:600; letter-spacing:.06em; text-transform:uppercase; align-self:end; padding-bottom:4px; }
+
+  /* ---- 04, type ---- */
+  .bigword { font-family:var(--face); font-weight:700; font-size:clamp(70px,13vw,210px); line-height:.85; text-transform:uppercase; overflow-wrap:anywhere; }
+  .weights > div { display:grid; grid-template-columns:120px 1fr; align-items:baseline; border-top:1px solid var(--hair); padding:10px 0; gap:12px; }
+  .weights .w { font-family:var(--face); font-size:clamp(28px,4.4vw,58px); line-height:1.05; overflow:hidden; white-space:nowrap; text-overflow:clip; }
+  .scale > div { display:grid; grid-template-columns:120px 90px 1fr; align-items:baseline; border-top:1px solid var(--hair); padding:10px 0; gap:12px; }
+  .scale .s { overflow:hidden; white-space:nowrap; min-width:0; }
+  .glyphset { font-family:var(--face); font-size:clamp(22px,2.8vw,36px); line-height:1.35; letter-spacing:.06em; word-break:break-all; }
+
+  /* ---- 05, press ---- */
+  .media { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
+  .media .plate { aspect-ratio:1; }
+  .media figcaption { display:block; }
+  .media figcaption b { display:block; font-size:12px; }
+  .media figcaption span { color:var(--dim); font-size:11px; }
+
+  /* ---- 07, sheets ---- */
+  .sheets { display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; }
+  .sheets figure { display:flex; flex-direction:column; gap:6px; }
+  .sheets .r { border:1px solid var(--black); background:var(--white); }
+
+  /* ---- 08, misuse ---- */
+  .dont .plate { aspect-ratio:1.25; display:grid; place-items:center; background:var(--white); border:1px solid var(--hair); }
+  .dont .plate > * { width:70%; }
+  .dont figcaption { display:block; }
+  .dont figcaption b { display:flex; align-items:center; gap:7px; font-size:12px; }
+  .dont figcaption b::before { content:"\00d7"; display:inline-grid; place-items:center; width:16px; height:16px; background:var(--black); color:var(--white); font-size:12px; line-height:1; }
+  .dont figcaption span { color:var(--dim); }
+
+  /* ---- 09, applications ---- */
+  .apps { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:clamp(10px,1.4vw,18px); align-items:start; }
+  .apps figure:nth-child(1) { grid-column:span 2; }
+  .apps figure:nth-child(2) { grid-column:span 2; }
+  .apps figure:nth-child(3) { grid-column:span 2; }
+  .apps figure:nth-child(4) { grid-column:span 4; }
+  .apps figure:nth-child(5) { grid-column:span 2; }
+
+  /* ---- 10, files ---- */
+  .files { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border-top:1px solid var(--rule); border-left:1px solid var(--rule); }
+  .files > div { border-right:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:14px; display:flex; flex-direction:column; gap:8px; }
+  .files h4 { font-size:11px; font-weight:700; font-stretch:118%; letter-spacing:.12em; text-transform:uppercase; }
+  .files .row { display:flex; flex-wrap:wrap; gap:4px; }
+  .b { display:inline-flex; align-items:center; height:26px; padding:0 10px; border:1px solid var(--rule); background:var(--white); color:var(--black);
+       font:600 10.5px var(--sans); font-stretch:112%; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; text-decoration:none; white-space:nowrap; }
+  .b:hover { background:var(--grey); }
+  .b.key { background:var(--fluo); }
+  .credits { display:grid; grid-template-columns:auto 1fr; gap:6px 18px; font-size:13px; }
+  .credits dt { color:var(--dim); } .credits dd { margin:0; font-weight:600; }
+  .toast { position:fixed; left:50%; bottom:24px; transform:translate(-50%,6px); background:var(--black); color:var(--white);
+           border-left:4px solid var(--fluo); padding:8px 14px; font:600 11px var(--sans); letter-spacing:.09em; text-transform:uppercase;
+           opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; z-index:40; }
+  .toast.on { opacity:1; transform:translate(-50%,0); }
+
+  @media (max-width:1100px) {
+    .inks { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .ink { border-bottom:1px solid var(--rule); }
+    .g5, .media { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .files { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  }
+  @media (max-width:900px) {
+    .wrap { grid-template-columns:minmax(0,1fr); }
+    aside.toc { position:static; height:auto; border-right:0; border-bottom:1px solid var(--rule); display:flex; overflow-x:auto; padding:0; }
+    aside.toc a { white-space:nowrap; border-left:0; border-bottom:3px solid transparent; grid-template-columns:auto auto; gap:6px; padding:10px 12px; }
+    aside.toc a.on { border-bottom-color:var(--black); }
+    aside.toc .foot { display:none; }
+    .cover { grid-template-columns:minmax(0,1fr); min-height:0; }
+    .cover .plate { border-right:0; border-bottom:1px solid var(--rule); }
+    .chead, .sub { grid-template-columns:minmax(0,1fr); }
+    .chead .no { font-size:64px; margin-bottom:10px; }
+    .g3, .g4 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .rules { grid-template-columns:minmax(0,1fr); }
+    .apps { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .apps figure:nth-child(n) { grid-column:span 1; }
+    .apps figure:nth-child(4) { grid-column:span 2; }
+    .matrix { grid-template-columns:70px repeat(4,minmax(0,1fr)); gap:4px; }
+    .ladder, .pairs { grid-template-columns:70px repeat(5,minmax(0,1fr)); }
+    .ver { display:none; }
+  }
+  @media (max-width:560px) {
+    nav.top a { padding:0 9px; }
+    .brand h1 { display:none; }
+    .inks, .g2, .g3, .g4, .g5, .media, .files { grid-template-columns:minmax(0,1fr); }
+    .ink { min-height:220px; border-right:0; }
+    .weights > div, .scale > div { grid-template-columns:minmax(0,1fr); gap:2px; }
+  }
+</style>
+
+<header>
+  <div class="brand"><span class="dot"></span><h1>Minor Index</h1></div>
+  <nav class="top">
+    <a href="index.html" id="navAtelier">Atelier</a>
+    <a href="specimen.html" id="navType">Typeface</a>
+    <a href="guide.html" aria-current="page">Guide</a>
+  </nav>
+  <div class="ver"><span class="cap">Identity guide</span><span class="cap">v1.0 · Oct 2026</span></div>
+</header>
+
+<div class="wrap">
+  <aside class="toc" id="toc">
+    <a href="#c00"><b>00</b>Cover</a>
+    <a href="#c01"><b>01</b>Principles</a>
+    <a href="#c02"><b>02</b>Marks</a>
+    <a href="#c03"><b>03</b>Ink</a>
+    <a href="#c04"><b>04</b>Type</a>
+    <a href="#c05"><b>05</b>The press</a>
+    <a href="#c06"><b>06</b>Bodies</a>
+    <a href="#c07"><b>07</b>Sheets</a>
+    <a href="#c08"><b>08</b>Misuse</a>
+    <a href="#c09"><b>09</b>In use</a>
+    <a href="#c10"><b>10</b>Files</a>
+    <div class="foot">Every figure on this page is printed live by the atelier's press. Change the system and this guide changes with it.</div>
+  </aside>
+
+  <main>
+    <!-- 00 ================================================================ -->
+    <section class="cover" id="c00">
+      <div class="plate" data-plate="cover"></div>
+      <div class="side">
+        <div>
+          <span class="cap dim">Identity guide · v1.0</span>
+          <h2 style="margin-top:14px">Minor<br>Index</h2>
+          <p class="what">A research project on small language models raised on narrow, local collections — and the visual system that prints it. This guide is how the system is used, so that what comes out of it stays one voice.</p>
+        </div>
+        <dl class="meta">
+          <dt>System</dt><dd>MINOR INDEX Atelier</dd>
+          <dt>Marks</dt><dd>Drawn by Frank, rebuilt as fields</dd>
+          <dt>Inks</dt><dd>Five, from one table</dd>
+          <dt>Type</dt><dd>Minor Index (drawn) · Archivo</dd>
+          <dt>Built for</dt><dd>Photocopy, thermal print, e-ink, a small square screen</dd>
+        </dl>
+      </div>
+    </section>
+
+    <!-- 01 ================================================================ -->
+    <section class="ch" id="c01">
+      <div class="chead">
+        <div class="no">01</div>
+        <div><span class="cap">Principles</span><h2>Four rules the rest follows from</h2>
+          <p class="lead">Minor Index works inside the major stack and bends it. The identity does the same: it is built from found parts, made to survive bad copies, and kept local.</p></div>
+      </div>
+      <div class="body">
+        <div class="rules">
+          <div><b class="n">01</b><h4>Degraded reproduction is the brief</h4>
+            <p>Everything is designed to survive a photocopier, a thermal printer, e-ink and a low-resolution screen. That is not a limitation we tolerate; it is the constraint the identity is drawn from. If it only works on a good monitor, it is not finished.</p></div>
+          <div><b class="n">02</b><h4>Minor, not small</h4>
+            <p>“Minor” is another logic, not a lesser one. The marks are rough, hand-made and singular on purpose. Do not clean them up into something that could belong to anyone.</p></div>
+          <div><b class="n">03</b><h4>Bricolage, not blueprint</h4>
+            <p>The bricoleur assembles what already exists. The system has a fixed vocabulary — four marks, twelve bodies, five inks, one press — and new work recombines it. Nothing is drawn fresh in an editor.</p></div>
+          <div><b class="n">04</b><h4>A plate is code, and code is the original</h4>
+            <p>Every image is reproducible from its numbers. If a plate is wrong, change the number that made it and print it again. Never retouch an export: the next export would lose it.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 ================================================================ -->
+    <section class="ch" id="c02">
+      <div class="chead">
+        <div class="no">02</div>
+        <div><span class="cap">Marks</span><h2>A family with no head</h2>
+          <p class="lead">Four marks, drawn by Frank. None leads: each one is chosen by where it is going, and all four carry the name equally. They are distance fields, so each can be cut flat, screened, outlined, bitten or printed out of register by the same press.</p></div>
+      </div>
+      <div class="body">
+        <div class="grid g4 family">
+          <figure><div class="plate" data-plate="m-lockup"></div>
+            <div class="role"><b>Lockup</b><p>The stroke with the name set either side of it. For when the name has to be read.</p>
+              <div class="use"><span>titles</span><span>covers</span><span>credits</span><span>signage</span></div></div></figure>
+          <figure><div class="plate" data-plate="m-figure"></div>
+            <div class="role"><b>Figure</b><p>The X between its two attendants. For a single square to fill.</p>
+              <div class="use"><span>avatar</span><span>device</span><span>stamp</span><span>sticker</span></div></div></figure>
+          <figure><div class="plate" data-plate="m-stroke"></div>
+            <div class="role"><b>Stroke</b><p>The gesture alone. Crosses a layout; can bleed off the edge.</p>
+              <div class="use"><span>bleeds</span><span>dividers</span><span>slides</span><span>motion</span></div></div></figure>
+          <figure><div class="plate" data-plate="m-scrawl"></div>
+            <div class="role"><b>Scrawl</b><p>A signature-sized mark. Small, repeated, in a margin; never as a headline.</p>
+              <div class="use"><span>seals</span><span>receipts</span><span>footers</span><span>pattern</span></div></div></figure>
+        </div>
+
+        <div class="sub">
+          <h3>Three cuts<small>What Frank drew the figure two ways — filled with an inline, and as an outline — is a cut, and any mark can take it.</small></h3>
+          <div class="grid g3 family">
+            <figure><div class="plate" data-plate="cut-solid"></div><figcaption><b>solid</b><span>the default</span></figcaption></figure>
+            <figure><div class="plate" data-plate="cut-inline"></div><figcaption><b>inline</b><span>line = 1/60 of the mark</span></figcaption></figure>
+            <figure><div class="plate" data-plate="cut-contour"></div><figcaption><b>contour</b><span>line = 1/45 of the mark</span></figcaption></figure>
+          </div>
+        </div>
+
+        <div class="sub">
+          <h3>Clear space<small>The unit is <b>x</b>: the cap height of INDEX in the lockup, and one tenth of the box for the other marks. Nothing enters x on any side — type, furniture, the sheet's edge.</small></h3>
+          <div class="grid g2">
+            <figure><div class="plate pad" data-plate="clear-lockup"></div><figcaption><b>Lockup</b><span>x = cap height of INDEX</span></figcaption></figure>
+            <figure><div class="plate pad" data-plate="clear-figure"></div><figcaption><b>Figure</b><span>x = one tenth of its box</span></figcaption></figure>
+          </div>
+        </div>
+
+        <div class="sub">
+          <h3>Smallest sizes<small>Below these the marks close up. Screened marks need room for the dots: at least twelve cells across the narrowest stroke.</small></h3>
+          <div class="scroll-x"><table class="spec">
+            <thead><tr><th>Mark</th><th>Flat · print</th><th>Flat · screen</th><th>Screened · print</th><th>Screened · screen</th></tr></thead>
+            <tbody>
+              <tr><td><b>Lockup</b> (width)</td><td>25 mm</td><td>120 px</td><td>60 mm</td><td>320 px</td></tr>
+              <tr><td><b>Figure</b> (height)</td><td>10 mm</td><td>32 px</td><td>30 mm</td><td>160 px</td></tr>
+              <tr><td><b>Stroke</b> (width)</td><td>12 mm</td><td>48 px</td><td>35 mm</td><td>200 px</td></tr>
+              <tr><td><b>Scrawl</b> (width)</td><td>8 mm</td><td>28 px</td><td>25 mm</td><td>140 px</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <div class="sub">
+          <h3>Through the press<small>The same four marks, pulled the four ways the identity prints. These are the only four.</small></h3>
+          <div class="matrix" id="matrix"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 ================================================================ -->
+    <section class="ch" id="c03">
+      <div class="chead">
+        <div class="no">03</div>
+        <div><span class="cap">Ink</span><h2>Two plates, a marker, a stamp</h2>
+          <p class="lead">Five inks, one table. Toner on the first plate at 15°, blu on the second at 75°, fluo laid flat like a highlighter, on white or grey stock. A sixth colour is a pass nobody paid for.</p></div>
+      </div>
+      <div class="body">
+        <div class="inks" id="inks"></div>
+        <div class="sub">
+          <h3>Screens, not tints<small>There are no lighter versions of an ink. A lighter tone is the same ink at a lower dot area, and it shows its dots.</small></h3>
+          <div class="ladder" id="ladder"></div>
+        </div>
+        <div class="sub">
+          <h3>Pairings<small>Ink on ground. Struck-through pairs are not used: they either vanish on a photocopy or put fluo through a screen.</small></h3>
+          <div class="pairs" id="pairs"></div>
+        </div>
+        <div class="sub">
+          <h3>On press<small>The hex values are the source. Everything else is a conversion.</small></h3>
+          <div class="prose">
+            <p class="note warn">CMYK values on this page are straight conversions for proofing, not separations. Blu and fluo are spot colours and are matched on press: blu to the Blu nCHANT 02 the film was printed with, fluo to a fluorescent yellow. Neither is a Pantone reference yet; record the swatch when one is chosen.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 ================================================================ -->
+    <section class="ch" id="c04">
+      <div class="chead">
+        <div class="no">04</div>
+        <div><span class="cap">Type</span><h2>One drawn letter, one working face</h2>
+          <p class="lead">Minor Index is the identity's own alphabet: the same distance field as the bodies, so a word can go through the press with everything else. Archivo does the reading — running text, interfaces, small print.</p></div>
+      </div>
+      <div class="body">
+        <div class="bigword">Aa Minor</div>
+        <div class="sub">
+          <h3>Minor Index<small>Display and lettering. Set in capitals: lowercase prints as the capital cut small. Never below 14 px or 9 pt.</small></h3>
+          <div class="weights">
+            <div><span class="cap dim">Light</span><span class="w" style="font-weight:300">INDEX OF THE MINOR</span></div>
+            <div><span class="cap dim">Regular</span><span class="w" style="font-weight:400">INDEX OF THE MINOR</span></div>
+            <div><span class="cap dim">Bold</span><span class="w" style="font-weight:700">INDEX OF THE MINOR</span></div>
+            <div><span class="cap dim">Screened</span><span class="w" style="font-family:'Minor Index Screened',var(--face)">INDEX OF THE MINOR</span></div>
+          </div>
+          <p class="glyphset" style="margin-top:18px">ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>0123456789 &amp; ÉÈÀÇŒ · ° — ?!</p>
+        </div>
+        <div class="sub">
+          <h3>Archivo<small>Text, captions, interfaces. Regular and SemiBold; capitals in small sizes are set wide (118%) and tracked +0.13em.</small></h3>
+          <div class="prose">
+            <p style="font-size:18px;line-height:1.45">A Minor Index could be the dark web version of a language model: an obsessive search engine trained on what the big networks never archived — zines, small-press catalogues, community archives.</p>
+            <p class="cap" style="margin-top:12px">Caption · Archivo SemiBold 118% · +0.13em</p>
+          </div>
+        </div>
+        <div class="sub">
+          <h3>Scale<small>Five steps. On a page, use three at most.</small></h3>
+          <div class="scale">
+            <div><span class="cap dim">Display</span><span class="dim">96 / 0.9</span><span class="s" style="font-family:var(--face);font-weight:700;font-size:clamp(40px,7vw,96px);line-height:.9">MINOR</span></div>
+            <div><span class="cap dim">Title</span><span class="dim">48 / 0.95</span><span class="s" style="font-family:var(--face);font-weight:700;font-size:clamp(28px,4vw,48px);line-height:.95">OPEN SESSION</span></div>
+            <div><span class="cap dim">Heading</span><span class="dim">24 / 1.1</span><span class="s" style="font-family:var(--face);font-weight:700;font-size:24px">GATHER · TRAIN · DEPLOY</span></div>
+            <div><span class="cap dim">Body</span><span class="dim">15 / 1.5</span><span class="s" style="font-size:15px">Archivo Regular for anything read in sentences.</span></div>
+            <div><span class="cap dim">Caption</span><span class="dim">11 / 1.4</span><span class="s cap">Archivo SemiBold · wide · tracked</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 ================================================================ -->
+    <section class="ch" id="c05">
+      <div class="chead">
+        <div class="no">05</div>
+        <div><span class="cap">The press</span><h2>Coverage becomes dot area</h2>
+          <p class="lead">Every mark and body is screened the same way: a rotated lattice, toner at 15°, blu at 75°. The screen is set for the medium the work is going to, not for the monitor it is made on.</p></div>
+      </div>
+      <div class="body">
+        <div class="media" id="media"></div>
+        <div class="sub">
+          <h3>House settings<small>Start here. The atelier's controls are named the same.</small></h3>
+          <div class="scroll-x"><table class="spec">
+            <thead><tr><th>Medium</th><th>Dot spacing</th><th>Angle</th><th>Dot size</th><th>Fringe</th><th>Grain</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td><b>Photocopy</b> A4/A3</td><td>4.4–7 px</td><td>15°</td><td>0.54</td><td>9</td><td>0.18</td><td>The default plate. A copy of a copy should still read.</td></tr>
+              <tr><td><b>Thermal printer</b> 58/80 mm</td><td>≥ 5 px</td><td>15°</td><td>0.6</td><td>6</td><td>0, on ink only</td><td>Black only. 384 / 576 px wide at 203 dpi. Grain off: the head adds its own.</td></tr>
+              <tr><td><b>Device</b> square screen, e-ink</td><td>3.2–4.4 px</td><td>15° or 75°</td><td>0.54</td><td>8</td><td>0.12</td><td>Knocked out on black. No fluo on e-ink.</td></tr>
+              <tr><td><b>Web &amp; slides</b></td><td>3.6–5 px</td><td>15°</td><td>0.54</td><td>9</td><td>0.18</td><td>Export SVG; PNG at 2×.</td></tr>
+              <tr><td><b>Poster</b> riso / offset</td><td>7–13 px</td><td>15° + 75°</td><td>0.66</td><td>15</td><td>0.26</td><td>Over-inked: let the forms grow together.</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06 ================================================================ -->
+    <section class="ch" id="c06">
+      <div class="chead">
+        <div class="no">06</div>
+        <div><span class="cap">Bodies</span><h2>Twelve bodies and an appetite</h2>
+          <p class="lead">Beside the marks, the system grows bodies: the sun, the cell, the seed head, the spiral and their kin. They carry the identity where the name is not needed. What is done to them — twist, growth, bites, eclipse — is the appetite.</p></div>
+      </div>
+      <div class="body">
+        <div class="grid g4" id="bodies"></div>
+        <div class="sub">
+          <h3>The appetite<small>Done to a field, in this order. Bites are taken at the contour, never at random.</small></h3>
+          <div class="grid g5" id="appetite"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07 ================================================================ -->
+    <section class="ch" id="c07">
+      <div class="chead">
+        <div class="no">07</div>
+        <div><span class="cap">Sheets</span><h2>The formats plates are cut at</h2>
+          <p class="lead">A plate is a sheet, not a canvas. These are the sizes, drawn to one scale; the furniture — trim marks, brackets, axes, a band at the foot — is placed by proportion, so it lands in the same place on every one.</p></div>
+      </div>
+      <div class="body">
+        <div class="sheets" id="sheets"></div>
+        <div class="sub">
+          <h3>Furniture<small>What a press leaves that is not the image. Use it to frame, never to decorate.</small></h3>
+          <div class="grid g4" id="furniture"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 08 ================================================================ -->
+    <section class="ch" id="c08">
+      <div class="chead">
+        <div class="no">08</div>
+        <div><span class="cap">Misuse</span><h2>What the system never does</h2>
+          <p class="lead">Each of these has been tempting at least once. Each breaks a principle in chapter 01.</p></div>
+      </div>
+      <div class="body">
+        <div class="grid g4 dont" id="donts"></div>
+      </div>
+    </section>
+
+    <!-- 09 ================================================================ -->
+    <section class="ch" id="c09">
+      <div class="chead">
+        <div class="no">09</div>
+        <div><span class="cap">In use</span><h2>The system, applied</h2>
+          <p class="lead">Every one of these is a plate state from the atelier, plus a line of type. Open it there and change the numbers.</p></div>
+      </div>
+      <div class="body">
+        <div class="apps" id="apps"></div>
+      </div>
+    </section>
+
+    <!-- 10 ================================================================ -->
+    <section class="ch" id="c10">
+      <div class="chead">
+        <div class="no">10</div>
+        <div><span class="cap">Files</span><h2>Take it from the source</h2>
+          <p class="lead">The marks below are generated now, from the fields, in the inks of the table. The fonts and the atelier are on this site.</p></div>
+      </div>
+      <div class="body">
+        <div class="files" id="files"></div>
+        <div class="sub">
+          <h3>Credits</h3>
+          <dl class="credits">
+            <dt>Marks</dt><dd>Frank</dd>
+            <dt>Visual research</dt><dd>with Lapo Sorride</dd>
+            <dt>System, press &amp; typeface</dt><dd>MINOR INDEX Atelier — github.com/yunglong28/minor-index-atelier</dd>
+          </dl>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="_bundle.js"></script>
+<script>
+(function () {
+  "use strict";
+  var M = window.MINOR;
+  /* the atelier and the specimen are next door on the site, and online when this page is not */
+  (function () {
+    var here = location.protocol === "file:" || /github\.io$/.test(location.hostname);
+    if (here) return;
+    var url = "https://yunglong28.github.io/minor-index-atelier/";
+    document.getElementById("navAtelier").href = url;
+    document.getElementById("navType").href = url + "specimen.html";
+  })();
+  if (!M) return;
+  var INK = M.INK;
+  function el(t, cls, txt) { var e = document.createElement(t); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("on");
+    setTimeout(function () { t.classList.remove("on"); }, 1400);
+  }
+
+  /* ---- the press, on demand ---------------------------------------------
+   * A figure is a plate state (plus, sometimes, a little more on top). It is
+   * pulled when it scrolls near, one at a time, so the page answers while
+   * the press works. */
+  var JOBS = new Map(), queue = [], busy = false;
+  function job(node, make) { node.setAttribute("data-wait", ""); JOBS.set(node, make); watch.observe(node); }
+  function pump() {
+    if (busy) return;
+    var node = queue.shift();
+    if (!node) return;
+    busy = true;
+    requestAnimationFrame(function () {
+      try { node.innerHTML = JOBS.get(node)(); } catch (e) { node.textContent = ""; console.error(e); }
+      node.removeAttribute("data-wait");
+      busy = false; pump();
+    });
+  }
+  var watch = new IntersectionObserver(function (es) {
+    es.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      watch.unobserve(e.target); queue.push(e.target); pump();
+    });
+  }, { rootMargin: "600px 0px" });
+
+  /* a plate from a state, with anything extra laid on top before the sheet closes */
+  function pull(st, extra) {
+    var out = M.buildPlate(Object.assign({ trimMarks: false, num: 0, name: "guide" }, st));
+    var svg = M.compactDots(out.svg);
+    if (extra) svg = svg.replace(/<\/svg>\s*$/, extra(out.w, out.h) + "</svg>");
+    return svg;
+  }
+  function plateIn(node, st, extra) { job(node, function () { return pull(st, extra); }); }
+  /* a word in the drawn alphabet, as SVG, in an ink of the table */
+  function word(t, x, y, cap, ink, o) {
+    return M.text.textSolid(t, x, y, cap, Object.assign({ color: INK[ink] || ink, weight: 0.13, hand: 0, track: 0.08 }, o));
+  }
+  function wordR(t, xr, y, cap, ink, o) {
+    return word(t, M.text.rightX(t, cap, xr, 0.08), y, cap, ink, o);
+  }
+  var sq = { format: "carre", size: 520, px: 60, py: 60 };
+  function S(o) { return Object.assign({}, sq, o); }
+  function q(sel) { return document.querySelector(sel); }
+
+  /* ---- 00 / 02, the marks themselves ------------------------------------ */
+  plateIn(q('[data-plate="cover"]'), { format: "emblem", sym: "lockup", size: 760, px: 30, py: 220,
+    bg: "white", ink: "black", pitch: 4.6, falloff: 10, dspread: 0.6, grain: 0.22,
+    plate2: "registre", p2ink: "blu", p2dx: -6, p2dy: 5, fReg: true, fInk: "black" },
+    function (W, H) { return word("IDENTITY GUIDE", 60, H - 110, 26, "black") + wordR("V1.0", W - 60, H - 110, 26, "black"); });
+
+  ["lockup", "figure", "stroke", "scrawl"].forEach(function (m) {
+    plateIn(q('[data-plate="m-' + m + '"]'), S({ sym: m, mode: "plein", size: 540, px: 50, py: 50 }));
+  });
+  [["solid", 0], ["inline", 9], ["contour", 12]].forEach(function (c) {
+    plateIn(q('[data-plate="cut-' + c[0] + '"]'), S({ sym: "figure", mode: "plein", mcut: c[0], mline: c[1] || 10, size: 540, px: 50, py: 50 }));
+  });
+
+  /* clear space, measured off the mark: the frame round it, and x on every side */
+  function clearRule(box, x, W, H) {
+    var b = box, o = "";
+    var hair = 'stroke="' + INK.blu + '" stroke-width="1.2" fill="none"';
+    o += '<rect x="' + b.x + '" y="' + b.y + '" width="' + b.w + '" height="' + b.h + '" ' + hair + ' stroke-dasharray="4 3"/>';
+    o += '<rect x="' + (b.x - x) + '" y="' + (b.y - x) + '" width="' + (b.w + 2 * x) + '" height="' + (b.h + 2 * x) + '" ' + hair + '/>';
+    var tag = function (tx, ty) {
+      return '<rect x="' + (tx - 9) + '" y="' + (ty - 9) + '" width="18" height="18" fill="' + INK.blu + '"/>'
+        + '<text x="' + tx + '" y="' + (ty + 4) + '" fill="' + INK.white + '" font-family="Archivo,sans-serif" font-size="12" font-weight="700" text-anchor="middle">x</text>';
+    };
+    o += tag(b.x - x / 2, b.y + b.h / 2) + tag(b.x + b.w + x / 2, b.y + b.h / 2)
+       + tag(b.x + b.w / 2, b.y - x / 2) + tag(b.x + b.w / 2, b.y + b.h + x / 2);
+    return o;
+  }
+  (function () {
+    var W = 900, H = 640, size = 600, px = (W - size) / 2, py = (H - size) / 2;
+    plateIn(q('[data-plate="clear-lockup"]'), { format: "paysage", sym: "lockup", mode: "plein", size: size, px: px, py: py },
+      function () {
+        var words = M.lockupWords(px, py, size);
+        var x = words[1].cap;
+        return clearRule(boxOf("lockup", px, py, size), x);
+      });
+    plateIn(q('[data-plate="clear-figure"]'), { format: "paysage", sym: "figure", mode: "plein", size: 460, px: 220, py: 90 },
+      function () {
+        return clearRule(boxOf("figure", 220, 90, 460), 46);
+      });
+  })();
+  /* the box a mark's ink actually fills: walk its field inside the circle the
+     press bounds it with, at a step a hair could not fall through */
+  function boxOf(name, x, y, size) {
+    var r = M.markBound(name, x, y, size);
+    var f = name === "lockup" ? null : M.markSDF(name, x, y, size);
+    if (!f) {
+      var st = M.lockupStroke(x, y, size), sf = M.markSDF("stroke", st.x, st.y, st.size);
+      var ws = M.lockupWords(x, y, size).map(function (w) {
+        var cap = w.cap, wx = w.right ? M.text.rightX(w.text, cap, w.x, 0.08) : w.x;
+        return M.text.textField(w.text, wx, w.y, cap, { weight: 0.16, hand: 0, track: 0.08 });
+      });
+      f = function (px, py) { var d = sf(px, py); ws.forEach(function (g) { d = Math.min(d, g(px, py)); }); return d; };
+    }
+    var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, step = size / 160;
+    for (var yy = r.cy - r.r; yy <= r.cy + r.r; yy += step) {
+      for (var xx = r.cx - r.r; xx <= r.cx + r.r; xx += step) {
+        if (f(xx, yy) < 0) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
+      }
+    }
+    return { x: Math.round(x0), y: Math.round(y0), w: Math.round(x1 - x0), h: Math.round(y1 - y0) };
+  }
+
+  /* the four ways the identity prints, for every mark */
+  (function () {
+    var mx = document.getElementById("matrix");
+    var PRESS = [
+      ["flat", { mode: "plein" }],
+      ["screened · 15°", { pitch: 4.4, falloff: 9, dspread: 0.56, grain: 0.18 }],
+      ["knocked out · 75°", { bg: "black", ink: "white", pitch: 4, falloff: 8, angle: 75, grain: 0.14 }],
+      ["over-inked + blu", { pitch: 6.6, falloff: 14, dspread: 0.66, grain: 0.24, plate2: "grossi", p2ink: "blu", p2grow: 8 }]
+    ];
+    mx.appendChild(el("span"));
+    PRESS.forEach(function (p) { mx.appendChild(el("span", "ch", p[0])); });
+    ["lockup", "figure", "stroke", "scrawl"].forEach(function (m) {
+      mx.appendChild(el("span", "rh", m));
+      PRESS.forEach(function (p) {
+        var d = el("div", "plate"); mx.appendChild(d);
+        plateIn(d, S(Object.assign({ sym: m, size: 560, px: 40, py: 40 }, p[1])));
+      });
+    });
+  })();
+
+  /* ---- 03, ink ------------------------------------------------------------ */
+  var ROLES = {
+    black: ["Toner", "The first plate, at 15°. Type, marks, everything that must survive the copy."],
+    white: ["Sheet", "The stock. Cool, not cream — there is no brown in this set."],
+    grey: ["Second sheet", "A ground for interfaces and quiet pages. Never an ink on white."],
+    fluo: ["Marker", "Laid down flat, as a swipe or a ground. Never screened, never small type."],
+    blu: ["Second plate", "Blu nCHANT 02, at 75°. Out of register, or spread under the toner."]
+  };
+  function rgb(h) { var v = parseInt(h.slice(1), 16); return [v >> 16 & 255, v >> 8 & 255, v & 255]; }
+  function cmyk(h) {
+    var c = rgb(h).map(function (v) { return v / 255; }), k = 1 - Math.max(c[0], c[1], c[2]);
+    if (k >= 1) return [0, 0, 0, 100];
+    return [0, 1, 2].map(function (i) { return Math.round((1 - c[i] - k) / (1 - k) * 100); }).concat(Math.round(k * 100));
+  }
+  (function () {
+    var box = document.getElementById("inks");
+    ["black", "blu", "fluo", "white", "grey"].forEach(function (k) {
+      var hex = INK[k], dark = k === "black" || k === "blu";
+      var d = el("div", "ink"); d.style.background = hex; d.style.color = dark ? INK.white : INK.black;
+      var top = el("div"); top.appendChild(el("span", "cap", ROLES[k][0]));
+      var h = el("h4", null, k); h.style.marginTop = "10px"; top.appendChild(h);
+      top.appendChild(el("p", "role", ROLES[k][1]));
+      var dl = el("dl"), c = cmyk(hex);
+      [["HEX", hex.toUpperCase()], ["RGB", rgb(hex).join(" ")], ["CMYK*", c.join(" ")], ["Token", "--" + k]].forEach(function (r) {
+        dl.appendChild(el("dt", null, r[0])); dl.appendChild(el("dd", null, r[1]));
+      });
+      var bt = el("button", "copy", "Copy hex"); bt.type = "button";
+      bt.onclick = function () {
+        if (navigator.clipboard) navigator.clipboard.writeText(hex).then(function () { toast(hex + " copied"); }, function () { toast("copy refused"); });
+      };
+      var bot = el("div"); bot.appendChild(dl); bot.appendChild(bt);
+      d.appendChild(top); d.appendChild(bot); box.appendChild(d);
+    });
+  })();
+  /* the ladder: the same ink at five dot areas, screened by the press itself */
+  (function () {
+    var box = document.getElementById("ladder"), STEPS = [1, 0.8, 0.6, 0.4, 0.2];
+    box.appendChild(el("span"));
+    STEPS.forEach(function (t) { box.appendChild(el("span", "ch", Math.round(t * 100) + "%")); });
+    [["black", 15], ["blu", 75]].forEach(function (ink) {
+      box.appendChild(el("span", "cap", ink[0]));
+      STEPS.forEach(function (t) {
+        var d = el("div", "plate"); box.appendChild(d);
+        job(d, function () {
+          var W = 220, H = 100, fall = 10;
+          var body = M.screen({ x: 0, y: 0, w: W, h: H, cell: 4.4, angle: ink[1], spread: 0.56, grain: 0.06, stray: 0,
+            falloff: fall, seed: 5, color: INK[ink[0]], sdf: function () { return (1 - t) * fall; } });
+          return M.compactDots(M.svg(W, H, body, INK.white));
+        });
+      });
+    });
+  })();
+  (function () {
+    var box = document.getElementById("pairs");
+    var GROUNDS = ["white", "grey", "black", "fluo", "blu"], INKS = ["black", "white", "blu", "fluo", "grey"];
+    /* what may stand on what: by contrast on a bad copy, and fluo never screened */
+    var OK = { white: ["black", "blu"], grey: ["black", "blu"], black: ["white", "fluo"], fluo: ["black", "blu"], blu: ["white", "fluo"] };
+    box.appendChild(el("span", "h", "ink ↓ ground →"));
+    GROUNDS.forEach(function (g) { box.appendChild(el("span", "h", g)); });
+    INKS.forEach(function (i) {
+      box.appendChild(el("span", "cap", i));
+      GROUNDS.forEach(function (g) {
+        var s = el("div", "sw" + (OK[g].indexOf(i) >= 0 ? "" : " no"), "Mi");
+        s.style.background = INK[g]; s.style.color = INK[i];
+        s.title = i + " on " + g + (OK[g].indexOf(i) >= 0 ? "" : " — not used");
+        box.appendChild(s);
+      });
+    });
+  })();
+
+  /* ---- 05, the press for each medium -------------------------------------- */
+  (function () {
+    var box = document.getElementById("media");
+    [["Photocopy", "4.4 px · 15°", { pitch: 4.4, falloff: 9, dspread: 0.54, grain: 0.18 }],
+     ["Thermal", "5.2 px · no grain", { pitch: 5.2, falloff: 6, dspread: 0.6, grain: 0, gclean: true }],
+     ["Device", "3.6 px · knocked out", { bg: "black", ink: "white", pitch: 3.6, falloff: 8, angle: 75, grain: 0.12 }],
+     ["Web", "4 px · 15°", { pitch: 4, falloff: 9, dspread: 0.54, grain: 0.18 }],
+     ["Poster", "9 px · over-inked + blu", { pitch: 9, falloff: 16, dspread: 0.68, grain: 0.26, plate2: "registre", p2ink: "blu", p2dx: -8, p2dy: 6 }]
+    ].forEach(function (m) {
+      var f = el("figure"), d = el("div", "plate"); f.appendChild(d);
+      var cap = el("figcaption"); cap.appendChild(el("b", null, m[0])); cap.appendChild(el("span", null, m[1]));
+      f.appendChild(cap); box.appendChild(f);
+      plateIn(d, S(Object.assign({ sym: "figure", size: 560, px: 40, py: 40 }, m[2])));
+    });
+  })();
+
+  /* ---- 06, bodies --------------------------------------------------------- */
+  (function () {
+    var box = document.getElementById("bodies");
+    [["sun", { sym: "sun", seed: 5 }], ["cell", { sym: "cell", seed: 23, sat: 5 }], ["seed head", { sym: "seed", seeds: 300, gspace: 16 }],
+     ["spiral", { sym: "spiral", turns: 3.4, tight: 0.19, sband: 30 }], ["corona", { sym: "corona", rays: 40, disc: 0.16, reachB: 0.48, mode: "plein" }],
+     ["lace", { sym: "lace", rays: 30, disc: 0.24, seeds: 430, gspace: 15.5 }], ["network", { sym: "network", count: 6, sat: 4, seed: 23 }],
+     ["shell", { sym: "shell", mode: "plein", turns: 2.75, tight: 0.205, sband: 14 }]
+    ].forEach(function (b) {
+      var f = el("figure"), d = el("div", "plate"); f.appendChild(d);
+      var cap = el("figcaption"); cap.appendChild(el("b", null, b[0])); f.appendChild(cap); box.appendChild(f);
+      plateIn(d, S(Object.assign({ size: 540, px: 50, py: 50, pitch: 4.6 }, b[1])));
+    });
+    var ap = document.getElementById("appetite");
+    [["twist", { twist: 0.005 }], ["grow", { grow: 14 }], ["choke", { grow: -10 }], ["bites", { bites: 6, biteSize: 70 }], ["eclipse", { occ: true, occX: 90, occY: -60, occR: 150 }]]
+      .forEach(function (a) {
+        var f = el("figure"), d = el("div", "plate"); f.appendChild(d);
+        var cap = el("figcaption"); cap.appendChild(el("b", null, a[0])); f.appendChild(cap); ap.appendChild(f);
+        plateIn(d, S(Object.assign({ sym: "sun", seed: 5, size: 540, px: 50, py: 50, pitch: 4.6 }, a[1])));
+      });
+  })();
+
+  /* ---- 07, sheets ---------------------------------------------------------- */
+  (function () {
+    var box = document.getElementById("sheets"), k = 0.12;
+    M.SHEETS.filter(function (s) { return s.w; }).forEach(function (s) {
+      var f = el("figure"), r = el("div", "r");
+      r.style.width = Math.round(s.w * k) + "px"; r.style.height = Math.round(s.h * k) + "px";
+      f.appendChild(r);
+      var c = el("figcaption"); c.style.display = "block";
+      c.appendChild(el("b", null, s.label.replace(/ \d.*$/, ""))); c.appendChild(el("div", "dim", s.w + " × " + s.h));
+      f.appendChild(c); box.appendChild(f);
+    });
+    var fu = document.getElementById("furniture");
+    [["trim + brackets", { fBrackets: true, trimMarks: true }], ["axes", { fAxes: true }], ["tick ring", { fTicks: true, fRing: true }], ["band + swipe", { fBand: true, fSwipe: true }]]
+      .forEach(function (a) {
+        var f = el("figure"), d = el("div", "plate"); f.appendChild(d);
+        var cap = el("figcaption"); cap.appendChild(el("b", null, a[0])); f.appendChild(cap); fu.appendChild(f);
+        job(d, function () { return pull(S(Object.assign({ sym: "scrawl", mode: "plein", size: 260, px: 190, py: 190 }, a[1]))); });
+      });
+  })();
+
+  /* ---- 08, misuse: the right mark, done wrong ------------------------------ */
+  (function () {
+    var box = document.getElementById("donts");
+    var good = function () { return M.compactDots(M.buildPlate(S({ sym: "lockup", mode: "plein", size: 600, px: 20, py: 20, trimMarks: false })).svg)
+      .replace(/<svg /, '<svg preserveAspectRatio="none" '); };
+    var figure = function (o) { return M.compactDots(M.buildPlate(S(Object.assign({ sym: "figure", mode: "plein", size: 600, px: 20, py: 20, trimMarks: false }, o))).svg); };
+    var D = [
+      ["Do not stretch", "Scale the box, never one side of it.", function () { return '<div style="aspect-ratio:1.9;width:86%">' + good().replace(/<svg /, '<svg style="width:100%;height:100%" ') + "</div>"; }],
+      ["Do not add effects", "No shadows, glows, bevels or gradients. Depth is dot area.", function () { return '<div style="filter:drop-shadow(6px 8px 6px rgba(0,0,0,.5))">' + figure({}) + "</div>"; }],
+      ["Do not leave the table", "A colour mixed outside the five inks is a sixth pass.", function () { return figure({ ink: "#d94f9a", bg: "#2a6b5f" }); }],
+      ["Do not screen fluo", "Fluo is laid flat, like a marker. Screened, it dies on every copy.", function () { return figure({ mode: "ecran", ink: "fluo", bg: "white", pitch: 4 }); }],
+      ["Do not rank the marks", "No mark is “the logo” with the others as backups. Pick by where it goes.", function () {
+        return '<div style="display:grid;grid-template-columns:2fr 1fr;align-items:center;gap:4%">' + good() + '<div style="opacity:.35">' + figure({}) + "</div></div>"; }],
+      ["Do not reset the name", "The lockup's name is drawn. Do not replace it with a system font.", function () {
+        return '<div style="font:700 clamp(13px,1.5vw,22px) Helvetica,Arial,sans-serif;display:flex;gap:6px;align-items:center;justify-content:center">MINOR <span style="display:block;flex:0 0 30%">' + M.compactDots(M.buildPlate(S({ sym: "stroke", mode: "plein", size: 600, px: 20, py: 20, trimMarks: false })).svg)
+          .replace("<svg ", '<svg style="width:100%;height:auto;display:block" ') + "</span> INDEX</div>"; }],
+      ["Do not rotate", "Marks stand upright. Movement comes from the press — twist, register — not from turning the sheet.", function () { return '<div style="transform:rotate(-24deg)">' + figure({}) + "</div>"; }],
+      ["Do not trace", "Never redraw a mark by hand or auto-trace an export. The field is the original.", function () { var k = 'fill="' + INK.black + '"';
+        return figure({ mode: "plein", mcut: "contour", mline: 2, ink: "black" }).replace(k, k + ' stroke="' + INK.black + '" stroke-width="7" stroke-dasharray="2 9"'); }]
+    ];
+    D.forEach(function (d) {
+      var f = el("figure"), p = el("div", "plate"); f.appendChild(p);
+      var c = el("figcaption"); c.appendChild(el("b", null, d[0])); c.appendChild(el("span", null, d[1]));
+      f.appendChild(c); box.appendChild(f);
+      job(p, d[2]);
+    });
+  })();
+
+  /* ---- 09, applications ----------------------------------------------------- */
+  (function () {
+    var box = document.getElementById("apps");
+    function app(label, sub, make) {
+      var f = el("figure"), d = el("div", "plate pad"); f.appendChild(d);
+      var c = el("figcaption"); c.appendChild(el("b", null, label)); c.appendChild(el("span", "dim", sub));
+      f.appendChild(c); box.appendChild(f);
+      job(d, make);
+    }
+    app("Device", "square screen, 720 × 720", function () {
+      return pull({ format: "libre", w: 720, h: 720, bg: "black", ink: "white", fInk: "white", sym: "figure", size: 520, px: 100, py: 60,
+        pitch: 3.6, falloff: 8, angle: 75, grain: 0.12 }, function (W, H) {
+        return word("LISTENING", 60, H - 92, 30, "white") + wordR("MI·04", W - 60, H - 92, 30, "fluo");
+      });
+    });
+    app("Workshop poster", "poster 820 × 1140, riso", function () {
+      return pull({ format: "affiche", bg: "white", ink: "black", sym: "seed", size: 700, px: 330, py: 660, seeds: 300, gspace: 20,
+        pitch: 7.4, falloff: 15, dspread: 0.66, grain: 0.26, plate2: "registre", p2ink: "blu", p2dx: -9, p2dy: 7, fBand: true, fBandInk: "fluo" },
+        function (W, H) {
+          var st = M.lockupStroke(60, 40, 380), out = M.markSolid("stroke", st.x, st.y, st.size, INK.black);
+          M.lockupWords(60, 40, 380).forEach(function (w) {
+            out += w.right ? wordR(w.text, w.x, w.y, w.cap, "black", { weight: 0.16 }) : word(w.text, w.x, w.y, w.cap, "black", { weight: 0.16 });
+          });
+          return out + word("OPEN", 60, 380, 112, "black", { weight: 0.16 }) + word("SESSION", 60, 504, 112, "black", { weight: 0.16 })
+            + word("TRUST · BERLIN", 60, 670, 34, "black") + word("29.10.2026", 60, 716, 34, "black")
+            + word("WITH ERIK BORDELEAU", 60, 764, 22, "black");
+        });
+    });
+    app("Thermal receipt", "58 mm, 384 px, black only", function () {
+      return pull({ format: "libre", w: 384, h: 820, bg: "white", ink: "black", sym: "scrawl", mode: "plein", size: 220, px: 82, py: 30 },
+        function (W, H) {
+          var o = "", y = 250, rows = [["QUERY", "0042"], ["CORPUS", "ZINES·12"], ["MODEL", "QWEN 3B"], ["TOKENS", "512"]];
+          o += '<line x1="24" y1="230" x2="' + (W - 24) + '" y2="230" stroke="' + INK.black + '" stroke-dasharray="4 4"/>';
+          rows.forEach(function (r) { o += word(r[0], 24, y, 18, "black") + wordR(r[1], W - 24, y, 18, "black"); y += 36; });
+          o += '<line x1="24" y1="' + (y + 6) + '" x2="' + (W - 24) + '" y2="' + (y + 6) + '" stroke="' + INK.black + '" stroke-dasharray="4 4"/>';
+          o += word("THE MINOR CARVES", 24, y + 30, 22, "black") + word("OUT ITS OWN SPACE", 24, y + 62, 22, "black");
+          o += word("IN THE DOMINANT", 24, y + 94, 22, "black") + word("GRAMMAR.", 24, y + 126, 22, "black");
+          return o + M.compactDots(M.screen({ x: 0, y: H - 200, w: W, h: 200, cell: 5.2, angle: 15, spread: 0.6, grain: 0, stray: 0,
+            falloff: 6, seed: 3, color: INK.black, sdf: M.markSDF("figure", 92, H - 210, 200, { cut: "contour", line: 8 }) }));
+        });
+    });
+    app("Slide", "16 : 9, 1920 × 1080", function () {
+      return pull({ format: "cadre", bg: "black", ink: "white", fInk: "white", sym: "stroke", size: 1500, px: 620, py: -240,
+        pitch: 5, falloff: 12, dspread: 0.6, grain: 0.18, angle: 75 },
+        function (W, H) {
+          return word("II.", 120, 140, 60, "fluo", { weight: 0.16 }) + word("PRACTICE", 120, 230, 150, "white", { weight: 0.16 })
+            + word("GATHER · TRAIN · DEPLOY", 120, 420, 40, "white") + word("MINOR INDEX", 120, H - 140, 30, "white");
+        });
+    });
+    app("Seal", "560 × 560, stamp or sticker", function () {
+      return pull({ format: "sceau", bg: "fluo", ink: "black", fInk: "black", sym: "figure", mode: "plein", mcut: "inline", mline: 7,
+        size: 340, px: 110, py: 90, fTicks: true, fRing: true },
+        function (W, H) { return word("MINOR INDEX", (W - M.text.textW("MINOR INDEX", 26, 0.08)) / 2, H - 92, 26, "black"); });
+    });
+  })();
+
+  /* ---- 10, files: the marks as SVG, made now -------------------------------- */
+  (function () {
+    var box = document.getElementById("files");
+    function save(name, text) {
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" }));
+      a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+      toast("saved " + name);
+    }
+    ["lockup", "figure", "stroke", "scrawl"].forEach(function (m) {
+      var d = el("div"); d.appendChild(el("h4", null, m));
+      var row = el("div", "row");
+      [["black", "white"], ["white", "black"], ["blu", "white"]].forEach(function (c) {
+        var b = el("button", "b", c[0]); b.type = "button";
+        b.title = c[0] + " on " + c[1] + ", flat, SVG";
+        b.onclick = function () {
+          var out = M.buildPlate({ format: "carre", sym: m, mode: "plein", ink: c[0], bg: c[1], size: 600, px: 20, py: 20, trimMarks: false, num: 0, name: m });
+          save("minor-index-" + m + "-" + c[0] + ".svg", out.svg);
+        };
+        row.appendChild(b);
+      });
+      d.appendChild(row);
+      d.appendChild(el("span", "dim", "Flat, 640 px sheet. For anything else, open it in the atelier."));
+      box.appendChild(d);
+    });
+    var d = el("div"); d.appendChild(el("h4", null, "Type & tools"));
+    var row = el("div", "row");
+    [["Fonts", "specimen.html"], ["Atelier", "index.html"], ["Source", "https://github.com/yunglong28/minor-index-atelier"]].forEach(function (l) {
+      var a = el("a", "b" + (l[0] === "Atelier" ? " key" : ""), l[0]); a.href = l[1]; row.appendChild(a);
+    });
+    d.appendChild(row); box.appendChild(d);
+  })();
+
+  /* ---- the index follows the reading -------------------------------------- */
+  (function () {
+    var links = [].slice.call(document.querySelectorAll("#toc a"));
+    var spy = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        links.forEach(function (a) { a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id); });
+      });
+    }, { rootMargin: "-40% 0px -55% 0px" });
+    document.querySelectorAll("main > section").forEach(function (s) { spy.observe(s); });
+  })();
+})();
+</script>

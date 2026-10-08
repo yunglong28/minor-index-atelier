@@ -7,6 +7,7 @@ require("./font.js");
 require("./plates.js");
 require("./press.js");
 require("./raster.js");
+require("./marks.js");
 require("./roundtrip.js");
 require("./bundle.js");
 require("./worker.js");

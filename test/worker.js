@@ -110,7 +110,7 @@ T.head("the pages — every control the script reaches for is on the page");
 /* There is no browser here to open them in, so the two things that break a
    page silently are checked instead: a script that does not parse, and a
    script asking for an element that the markup does not have. */
-for (const file of ["index.html", "specimen.html"]) {
+for (const file of ["index.html", "specimen.html", "guide.html"]) {
   const src = fs.readFileSync(path.join(ROOT, "site", file), "utf8");
   const blocks = (src.match(/<script>([\s\S]*?)<\/script>/g) || [])
     .map((b) => b.replace(/^<script>/, "").replace(/<\/script>$/, ""));

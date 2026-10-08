@@ -60,6 +60,17 @@ for (const sym of BODIES) {
   trip(sym + " · flat", { sym: sym, mode: "plein" });
 }
 
+/* Frank's marks: each one in both passes, every cut, and one bitten */
+for (const sym of ["lockup", "stroke", "figure", "scrawl"]) {
+  for (const mcut of ["solid", "contour", "inline"]) {
+    trip(`mark ${sym} · ${mcut} · screened`, { sym, mcut, mode: "ecran" });
+    trip(`mark ${sym} · ${mcut} · flat`, { sym, mcut, mode: "plein" });
+  }
+}
+trip("mark figure · bitten, grown, out of register", { sym: "figure", bites: 5, grow: 4,
+  plate2: "registre", p2ink: "blu" });
+trip("mark lockup · a word printed beside it", { sym: "lockup", tmode: "printed", ty: 520 });
+
 trip("appetite · everything at once", { sym: "sun", grow: 6, twist: 0.004, wobAmp: 5,
   wobScale: 40, bites: 4, biteSize: 50, occ: true });
 trip("appetite · sun toward the cell", { sym: "sun", morph: 0.5 });

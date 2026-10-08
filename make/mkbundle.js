@@ -21,13 +21,13 @@ const path = require("path");
 const { INK } = require("../lib/_mark.js");
 
 /* in dependency order */
-const SRC = ["_mark.js", "_press.js", "_glyphs.js", "_letters.js", "_furniture.js",
+const SRC = ["_mark.js", "_press.js", "_marks.data.js", "_marks.js", "_glyphs.js", "_letters.js", "_furniture.js",
              "_font.js", "_raster.js", "_studio.js"];
 /* what the page gets on window.MINOR */
 const EXPOSE = {
   "_mark.js": ["INK", "GROT", "MONO", "n", "rng", "pick", "segDist", "L", "axes", "brackets",
     "trim", "polar", "swipe", "under", "svg", "svgOpen", "SVG_CLOSE", "G"],
-  "_glyphs.js": ["blob", "cell", "sunGeom", "sunSolid", "sunSDF", "sunWhirl", "screen",
+  "_glyphs.js": ["markSDF", "markSolid", "markBound", "lockupWords", "lockupStroke", "blob", "cell", "sunGeom", "sunSolid", "sunSDF", "sunWhirl", "screen",
     "cellGeom", "cellSDF", "phylloPts", "sPts", "sScatter", "nearest", "spiralPath", "spiralWalls",
     "sSpiral", "sDisc", "sRing", "sBox", "sUnion", "sSub", "sShift", "sTwist", "sGrow",
     "sSmooth", "sMorph", "noise2", "sWobble", "contour", "sBite", "sunBound", "cellBound"],
@@ -87,6 +87,7 @@ function build() {
   const worker = readSrc(path.join("site", "press.worker.js"));
   const index = page("index.html");
   const spec = page("specimen.html");
+  const guide = page("guide.html");
   const out = {
     "_bundle.js": b,
     /* the worker, for a site that is served: it fetches the vocabulary beside it */
@@ -94,6 +95,7 @@ function build() {
       + 'importScripts("_bundle.js");\n' + worker,
     "index.html": index,
     "specimen.html": spec,
+    "guide.html": guide,
   };
   /* one self-contained file for the Claude artifact, which wraps the page in a
      document of its own and so must not be given a second doctype. The press
