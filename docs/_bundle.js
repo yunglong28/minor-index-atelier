@@ -1593,6 +1593,9 @@ const PRESSES = [
     screen: { cell: 4.8, falloff: 7, spread: 0.66, grain: 0.14, angle: 15, seed: 5, grow: 1.5 } },
   { cut: "knock", name: "Knockout", label: "Knocked out",
     weight: 0.155, hand: 0.02, slab: [-150, 840], step: 6, tol: 0.3 },
+  { cut: "grit", name: "Gritty", label: "Gritty",
+    weight: 0.125, hand: 0.045, step: 3.5, tol: 0.6,
+    grit: { seed: 11, edge: 16, bite: 9, drag: 7, pits: 70, lean: 2.2, bob: 14, speck: 260 } },
 ];
 const press = (cut) => PRESSES.filter((p) => p.cut === cut)[0];
 
@@ -1824,8 +1827,72 @@ function knockGlyph(ch, o) {
   return { contours, adv };
 }
 
+/* value noise on a hashed lattice, so a letter is eaten the same way every
+   build and two letters are not eaten the same way as each other */
+const hash2 = (i, j, s) => {
+  let h = (Math.imul(i, 374761393) + Math.imul(j, 668265263) + Math.imul(s, 1274126177)) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+};
+function vnoise(x, y, s) {
+  const i = Math.floor(x), j = Math.floor(y);
+  let u = x - i, v = y - j;
+  u = u * u * (3 - 2 * u); v = v * v * (3 - 2 * v);
+  const a = hash2(i, j, s), b = hash2(i + 1, j, s);
+  const c = hash2(i, j + 1, s), d = hash2(i + 1, j + 1, s);
+  return (a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v) * 2 - 1;
+}
+
+/**
+ * The letter, worn: the cut letter's own field with the edge eaten.
+ *
+ * Not a screen — the ink stays one body. The edge is pushed in and out at
+ * three sizes (a wander, a bite, a horizontal drag like a roller that
+ * skipped), the inside is pitted where the ink did not take, and each letter
+ * sits a little off the line and a little off the upright, a different
+ * little for every letter. Then the field is traced as the knock-out is, and
+ * a loop too small to be anything but a speck is dropped.
+ */
+function gritGlyph(ch, o) {
+  const f = glyphField(ch, o);
+  if (!f) return null;
+  const adv = Math.round(f.adv);
+  if (!f.d) return { contours: [], adv };
+  const G = o.grit;
+  const s = G.seed + ch.codePointAt(0) * 31;
+  const lean = (vnoise(0.5, 0.5, s + 1) * G.lean * Math.PI) / 180;
+  const bob = vnoise(0.5, 0.5, s + 2) * G.bob;
+  const cx = (f.box.x0 + f.box.x1) / 2, cy = CAP / 2;
+  const cl = Math.cos(lean), sl = Math.sin(lean);
+  const field = (X, Y) => {
+    const x0 = X - cx, y0 = Y - bob - cy;
+    const x = cx + x0 * cl + y0 * sl, y = cy - x0 * sl + y0 * cl;
+    const d = f.d(x, y);
+    if (d > G.edge + G.bite + G.drag + 4) return d;
+    let n = d
+      + G.edge * vnoise(x / 70, y / 70, s + 3)
+      + G.bite * vnoise(x / 17, y / 17, s + 4)
+      + G.drag * vnoise(x / 160, y / 6, s + 5);
+    if (d < 0) {                       /* where the ink did not take */
+      const p = vnoise(x / 11, y / 11, s + 6) + 0.35 * vnoise(x / 4, y / 4, s + 7);
+      if (p > 0.5) n += (p - 0.5) * G.pits * 3;
+    }
+    return n;
+  };
+  const m = G.edge + G.bite + G.drag + G.bob + 30;
+  const contours = [];
+  for (const loop of traceField(field, [f.box.x0 - m, f.box.y0 - m,
+                                        f.box.x1 + m, f.box.y1 + m], o.step)) {
+    if (Math.abs(area(loop)) / 2 < G.speck) continue;
+    const ring = toGrid(thin(loop, o.tol));
+    if (ring.length >= 3) contours.push(ring);
+  }
+  return { contours, adv };
+}
+
 /** one letter, whichever press it went through */
 function pressGlyph(ch, o) {
+  if (o.cut === "grit") return gritGlyph(ch, o);
   return o.cut === "knock" ? knockGlyph(ch, o) : screenGlyph(ch, o);
 }
 
