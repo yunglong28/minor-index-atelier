@@ -2865,7 +2865,8 @@ const PARAMS = [
         when: (s) => s.sym === "image" } ],
       help: "A second colour, printed underneath the first. Out of register is the same form again, moved a few units \u2014 the misprint of plate 107. Spread lets the lower plate out past the upper one so a rim of colour shows all round \u2014 plate 119. Separation is what a two-colour press does to a photograph: the lower ink carries the whole picture, the upper one only the shadows, and where they lie on each other you get a black neither ink has alone." },
     { id: "p2ink", type: "ink", label: "second ink", def: "blu", when: (s) => s.plate2 !== "aucune",
-      help: "The colour of the plate underneath." },
+      options: INKS.concat(["none"]),
+      help: "The colour of the plate underneath. None takes the second plate off altogether." },
     { id: "p2dx", type: "range", label: "shift", unit: "px", axis: "x", pair: "p2dy",
       min: -30, max: 30, step: 1, def: -8, when: is("plate2", "registre"),
       help: "How far the lower plate is out of register. Two or three units is a press slipping; twenty is a misprint made on purpose." },
@@ -2915,8 +2916,8 @@ const PARAMS = [
       help: "Which particular hand drew it. The shake follows from this number, so the same number draws the same word." },
   ] },
   { id: "mobilier", label: "Marks", fields: [
-    { id: "fInk", type: "ink", label: "ink", def: "black",
-      help: "Also the colour of the trim marks. On a black ground, set it to white." },
+    { id: "fInk", type: "ink", label: "ink", def: "black", options: INKS.concat(["none"]),
+      help: "Also the colour of the trim marks. On a black ground, set it to white. None takes every mark off the sheet, trim marks included." },
     { id: "fBrackets", type: "bool", label: "corner brackets", def: false,
       help: "Hairline corners that frame the sheet like an instrument." },
     { id: "fAxes", type: "bool", label: "axes", def: false,
@@ -3194,6 +3195,17 @@ function stTextBound(s, tOpt) {
            r: Math.hypot(w, s.tcap * 1.9) / 2 + s.tcap * s.tweight };
 }
 
+/* an ink of "none" is a pass that is not pulled: no second plate, or no
+   marks in the marks' ink (the band and the swipe keep inks of their own) */
+function unpulled(s) {
+  if (s.p2ink === "none") s.plate2 = "aucune";
+  if (s.fInk === "none") {
+    s.fBrackets = s.fAxes = s.fPolar = s.fRing = s.fTicks = s.fReg = false;
+    s.trimMarks = false;
+  }
+  return s;
+}
+
 /** state → a finished plate. The same route a batch script takes.
  *
  * `hooks` is for a press that is being watched: `open` gets the sheet and
@@ -3202,7 +3214,7 @@ function stTextBound(s, tOpt) {
  * the same plate either way — the hooks only say when.
  */
 function buildPlate(state, hooks) {
-  const s = Object.assign({}, DEFAULTS, state);
+  const s = unpulled(Object.assign({}, DEFAULTS, state));
   const { w: W, h: H } = sheetOf(s);
   const t0 = Date.now();
   const rand = rng((s.seed | 0) * 7 + 11);
@@ -3323,7 +3335,7 @@ function buildPlate(state, hooks) {
 
 /* ---- the same state, as the code a batch script would hold -------------- */
 function emitPlate(state) {
-  const s = Object.assign({}, DEFAULTS, state);
+  const s = unpulled(Object.assign({}, DEFAULTS, state));
   const { w: W, h: H } = sheetOf(s);
   const K = (v) => (INK[v] ? `INK.${v}` : JSON.stringify(inkOf(v)));
   const L = [], size = s.size, cx = q4(s.px + size / 2), cy = q4(s.py + size / 2);
