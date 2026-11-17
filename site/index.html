@@ -1737,7 +1737,9 @@
       var pick = nineGrid.children[+e.key - 1];
       return pick && pick.click();
     }
-    if (/input|select|textarea/i.test(e.target.tagName)) return;
+    if (/input|select|textarea/i.test(e.target.tagName) || e.target.isContentEditable) return;
+    /* the letters are shortcuts only on their own: ⌘V pastes an image, it does not cut a font */
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === "r" || e.key === "R") document.getElementById("roll").click();
     if (e.key === "n" || e.key === "N") document.getElementById("nine").click();
     if (e.key === "c" || e.key === "C") document.getElementById("copycode").click();
